@@ -28,7 +28,7 @@ public class ControladorComercio {
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView listarTodos() {
         List<Comercio> comercios = servicioComercio.listarTodos();
-        ModelAndView mav = new ModelAndView("lista-comercios");
+        ModelAndView mav = new ModelAndView("comercio/lista-comercios");
         mav.addObject("comercios", comercios);
         return mav;
     }
@@ -36,7 +36,7 @@ public class ControladorComercio {
     @RequestMapping(path = "/{id}", method = RequestMethod.GET)
     public ModelAndView buscarPorId(@PathVariable Long id) {
         Comercio comercio = servicioComercio.buscarComercio(id);
-        ModelAndView mav = new ModelAndView("comercios");
+        ModelAndView mav = new ModelAndView("comercio/comercios");
         mav.addObject("comercio", comercio);
         return mav;
     }
@@ -44,7 +44,7 @@ public class ControladorComercio {
     @RequestMapping(path = "/buscar", method = RequestMethod.GET)
     public ModelAndView buscarComercioPorNombre(@RequestParam String nombre) {
         Comercio comercio = servicioComercio.buscarComercioPorNombre(nombre);
-        ModelAndView mav = new ModelAndView("comercios");
+        ModelAndView mav = new ModelAndView("comercio/comercios");
         mav.addObject("comercio", comercio);
         return  mav;
     }

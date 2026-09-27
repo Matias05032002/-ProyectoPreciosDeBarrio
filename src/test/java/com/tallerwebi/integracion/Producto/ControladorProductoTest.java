@@ -47,7 +47,7 @@ public class ControladorProductoTest {
 
         ModelAndView modelAndView = result.getModelAndView();
         assert modelAndView != null;
-        assertThat(modelAndView.getViewName(), equalToIgnoringCase("lista-productos"));
+        assertThat(modelAndView.getViewName(), equalToIgnoringCase("producto/lista-productos"));
     }
 
     @Test
@@ -57,7 +57,7 @@ public class ControladorProductoTest {
                 .andReturn();
         ModelAndView modelAndView = result.getModelAndView();
         assert modelAndView != null;
-        assertThat(modelAndView.getViewName(), equalToIgnoringCase("productos"));
+        assertThat(modelAndView.getViewName(), equalToIgnoringCase("producto/productos"));
 
     }
     @Test

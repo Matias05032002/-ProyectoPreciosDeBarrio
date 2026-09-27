@@ -44,7 +44,7 @@ public class ControladorComercioTest {
 
         ModelAndView modelAndView = result.getModelAndView();
         assert modelAndView != null;
-        assertThat(modelAndView.getViewName(), equalToIgnoringCase("lista-comercios"));
+        assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/lista-comercios"));
     }
     @Test
     public void verificarQueGetComercioDevuelveElModeloConComercios() throws Exception {
@@ -62,7 +62,7 @@ public class ControladorComercioTest {
                 .andReturn();
         ModelAndView modelAndView = result.getModelAndView();
         assert modelAndView != null;
-        assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercios"));
+        assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/comercios"));
 
     }
 }

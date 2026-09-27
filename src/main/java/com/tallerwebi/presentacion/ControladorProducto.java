@@ -16,7 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorProducto {
 
     private ServicioProducto servicioProducto;
-    private static final String VISTA_PRODUCTOS = "productos";
+    private static final String VISTA_PRODUCTOS = "producto/productos";
 
     @Autowired
     public ControladorProducto(ServicioProducto servicioProducto) {
@@ -31,8 +31,8 @@ public class ControladorProducto {
 
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView listarProductos() {
-        ModelAndView mav = new ModelAndView("lista-productos");
-        mav.addObject(VISTA_PRODUCTOS, servicioProducto.listarTodos());
+        ModelAndView mav = new ModelAndView("producto/lista-productos");
+        mav.addObject("productos", servicioProducto.listarTodos());
         return mav;
     }
 

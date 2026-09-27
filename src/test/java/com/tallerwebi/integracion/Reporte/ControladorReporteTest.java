@@ -44,7 +44,7 @@ public class ControladorReporteTest {
 
             ModelAndView modelAndView = result.getModelAndView();
             assert modelAndView != null;
-            assertThat(modelAndView.getViewName(), equalToIgnoringCase("lista-reportes"));
+            assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
         }
     @Test
     public void verificarQueGetReporteDevuelveElModeloConReportes() throws Exception {
@@ -62,7 +62,6 @@ public class ControladorReporteTest {
                 .andReturn();
         ModelAndView modelAndView = result.getModelAndView();
         assert modelAndView != null;
-        assertThat(modelAndView.getViewName(), equalToIgnoringCase("reportes"));
-
+        assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/reportes"));
     }
     }
