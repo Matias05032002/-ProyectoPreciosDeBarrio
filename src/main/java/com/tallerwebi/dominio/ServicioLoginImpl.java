@@ -32,4 +32,9 @@ public class ServicioLoginImpl implements ServicioLogin {
     }
     repositorioUsuario.guardar(usuario);
   }
+  @Override
+  public Usuario buscarPorEmail(String email) {
+    return repositorioUsuario.buscar(email);
+  }
 }
+

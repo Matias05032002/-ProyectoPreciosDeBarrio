@@ -35,11 +35,11 @@ public class ControladorReporteTest {
 
     @BeforeEach
     public void init(){
-        this.servicioReporteMock = mock(ServicioReporte.class);
-        this.controladorReporte = new ControladorReporte(servicioReporteMock, servicioProductoMock, servicioComercioMock, servicioLoginMock);
         this.servicioProductoMock = mock(ServicioProducto.class);
         this.servicioComercioMock = mock(ServicioComercio.class);
         this.servicioLoginMock = mock(ServicioLogin.class);
+        this.servicioReporteMock = mock(ServicioReporte.class);
+        this.controladorReporte = new ControladorReporte(servicioReporteMock, servicioProductoMock, servicioComercioMock, servicioLoginMock);
         requestMock = mock(HttpServletRequest.class);
         sessionMock = mock(HttpSession.class);
         when(requestMock.getSession()).thenReturn(sessionMock);
