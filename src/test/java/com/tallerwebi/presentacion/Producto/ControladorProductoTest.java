@@ -47,7 +47,7 @@ public class ControladorProductoTest {
 
     ModelAndView modelAndView = controladorProducto.guardarProducto(producto);
 
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/productos"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/producto"));
     verify(this.servicioProductoMock, times(1)).guardarProducto(producto);
   }
 

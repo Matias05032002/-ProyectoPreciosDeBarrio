@@ -65,6 +65,7 @@ public class ControladorReporteTest {
   @Test
   public void listarTodosLosReportes() {
     Reporte reporte = new Reporte();
+    reporte.setPrecio(100.0);
     List<Reporte> listaDeReportes = Arrays.asList(reporte);
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
     when(this.servicioReporteMock.listarTodos()).thenReturn(listaDeReportes);
