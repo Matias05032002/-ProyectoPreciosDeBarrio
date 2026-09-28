@@ -80,4 +80,27 @@ public class ServicioComercioTest {
     assertThat(comercioBuscado, equalTo(Collections.emptyList()));
     verify(this.repositorioComercioMock, times(1)).buscarComercioPorNombre("ComercioInexistente");
   }
+
+  @Test
+  public void comercioTieneGettersYSettersCorrectos() {
+    Comercio comercio = new Comercio();
+    comercio.setId(1L);
+    comercio.setNombre("Almacen Central");
+    comercio.setLocalidad("Palermo");
+    comercio.setDireccion("Av. Santa Fe 1234");
+    comercio.setDescripcion("Almacen de barrio");
+    comercio.setTipo("Almacen");
+    comercio.setActivo(true);
+    java.time.LocalDateTime fecha = java.time.LocalDateTime.now();
+    comercio.setFechaRegistro(fecha);
+
+    assertThat(comercio.getId(), equalTo(1L));
+    assertThat(comercio.getNombre(), equalTo("Almacen Central"));
+    assertThat(comercio.getLocalidad(), equalTo("Palermo"));
+    assertThat(comercio.getDireccion(), equalTo("Av. Santa Fe 1234"));
+    assertThat(comercio.getDescripcion(), equalTo("Almacen de barrio"));
+    assertThat(comercio.getTipo(), equalTo("Almacen"));
+    assertThat(comercio.getActivo(), equalTo(true));
+    assertThat(comercio.getFechaRegistro(), equalTo(fecha));
+  }
 }

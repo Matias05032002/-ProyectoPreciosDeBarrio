@@ -90,4 +90,29 @@ public class ServicioProductoTest {
     assertThat(resultado, equalTo(producto));
     verify(this.repositorioProductoMock, times(1)).buscarProductoPorNombreExacto("Leche");
   }
+
+  @Test
+  public void productoTieneGettersYSettersCorretos() {
+    Producto producto = new Producto();
+    producto.setId(1L);
+    producto.setNombre("Leche");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("litro");
+    producto.setPrecio(150.0);
+    producto.setDescripcion("Leche entera");
+    producto.setMarca("La Serenisima");
+    producto.setDisponible(true);
+    java.time.LocalDateTime fecha = java.time.LocalDateTime.now();
+    producto.setFechaDeSubida(fecha);
+
+    assertThat(producto.getId(), equalTo(1L));
+    assertThat(producto.getNombre(), equalTo("Leche"));
+    assertThat(producto.getCategoria(), equalTo("Lacteos"));
+    assertThat(producto.getUnidad(), equalTo("litro"));
+    assertThat(producto.getPrecio(), equalTo(150.0));
+    assertThat(producto.getDescripcion(), equalTo("Leche entera"));
+    assertThat(producto.getMarca(), equalTo("La Serenisima"));
+    assertThat(producto.getDisponible(), equalTo(true));
+    assertThat(producto.getFechaDeSubida(), equalTo(fecha));
+  }
 }

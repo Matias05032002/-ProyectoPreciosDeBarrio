@@ -8,6 +8,7 @@ import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.presentacion.ControladorProducto;
+import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -72,5 +73,29 @@ public class ControladorProductoTest {
     ModelAndView modelAndView = this.controladorProducto.buscarProducto("Producto Inexistente");
 
     assertThat((List<?>) modelAndView.getModel().get("productos"), is(empty()));
+  }
+
+  @Test
+  public void productoConPrecioTieneGettersCorrectos() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L
+    );
+
+    assertThat(dto.getNombre(), equalTo("Leche"));
+    assertThat(dto.getMarca(), equalTo("La Serenisima"));
+    assertThat(dto.getUnidad(), equalTo("litro"));
+    assertThat(dto.getCategoria(), equalTo("Lacteos"));
+    assertThat(dto.getPrecioMinimo(), equalTo(150.0));
+    assertThat(dto.getComercio(), equalTo("Almacen Central"));
+    assertThat(dto.getReporteId(), equalTo(1L));
+
+    dto.setReporteId(2L);
+    assertThat(dto.getReporteId(), equalTo(2L));
   }
 }
