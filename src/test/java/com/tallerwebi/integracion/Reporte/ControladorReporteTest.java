@@ -1,5 +1,11 @@
 package com.tallerwebi.integracion.Reporte;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,53 +21,52 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.ModelAndView;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @ExtendWith(SpringExtension.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = { SpringWebTestConfig.class, HibernateTestConfig.class })
 public class ControladorReporteTest {
 
-        @Autowired
-        private WebApplicationContext wac;
+  @Autowired
+  private WebApplicationContext wac;
 
-        private MockMvc mockMvc;
+  private MockMvc mockMvc;
 
-        @BeforeEach
-        public void init() {
-            this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
-        }
+  @BeforeEach
+  public void init() {
+    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+  }
 
-        @Test
-        public void verificarQueGetReporteDevuelveDosCientosYlaVista() throws Exception {
-            MvcResult result = this.mockMvc.perform(get("/reporte"))
-                    .andExpect(status().isOk())
-                    .andReturn();
+  @Test
+  public void verificarQueGetReporteDevuelveDosCientosYlaVista() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(get("/reporte").sessionAttr("ROL", "USER"))
+        .andExpect(status().isOk())
+        .andReturn();
 
-            ModelAndView modelAndView = result.getModelAndView();
-            assert modelAndView != null;
-            assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
-        }
-    @Test
-    public void verificarQueGetReporteDevuelveElModeloConReportes() throws Exception {
-        MvcResult result = this.mockMvc.perform(get("/reporte"))
-                .andExpect(status().isOk())
-                .andReturn();
-        ModelAndView modelAndView = result.getModelAndView();
-        assert modelAndView != null;
-        assertThat(modelAndView.getModel().containsKey("reportes"), is(true));
-    }
-    @Test
-    public void verificarQueBuscarUnReporteDevuelveLaVistaReportes() throws Exception {
-        MvcResult result = this.mockMvc.perform(get("/reporte/buscar?nombre=Leche"))
-                .andExpect(status().isOk())
-                .andReturn();
-        ModelAndView modelAndView = result.getModelAndView();
-        assert modelAndView != null;
-        assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/reportes"));
-    }
-    }
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
+  }
+
+  @Test
+  public void verificarQueGetReporteDevuelveElModeloConReportes() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(get("/reporte").sessionAttr("ROL", "USER"))
+        .andExpect(status().isOk())
+        .andReturn();
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getModel().containsKey("reportes"), is(true));
+  }
+
+  @Test
+  public void verificarQueBuscarUnReporteDevuelveLaVistaReportes() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(get("/reporte/buscar?nombre=Leche").sessionAttr("ROL", "USER"))
+        .andExpect(status().isOk())
+        .andReturn();
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/reportes"));
+  }
+}

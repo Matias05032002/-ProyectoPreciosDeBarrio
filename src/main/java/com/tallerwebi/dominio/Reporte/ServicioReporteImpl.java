@@ -6,12 +6,12 @@ import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service("servicioReporte")
 @Transactional
@@ -37,19 +37,22 @@ public class ServicioReporteImpl implements ServicioReporte {
     Producto productoExistente = servicioProducto.buscarProductoPorNombreExacto(
       reporte.getProducto().getNombre()
     );
-    if (productoExistente == null) {
+    if (
+      productoExistente == null ||
+      !Objects.equals(productoExistente.getMarca(), reporte.getProducto().getMarca())
+    ) {
       servicioProducto.guardarProducto(reporte.getProducto());
     } else {
       reporte.setProducto(productoExistente);
     }
 
-    Comercio comercioExistente = servicioComercio.buscarComercioPorNombre(
+    List<Comercio> comerciosExistentes = servicioComercio.buscarComercioPorNombre(
       reporte.getComercio().getNombre()
     );
-    if (comercioExistente == null) {
+    if (comerciosExistentes == null || comerciosExistentes.isEmpty()) {
       servicioComercio.guardarComercio(reporte.getComercio());
     } else {
-      reporte.setComercio(comercioExistente);
+      reporte.setComercio(comerciosExistentes.get(0));
     }
 
     reporte.setFechaDeReporte(LocalDateTime.now());
@@ -77,8 +80,8 @@ public class ServicioReporteImpl implements ServicioReporte {
   }
 
   @Override
-  public List<Reporte> buscarPorPorducto(Long productoId) {
-    return repositorioReporte.buscarPorPorducto(productoId);
+  public List<Reporte> buscarPorProducto(Long productoId) {
+    return repositorioReporte.buscarPorProducto(productoId);
   }
 
   @Override

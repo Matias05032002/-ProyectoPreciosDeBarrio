@@ -12,40 +12,40 @@ import org.springframework.web.servlet.ModelAndView;
 @RequestMapping("/comercio")
 public class ControladorComercio {
 
-    private ServicioComercio servicioComercio;
+  private ServicioComercio servicioComercio;
 
-    @Autowired
-    public ControladorComercio(ServicioComercio servicioComercio) {
-        this.servicioComercio = servicioComercio;
-    }
+  @Autowired
+  public ControladorComercio(ServicioComercio servicioComercio) {
+    this.servicioComercio = servicioComercio;
+  }
 
-    @RequestMapping(method = RequestMethod.POST)
-    public ModelAndView guardarComercio(@ModelAttribute Comercio comercio) {
-        servicioComercio.guardarComercio(comercio);
-        return new ModelAndView("redirect:/comercios");
-    }
+  @RequestMapping(method = RequestMethod.POST)
+  public ModelAndView guardarComercio(@ModelAttribute Comercio comercio) {
+    servicioComercio.guardarComercio(comercio);
+    return new ModelAndView("redirect:/comercio");
+  }
 
-    @RequestMapping(method = RequestMethod.GET)
-    public ModelAndView listarTodos() {
-        List<Comercio> comercios = servicioComercio.listarTodos();
-        ModelAndView mav = new ModelAndView("comercio/lista-comercios");
-        mav.addObject("comercios", comercios);
-        return mav;
-    }
+  @RequestMapping(method = RequestMethod.GET)
+  public ModelAndView listarTodos() {
+    List<Comercio> comercios = servicioComercio.listarTodos();
+    ModelAndView mav = new ModelAndView("comercio/lista-comercios");
+    mav.addObject("comercios", comercios);
+    return mav;
+  }
 
-    @RequestMapping(path = "/{id}", method = RequestMethod.GET)
-    public ModelAndView buscarPorId(@PathVariable Long id) {
-        Comercio comercio = servicioComercio.buscarComercio(id);
-        ModelAndView mav = new ModelAndView("comercio/comercios");
-        mav.addObject("comercio", comercio);
-        return mav;
-    }
+  @RequestMapping(path = "/{id}", method = RequestMethod.GET)
+  public ModelAndView buscarPorId(@PathVariable("id") Long id) {
+    Comercio comercio = servicioComercio.buscarComercio(id);
+    ModelAndView mav = new ModelAndView("comercio/comercios");
+    mav.addObject("comercio", comercio);
+    return mav;
+  }
 
-    @RequestMapping(path = "/buscar", method = RequestMethod.GET)
-    public ModelAndView buscarComercioPorNombre(@RequestParam String nombre) {
-        Comercio comercio = servicioComercio.buscarComercioPorNombre(nombre);
-        ModelAndView mav = new ModelAndView("comercio/comercios");
-        mav.addObject("comercio", comercio);
-        return  mav;
-    }
+  @RequestMapping(path = "/buscar", method = RequestMethod.GET)
+  public ModelAndView buscarComercioPorNombre(@RequestParam("nombre") String nombre) {
+    List<Comercio> comercios = servicioComercio.buscarComercioPorNombre(nombre);
+    ModelAndView mav = new ModelAndView("comercio/lista-comercios");
+    mav.addObject("comercios", comercios);
+    return mav;
+  }
 }

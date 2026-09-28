@@ -7,7 +7,7 @@ import java.util.List;
 public interface ServicioReporte {
   Reporte guardarReporte(Reporte reporte) throws ReporteExistente;
   Reporte buscarReporte(Long id);
-  List<Reporte> buscarPorPorducto(Long productoId);
+  List<Reporte> buscarPorProducto(Long productoId);
   Reporte marcarDudoso(Long id);
   List<Reporte> listarTodos();
   Reporte buscarReporteDuplicado(Long usuarioId, Long productoId, Long comercioId, LocalDate fecha);

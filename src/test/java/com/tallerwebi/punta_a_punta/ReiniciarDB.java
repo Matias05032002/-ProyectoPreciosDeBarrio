@@ -15,6 +15,8 @@ public class ReiniciarDB {
         : "user";
 
       String sqlCommands =
+        "DELETE FROM Reporte;\n" +
+        "ALTER TABLE Reporte AUTO_INCREMENT = 1;\n" +
         "DELETE FROM Usuario;\n" +
         "ALTER TABLE Usuario AUTO_INCREMENT = 1;\n" +
         "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test@unlam.edu.ar', 'test', 'ADMIN', true);";

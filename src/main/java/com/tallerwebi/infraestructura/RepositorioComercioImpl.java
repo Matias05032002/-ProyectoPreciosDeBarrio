@@ -10,35 +10,35 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class RepositorioComercioImpl implements RepositorioComercio {
 
-    private SessionFactory sessionFactory;
+  private SessionFactory sessionFactory;
 
-    @Autowired
-    public RepositorioComercioImpl(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
-    }
+  @Autowired
+  public RepositorioComercioImpl(SessionFactory sessionFactory) {
+    this.sessionFactory = sessionFactory;
+  }
 
-    @Override
-    public Comercio guardarComercio(Comercio comercio) {
-        sessionFactory.getCurrentSession().persist(comercio);
-        return comercio;
-    }
+  @Override
+  public Comercio guardarComercio(Comercio comercio) {
+    sessionFactory.getCurrentSession().persist(comercio);
+    return comercio;
+  }
 
-    @Override
-    public List<Comercio> listarTodos() {
-        return sessionFactory.getCurrentSession().createQuery("from Comercio", Comercio.class).list();
-    }
+  @Override
+  public List<Comercio> listarTodos() {
+    return sessionFactory.getCurrentSession().createQuery("from Comercio", Comercio.class).list();
+  }
 
-    @Override
-    public Comercio buscarComercio(Long id) {
-        return sessionFactory.getCurrentSession().get(Comercio.class, id);
-    }
+  @Override
+  public Comercio buscarComercio(Long id) {
+    return sessionFactory.getCurrentSession().get(Comercio.class, id);
+  }
 
-    @Override
-    public Comercio buscarComercioPorNombre(String nombre) {
-        return sessionFactory
-                .getCurrentSession()
-                .createQuery("from Comercio where nombre = :nombre", Comercio.class)
-                .setParameter("nombre", nombre)
-                .uniqueResult();
-    }
+  @Override
+  public List<Comercio> buscarComercioPorNombre(String nombre) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery("from Comercio where nombre like :nombre", Comercio.class)
+      .setParameter("nombre", "%" + nombre + "%")
+      .list();
+  }
 }

@@ -30,11 +30,12 @@ public class ServicioLoginImpl implements ServicioLogin {
     if (usuarioEncontrado != null) {
       throw new UsuarioExistente();
     }
+    usuario.setRol("USER");
     repositorioUsuario.guardar(usuario);
   }
+
   @Override
   public Usuario buscarPorEmail(String email) {
     return repositorioUsuario.buscar(email);
   }
 }
-

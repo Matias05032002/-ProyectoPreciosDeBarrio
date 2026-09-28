@@ -41,6 +41,7 @@ public class ControladorLogin {
     );
     if (usuarioBuscado != null) {
       request.getSession().setAttribute("ROL", usuarioBuscado.getRol());
+      request.getSession().setAttribute("EMAIL", usuarioBuscado.getEmail());
       return new ModelAndView("redirect:/home");
     } else {
       Map<String, Object> model = new ModelMap();
@@ -78,6 +79,12 @@ public class ControladorLogin {
 
   @RequestMapping(path = "/", method = RequestMethod.GET)
   public ModelAndView inicio() {
+    return new ModelAndView("redirect:/login");
+  }
+
+  @RequestMapping(path = "/logout", method = RequestMethod.GET)
+  public ModelAndView logout(HttpServletRequest request) {
+    request.getSession().invalidate();
     return new ModelAndView("redirect:/login");
   }
 }
