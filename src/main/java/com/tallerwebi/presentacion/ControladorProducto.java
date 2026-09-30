@@ -5,9 +5,7 @@ import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -50,7 +48,7 @@ public class ControladorProducto {
     if (reportes == null) reportes = Collections.emptyList();
     List<ProductoConPrecio> productosConPrecio = new ArrayList<>();
     for (Producto producto : productos) {
-      productosConPrecio.add(construirProductoConPrecio(producto, reportes));
+      productosConPrecio.addAll(construirProductoConPrecio(producto, reportes));
     }
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
     mav.addObject("productos", productosConPrecio);
@@ -64,33 +62,31 @@ public class ControladorProducto {
     return mav;
   }
 
-  private ProductoConPrecio construirProductoConPrecio(Producto producto, List<Reporte> reportes) {
-    Double precioMinimo = null;
-    String comercio = null;
-    Long reporteId = null;
+  private List<ProductoConPrecio> construirProductoConPrecio(
+    Producto producto,
+    List<Reporte> reportes
+  ) {
+    List<ProductoConPrecio> resultado = new ArrayList<>();
     for (Reporte reporte : reportes) {
       if (
         reporte.getProducto() != null &&
         reporte.getProducto().getId() != null &&
         reporte.getProducto().getId().equals(producto.getId())
       ) {
-        if (precioMinimo == null || reporte.getPrecio() < precioMinimo) {
-          precioMinimo = reporte.getPrecio();
-          if (reporte.getComercio() != null) {
-            comercio = reporte.getComercio().getNombre();
-          }
-          reporteId = reporte.getId();
-        }
+        resultado.add(
+          new ProductoConPrecio(
+            producto.getNombre(),
+            producto.getMarca(),
+            producto.getUnidad(),
+            producto.getCategoria(),
+            reporte.getPrecio(),
+            reporte.getComercio().getNombre(),
+            reporte.getId()
+          )
+        );
       }
     }
-    return new ProductoConPrecio(
-      producto.getNombre(),
-      producto.getMarca(),
-      producto.getUnidad(),
-      producto.getCategoria(),
-      precioMinimo,
-      comercio,
-      reporteId
-    );
+    resultado.sort(Comparator.comparingDouble(ProductoConPrecio::getPrecioMinimo));
+    return resultado;
   }
 }

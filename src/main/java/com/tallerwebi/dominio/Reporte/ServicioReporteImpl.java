@@ -108,6 +108,7 @@ public class ServicioReporteImpl implements ServicioReporte {
   public List<Reporte> buscarPorNombre(String nombreProducto) {
     return repositorioReporte.buscarPorNombre(nombreProducto);
   }
+
   @Override
   public List<Reporte> buscarPorComercio(Long comercioId) {
     return repositorioReporte.buscarPorComercio(comercioId);

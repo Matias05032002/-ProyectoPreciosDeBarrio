@@ -74,6 +74,14 @@ public class VistaComercioE2E {
     assertThat(vistaComercio.existeBotonVerDetalle(), is(true));
   }
 
+  @Test
+  void deberiaVerLosProductosAlIngresarAlDetalleDeUnComercio() {
+    dadoQueExisteUnReporteCargado();
+    vistaComercio = new VistaComercio(context.pages().get(0));
+    vistaComercio.darClickEnVerDetalle();
+    assertThat(vistaComercio.hayProductosEnElDetalle(), is(true));
+  }
+
   private void dadoQueElUsuarioBuscaUnComercioPorNombre(String nombre) {
     vistaComercio.escribirNombreDelComercioABuscar(nombre);
     vistaComercio.darClickEnBuscar();

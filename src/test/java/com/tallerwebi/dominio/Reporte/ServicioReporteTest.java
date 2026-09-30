@@ -178,7 +178,8 @@ public class ServicioReporteTest {
     assertThat(resultado, equalTo(reportes));
     verify(this.repositorioReporteMock, times(1)).buscarPorNombre("leche");
   }
-   @Test
+
+  @Test
   public void buscarPorComercio() {
     Comercio comercio = new Comercio();
     Reporte reporte = new Reporte();

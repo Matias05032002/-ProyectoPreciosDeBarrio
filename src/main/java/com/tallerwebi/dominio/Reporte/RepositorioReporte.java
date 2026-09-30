@@ -11,5 +11,5 @@ public interface RepositorioReporte {
   Reporte marcarDudoso(Long id);
   List<Reporte> listarTodos();
   Reporte buscarReporteDuplicado(Long usuarioId, Long productoId, Long comercioId, LocalDate fecha);
-   List<Reporte> buscarPorComercio(Long comercioId);
+  List<Reporte> buscarPorComercio(Long comercioId);
 }

@@ -2,10 +2,9 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
-import java.util.List;
-
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +15,8 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorComercio {
 
   private ServicioComercio servicioComercio;
-  public ServicioReporte servicioReporte;
+  private ServicioReporte servicioReporte;
+
   @Autowired
   public ControladorComercio(ServicioComercio servicioComercio, ServicioReporte servicioReporte) {
     this.servicioComercio = servicioComercio;

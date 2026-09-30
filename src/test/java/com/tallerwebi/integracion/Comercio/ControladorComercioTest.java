@@ -65,4 +65,25 @@ public class ControladorComercioTest {
     assert modelAndView != null;
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/lista-comercios"));
   }
+
+  @Test
+  public void verificarQueGetIdDevuelveLavistaCorrecta() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(get("/comercio/1")).andExpect(status().isOk()).andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/comercios"));
+  }
+
+  @Test
+  public void verificarQueGetIdDevuelveElModeloConComercioYReportes() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(get("/comercio/1")).andExpect(status().isOk()).andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getModel().containsKey("comercio"), is(true));
+    assertThat(modelAndView.getModel().containsKey("reportes"), is(true));
+  }
 }

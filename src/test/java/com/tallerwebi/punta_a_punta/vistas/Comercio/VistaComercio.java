@@ -33,4 +33,12 @@ public class VistaComercio extends VistaWeb {
   public String obtenerNombreDelPrimerComercio() {
     return page.locator(".card-title").first().textContent().trim();
   }
+
+  public void darClickEnVerDetalle() {
+    this.darClickEnElElemento("#btn-ver-detalle");
+  }
+
+  public boolean hayProductosEnElDetalle() {
+    return page.locator("tbody tr").count() > 0;
+  }
 }

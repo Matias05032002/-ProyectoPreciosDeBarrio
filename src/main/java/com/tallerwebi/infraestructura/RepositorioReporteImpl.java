@@ -95,7 +95,8 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       .setParameter("fecha", fecha)
       .uniqueResult();
   }
-   @Override
+
+  @Override
   public List<Reporte> buscarPorComercio(Long comercioId) {
     return sessionFactory
       .getCurrentSession()
