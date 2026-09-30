@@ -178,4 +178,19 @@ public class ServicioReporteTest {
     assertThat(resultado, equalTo(reportes));
     verify(this.repositorioReporteMock, times(1)).buscarPorNombre("leche");
   }
+   @Test
+  public void buscarPorComercio() {
+    Comercio comercio = new Comercio();
+    Reporte reporte = new Reporte();
+    comercio.setId(1L);
+    List<Reporte> listaDeReportes = Arrays.asList(reporte);
+    when(this.repositorioReporteMock.buscarPorComercio(comercio.getId()))
+      .thenReturn(listaDeReportes);
+
+    List<Reporte> listaDeComerciosBuscados =
+      this.servicioReporte.buscarPorComercio(comercio.getId());
+
+    assertThat(listaDeComerciosBuscados, equalTo(listaDeReportes));
+    verify(this.repositorioReporteMock, times(1)).buscarPorComercio(comercio.getId());
+  }
 }

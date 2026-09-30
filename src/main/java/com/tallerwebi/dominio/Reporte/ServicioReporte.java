@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.Reporte;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import java.time.LocalDate;
 import java.util.List;
@@ -12,4 +13,5 @@ public interface ServicioReporte {
   List<Reporte> listarTodos();
   Reporte buscarReporteDuplicado(Long usuarioId, Long productoId, Long comercioId, LocalDate fecha);
   List<Reporte> buscarPorNombre(String nombreProducto);
+  List<Reporte> buscarPorComercio(Long comercioId);
 }

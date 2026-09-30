@@ -3,6 +3,9 @@ package com.tallerwebi.presentacion;
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import java.util.List;
+
+import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +16,11 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorComercio {
 
   private ServicioComercio servicioComercio;
-
+  public ServicioReporte servicioReporte;
   @Autowired
-  public ControladorComercio(ServicioComercio servicioComercio) {
+  public ControladorComercio(ServicioComercio servicioComercio, ServicioReporte servicioReporte) {
     this.servicioComercio = servicioComercio;
+    this.servicioReporte = servicioReporte;
   }
 
   @RequestMapping(method = RequestMethod.POST)
@@ -36,8 +40,10 @@ public class ControladorComercio {
   @RequestMapping(path = "/{id}", method = RequestMethod.GET)
   public ModelAndView buscarPorId(@PathVariable("id") Long id) {
     Comercio comercio = servicioComercio.buscarComercio(id);
+    List<Reporte> reportes = servicioReporte.buscarPorComercio(id);
     ModelAndView mav = new ModelAndView("comercio/comercios");
     mav.addObject("comercio", comercio);
+    mav.addObject("reportes", reportes);
     return mav;
   }
 

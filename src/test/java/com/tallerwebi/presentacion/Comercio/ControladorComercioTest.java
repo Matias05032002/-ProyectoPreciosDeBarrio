@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.presentacion.ControladorComercio;
 import java.util.Arrays;
 import java.util.List;
@@ -18,11 +19,13 @@ public class ControladorComercioTest {
 
   private ControladorComercio controladorComercio;
   private ServicioComercio servicioComercioMock;
+  private ServicioReporte servicioReporteMock;
 
   @BeforeEach
   public void init() {
     this.servicioComercioMock = mock(ServicioComercio.class);
-    this.controladorComercio = new ControladorComercio(servicioComercioMock);
+    this.servicioReporteMock = mock(ServicioReporte.class);
+    this.controladorComercio = new ControladorComercio(servicioComercioMock, servicioReporteMock);
   }
 
   @Test

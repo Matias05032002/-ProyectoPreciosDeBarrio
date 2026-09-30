@@ -1,5 +1,6 @@
 package com.tallerwebi.infraestructura;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import java.time.LocalDate;
@@ -93,5 +94,16 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       .setParameter("comercioId", comercioId)
       .setParameter("fecha", fecha)
       .uniqueResult();
+  }
+   @Override
+  public List<Reporte> buscarPorComercio(Long comercioId) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "from Reporte where comercio.id = :comercioId order by precio asc",
+        Reporte.class
+      )
+      .setParameter("comercioId", comercioId)
+      .list();
   }
 }
