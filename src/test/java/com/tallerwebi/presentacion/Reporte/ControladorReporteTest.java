@@ -84,7 +84,7 @@ public class ControladorReporteTest {
     ModelAndView modelAndView = this.controladorReporte.buscarReporte(1L);
 
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/reportes"));
-    assertThat(modelAndView.getModel().get("reportes"), is(reporte));
+    assertThat(modelAndView.getModel().get("reportes"), is(Collections.singletonList(reporte)));
     verify(this.servicioReporteMock, times(1)).buscarReporte(1L);
   }
 

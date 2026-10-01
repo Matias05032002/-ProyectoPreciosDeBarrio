@@ -9,7 +9,6 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import jakarta.servlet.http.HttpServletRequest;
-
 import java.util.Collections;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;

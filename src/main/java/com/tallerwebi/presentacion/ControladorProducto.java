@@ -51,6 +51,7 @@ public class ControladorProducto {
     mav.addObject("productos", productosConPrecio);
     return mav;
   }
+
   @RequestMapping(path = "/buscar/{id}", method = RequestMethod.GET)
   public ModelAndView buscarPorId(@PathVariable Long id) {
     Producto producto = servicioProducto.buscarProductoPorId(id);
@@ -70,14 +71,17 @@ public class ControladorProducto {
         reporte.getProducto().getId() != null &&
         reporte.getProducto().getId().equals(producto.getId())
       ) {
-        String nombreComercio = (reporte.getComercio() != null) ? reporte.getComercio().getNombre() : null;
+        String nombreComercio = (reporte.getComercio() != null)
+          ? reporte.getComercio().getNombre()
+          : null;
         resultado.add(
           new ProductoConPrecio(
             producto.getNombre(),
             producto.getMarca(),
             producto.getUnidad(),
             producto.getCategoria(),
-            reporte.getPrecio(), nombreComercio,
+            reporte.getPrecio(),
+            nombreComercio,
             reporte.getId()
           )
         );
