@@ -9,6 +9,8 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.Collections;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -76,7 +78,7 @@ public class ControladorReporte {
   public ModelAndView buscarReporte(@PathVariable("id") Long id) {
     Reporte reporte = servicioReporte.buscarReporte(id);
     ModelAndView mav = new ModelAndView(VISTA_REPORTES);
-    mav.addObject(NOMBRE_REPORTES, reporte);
+    mav.addObject(NOMBRE_REPORTES, Collections.singletonList(reporte));
     return mav;
   }
 

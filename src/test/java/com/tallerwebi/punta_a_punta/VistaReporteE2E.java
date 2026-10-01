@@ -51,7 +51,7 @@ public class VistaReporteE2E {
   @Test
   void deberiaMostrarElTituloDeReportes() {
     String titulo = vistaReporte.obtenerTitulo();
-    assertThat(titulo, equalToIgnoringCase("Precios reportados"));
+    assertThat(titulo, equalToIgnoringCase("Reporta el precio del producto para ayudar a tus vecinos"));
   }
 
   @Test

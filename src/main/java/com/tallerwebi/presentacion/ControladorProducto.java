@@ -8,10 +8,7 @@ import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 @Controller
@@ -54,11 +51,11 @@ public class ControladorProducto {
     mav.addObject("productos", productosConPrecio);
     return mav;
   }
-
-  public ModelAndView buscarPorId(Long id) {
+  @RequestMapping(path = "/buscar/{id}", method = RequestMethod.GET)
+  public ModelAndView buscarPorId(@PathVariable Long id) {
     Producto producto = servicioProducto.buscarProductoPorId(id);
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
-    mav.addObject(VISTA_PRODUCTOS, producto);
+    mav.addObject("productos", Collections.singletonList(producto));
     return mav;
   }
 
@@ -73,14 +70,14 @@ public class ControladorProducto {
         reporte.getProducto().getId() != null &&
         reporte.getProducto().getId().equals(producto.getId())
       ) {
+        String nombreComercio = (reporte.getComercio() != null) ? reporte.getComercio().getNombre() : null;
         resultado.add(
           new ProductoConPrecio(
             producto.getNombre(),
             producto.getMarca(),
             producto.getUnidad(),
             producto.getCategoria(),
-            reporte.getPrecio(),
-            reporte.getComercio().getNombre(),
+            reporte.getPrecio(), nombreComercio,
             reporte.getId()
           )
         );

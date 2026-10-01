@@ -63,6 +63,6 @@ public class VistaReporte extends VistaWeb {
   }
 
   public boolean hayReportesEnLaTabla() {
-    return page.locator("tbody tr").count() > 0;
+    return page.locator("#error").count() == 0;
   }
 }
