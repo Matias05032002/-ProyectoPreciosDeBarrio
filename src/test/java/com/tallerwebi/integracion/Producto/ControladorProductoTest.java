@@ -69,13 +69,13 @@ public class ControladorProductoTest {
     assert modelAndView != null;
     assertThat(modelAndView.getModel().containsKey("productos"), is(true));
   }
+
   @Autowired
   private org.hibernate.SessionFactory sessionFactory;
 
   @Test
   @Transactional
   public void cuandoSeBuscaUnProductoMuestraLaAntiguedadCorrecta() throws Exception {
-
     org.hibernate.Session session = sessionFactory.getCurrentSession();
 
     Producto producto = new Producto();
@@ -85,7 +85,7 @@ public class ControladorProductoTest {
     producto.setCategoria("Lacteos");
     session.save(producto);
 
-  Comercio comercio = new Comercio();
+    Comercio comercio = new Comercio();
     comercio.setNombre("Almacen Central");
     comercio.setDireccion("Av. Siempreviva 123");
     comercio.setLocalidad("La Matanza");
@@ -98,14 +98,12 @@ public class ControladorProductoTest {
     reporte.setFechaDeReporte(java.time.LocalDateTime.now().minusDays(3));
     session.save(reporte);
 
-
-    MvcResult result = this.mockMvc.perform(get("/producto/buscar?nombre=Leche"))
-            .andExpect(status().isOk())
-            .andReturn();
+    MvcResult result =
+      this.mockMvc.perform(get("/producto/buscar?nombre=Leche"))
+        .andExpect(status().isOk())
+        .andReturn();
 
     String html = result.getResponse().getContentAsString();
     assertThat(html.contains("Fresco"), is(true));
   }
-
-
 }

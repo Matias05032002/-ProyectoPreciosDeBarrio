@@ -9,7 +9,6 @@ import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.presentacion.ControladorProducto;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
-
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,7 +86,8 @@ public class ControladorProductoTest {
       150.0,
       "Almacen Central",
       1L,
-      null
+      null,
+      1
     );
 
     assertThat(dto.getNombre(), equalTo("Leche"));
@@ -101,29 +101,36 @@ public class ControladorProductoTest {
     dto.setReporteId(2L);
     assertThat(dto.getReporteId(), equalTo(2L));
   }
+
   @Test
-  public void calcularAntiguedadNullDeUnProducto(){
+  public void calcularAntiguedadNullDeUnProducto() {
     ProductoConPrecio dto = new ProductoConPrecio(
-            "Leche",
-            "La Serenisima",
-            "litro",
-            "Lacteos",
-            150.0,
-            "Almacen Central",
-            1L,
-            null
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L,
+      null,
+      6
     );
-
-
 
     assertThat(dto.getAntiguedad(), equalTo("Desconocido"));
   }
+
   @Test
   public void productoConFechaDeHacePocoEsFresco() {
     ProductoConPrecio dto = new ProductoConPrecio(
-            "Leche", "La Serenisima", "litro", "Lacteos",
-            150.0, "Almacen Central", 1L,
-            LocalDateTime.now().minusDays(3)
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L,
+      LocalDateTime.now().minusDays(3),
+      0
     );
     assertThat(dto.getAntiguedad(), equalTo("Fresco"));
   }
@@ -131,9 +138,15 @@ public class ControladorProductoTest {
   @Test
   public void productoConFechaDeHace15DiasEsDesactualizado() {
     ProductoConPrecio dto = new ProductoConPrecio(
-            "Leche", "La Serenisima", "litro", "Lacteos",
-            150.0, "Almacen Central", 1L,
-            LocalDateTime.now().minusDays(15)
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L,
+      LocalDateTime.now().minusDays(15),
+      0
     );
     assertThat(dto.getAntiguedad(), equalTo("Desactualizado"));
   }
@@ -141,10 +154,64 @@ public class ControladorProductoTest {
   @Test
   public void productoConFechaDeHace30DiasEsVencido() {
     ProductoConPrecio dto = new ProductoConPrecio(
-            "Leche", "La Serenisima", "litro", "Lacteos",
-            150.0, "Almacen Central", 1L,
-            LocalDateTime.now().minusDays(50)
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L,
+      LocalDateTime.now().minusDays(50),
+      0
     );
     assertThat(dto.getAntiguedad(), equalTo("Vencido"));
+  }
+
+  @Test
+  public void productoConNingunaValoracionEsConfiable() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L,
+      LocalDateTime.now().minusDays(50),
+      0
+    );
+    assertThat(dto.isEsDudoso(), equalTo(false));
+  }
+
+  @Test
+  public void productoConSeisValoracionesEsDudoso() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L,
+      LocalDateTime.now().minusDays(50),
+      7
+    );
+    assertThat(dto.isEsDudoso(), equalTo(true));
+  }
+
+  @Test
+  public void productoConMasDeDiezReportesEsDudoso() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L,
+      LocalDateTime.now().minusDays(50),
+      11
+    );
+    assertThat(dto.isEsDudoso(), equalTo(true));
   }
 }

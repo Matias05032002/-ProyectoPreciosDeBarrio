@@ -30,6 +30,7 @@
                               th:classappend="${producto.antiguedad == 'Fresco'} ? 'bg-success' : (${producto.antiguedad == 'Desactualizado'} ? 'bg-warning text-dark' : 'bg-danger')"
                               class="badge" id="badge-antiguedad">
                         </span>
+                        <span th:if="${producto.esDudoso}" class="badge bg-secondary ms-1">Dudoso</span>
                     </div>
                     <p class="card-text text-muted mb-1">
                         <span th:text="${producto.marca}"></span> ·

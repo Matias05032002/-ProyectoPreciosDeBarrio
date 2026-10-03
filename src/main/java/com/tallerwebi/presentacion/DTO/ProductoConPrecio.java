@@ -16,6 +16,7 @@ public class ProductoConPrecio {
   LocalDateTime fechaDeReporte;
   private static final int DIAS_FRESCO = 7;
   private static final int DIAS_DESACTUALIZADO = 45;
+  private boolean esDudoso;
 
   public ProductoConPrecio(
     String nombre,
@@ -25,7 +26,8 @@ public class ProductoConPrecio {
     Double precioMinimo,
     String comercio,
     Long reporteId,
-    LocalDateTime fechaDeReporte
+    LocalDateTime fechaDeReporte,
+    Integer puntuacion
   ) {
     this.nombre = nombre;
     this.marca = marca;
@@ -35,6 +37,7 @@ public class ProductoConPrecio {
     this.comercio = comercio;
     this.reporteId = reporteId;
     this.antiguedad = calcularAntiguedadDelProducto(fechaDeReporte);
+    this.esDudoso = puntuacion != null && puntuacion > 6;
   }
 
   public String getNombre() {
@@ -93,5 +96,9 @@ public class ProductoConPrecio {
     } else {
       return "Vencido";
     }
+  }
+
+  public boolean isEsDudoso() {
+    return esDudoso;
   }
 }
