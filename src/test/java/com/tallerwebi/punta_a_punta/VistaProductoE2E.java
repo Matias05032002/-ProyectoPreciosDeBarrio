@@ -78,6 +78,16 @@ public class VistaProductoE2E {
     assertThat(vistaProducto.hayBotonMarcarDudoso(), is(true));
   }
 
+  @Test
+  void deberiaMostrarElModalCuandoSeMarcaComoDudoso() {
+    dadoQueExisteUnReporteCargado();
+    vistaProducto = new VistaProducto(context.pages().get(0));
+    vistaProducto.escribirNombreDelProductoABuscar("Leche");
+    vistaProducto.darClickEnBuscar();
+    vistaProducto.darClickEnMarcarDudoso();
+    assertThat(vistaProducto.hayModalDudoso(), is(true));
+  }
+
   private void dadoQueElUsuarioBuscaUnProductoPorNombre(String nombre) {
     vistaProducto.escribirNombreDelProductoABuscar(nombre);
     vistaProducto.darClickEnBuscar();

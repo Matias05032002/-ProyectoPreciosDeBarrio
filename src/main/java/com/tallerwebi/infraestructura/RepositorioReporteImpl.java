@@ -3,6 +3,7 @@ package com.tallerwebi.infraestructura;
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
+import com.tallerwebi.dominio.Usuario;
 import java.time.LocalDate;
 import java.util.List;
 import org.hibernate.SessionFactory;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Repository;
 public class RepositorioReporteImpl implements RepositorioReporte {
 
   private SessionFactory sessionFactory;
+  private static final int PUNTUACION_MAXIMA = 10;
 
   @Autowired
   public RepositorioReporteImpl(SessionFactory sessionFactory) {
@@ -55,11 +57,21 @@ public class RepositorioReporteImpl implements RepositorioReporte {
   }
 
   @Override
-  public Reporte marcarDudoso(Long id) {
+  public Reporte marcarDudoso(Long id, Usuario usuario) {
     Reporte reporte = sessionFactory.getCurrentSession().get(Reporte.class, id);
     if (reporte != null) {
+      if (usuario != null && reporte.getUsuariosQueMarcaron().contains(usuario)) {
+        return reporte;
+      }
       int puntuacionActual = reporte.getPuntuacion() != null ? reporte.getPuntuacion() : 0;
       reporte.setPuntuacion(puntuacionActual + 1);
+      if (usuario != null) {
+        reporte.getUsuariosQueMarcaron().add(usuario);
+      }
+      if (reporte.getPuntuacion() > PUNTUACION_MAXIMA) {
+        sessionFactory.getCurrentSession().remove(reporte);
+        return null;
+      }
       sessionFactory.getCurrentSession().merge(reporte);
     }
     return reporte;

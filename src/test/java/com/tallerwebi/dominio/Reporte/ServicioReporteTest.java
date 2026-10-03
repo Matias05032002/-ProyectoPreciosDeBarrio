@@ -88,12 +88,12 @@ public class ServicioReporteTest {
   @Test
   public void marcarUnReporteDudoso() {
     Reporte reporte = new Reporte();
-    when(this.repositorioReporteMock.marcarDudoso(1L)).thenReturn(reporte);
+    when(this.repositorioReporteMock.marcarDudoso(1L, null)).thenReturn(reporte);
 
-    Reporte reporteMarcado = this.servicioReporte.marcarDudoso(1L);
+    Reporte reporteMarcado = this.servicioReporte.marcarDudoso(1L, null);
 
     assertThat(reporteMarcado, equalTo(reporte));
-    verify(this.repositorioReporteMock, times(1)).marcarDudoso(1L);
+    verify(this.repositorioReporteMock, times(1)).marcarDudoso(1L, null);
   }
 
   @Test

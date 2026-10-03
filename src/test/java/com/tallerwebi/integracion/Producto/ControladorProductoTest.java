@@ -12,6 +12,8 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
 import jakarta.transaction.Transactional;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,12 +73,12 @@ public class ControladorProductoTest {
   }
 
   @Autowired
-  private org.hibernate.SessionFactory sessionFactory;
+  private SessionFactory sessionFactory;
 
   @Test
   @Transactional
   public void cuandoSeBuscaUnProductoMuestraLaAntiguedadCorrecta() throws Exception {
-    org.hibernate.Session session = sessionFactory.getCurrentSession();
+    Session session = sessionFactory.getCurrentSession();
 
     Producto producto = new Producto();
     producto.setNombre("Leche");
@@ -105,5 +107,39 @@ public class ControladorProductoTest {
 
     String html = result.getResponse().getContentAsString();
     assertThat(html.contains("Fresco"), is(true));
+  }
+
+  @Test
+  @Transactional
+  public void cuandoSeMarcaDudosoApareceElModalEnLaVista() throws Exception {
+    Session session = sessionFactory.getCurrentSession();
+
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setUnidad("1000ml");
+    producto.setCategoria("Lacteos");
+    session.save(producto);
+
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen Central");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+    session.save(comercio);
+
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(150.0);
+    reporte.setFechaDeReporte(java.time.LocalDateTime.now().minusDays(3));
+    session.save(reporte);
+
+    MvcResult result =
+      this.mockMvc.perform(get("/producto/buscar?nombre=Leche&dudosoMarcado=true"))
+        .andExpect(status().isOk())
+        .andReturn();
+
+    String html = result.getResponse().getContentAsString();
+    assertThat(html.contains("modalDudoso"), is(true));
   }
 }

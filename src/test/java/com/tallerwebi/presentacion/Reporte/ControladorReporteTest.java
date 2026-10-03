@@ -122,14 +122,14 @@ public class ControladorReporteTest {
   @Test
   public void marcarDudosoUnReporte() {
     Reporte reporte = new Reporte();
-    when(this.servicioReporteMock.marcarDudoso(1L)).thenReturn(reporte);
+    when(this.servicioReporteMock.marcarDudoso(1L, null)).thenReturn(reporte);
 
-    ModelAndView modelAndView = this.controladorReporte.marcarDudoso(1L, "Leche");
+    ModelAndView modelAndView = this.controladorReporte.marcarDudoso(1L, "Leche", requestMock);
 
     assertThat(
       modelAndView.getViewName(),
-      equalToIgnoringCase("redirect:/producto/buscar?nombre=Leche")
+      equalToIgnoringCase("redirect:/producto/buscar?nombre=Leche&dudosoMarcado=true")
     );
-    verify(this.servicioReporteMock, times(1)).marcarDudoso(1L);
+    verify(this.servicioReporteMock, times(1)).marcarDudoso(1L, null);
   }
 }

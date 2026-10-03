@@ -61,7 +61,7 @@ public class ControladorProductoTest {
     when(this.servicioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
     when(this.servicioProductoMock.buscarPorNombre("Leche")).thenReturn(lista);
 
-    ModelAndView modelAndView = controladorProducto.buscarProducto("Leche");
+    ModelAndView modelAndView = controladorProducto.buscarProducto("Leche", null);
 
     assertThat(modelAndView.getViewName(), equalTo("producto/lista-productos"));
     assertThat(modelAndView.getModel().get("productos"), is(notNullValue()));
@@ -71,7 +71,8 @@ public class ControladorProductoTest {
   public void buscarUnProductoQueNoExisteDevuelveListaVacia() {
     when(this.servicioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
 
-    ModelAndView modelAndView = this.controladorProducto.buscarProducto("Producto Inexistente");
+    ModelAndView modelAndView =
+      this.controladorProducto.buscarProducto("Producto Inexistente", null);
 
     assertThat((List<?>) modelAndView.getModel().get("productos"), is(empty()));
   }

@@ -39,7 +39,10 @@ public class ControladorProducto {
   }
 
   @RequestMapping(path = "/buscar", method = RequestMethod.GET)
-  public ModelAndView buscarProducto(@RequestParam("nombre") String nombre) {
+  public ModelAndView buscarProducto(
+    @RequestParam("nombre") String nombre,
+    @RequestParam(value = "dudosoMarcado", required = false) Boolean dudosoMarcado
+  ) {
     List<Producto> productos = servicioProducto.buscarPorNombre(nombre);
     List<Reporte> reportes = servicioReporte.listarTodos();
     if (reportes == null) reportes = Collections.emptyList();
@@ -49,6 +52,7 @@ public class ControladorProducto {
     }
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
     mav.addObject("productos", productosConPrecio);
+    mav.addObject("dudosoMarcado", dudosoMarcado != null && dudosoMarcado);
     return mav;
   }
 

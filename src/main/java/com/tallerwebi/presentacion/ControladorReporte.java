@@ -85,10 +85,15 @@ public class ControladorReporte {
   @RequestMapping(path = "/{id}/dudoso", method = RequestMethod.POST)
   public ModelAndView marcarDudoso(
     @PathVariable("id") Long id,
-    @RequestParam("nombreProducto") String nombreProducto
+    @RequestParam("nombreProducto") String nombreProducto,
+    HttpServletRequest request
   ) {
-    servicioReporte.marcarDudoso(id);
-    return new ModelAndView("redirect:/producto/buscar?nombre=" + nombreProducto);
+    String email = (String) request.getSession().getAttribute("EMAIL");
+    Usuario usuario = servicioLogin.buscarPorEmail(email);
+    servicioReporte.marcarDudoso(id, usuario);
+    return new ModelAndView(
+      "redirect:/producto/buscar?nombre=" + nombreProducto + "&dudosoMarcado=true"
+    );
   }
 
   @RequestMapping(path = "/buscar", method = RequestMethod.GET)

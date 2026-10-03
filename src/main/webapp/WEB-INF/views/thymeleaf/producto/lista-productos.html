@@ -60,6 +60,29 @@
     </div>
 
 </div>
+
+
+<div th:if="${dudosoMarcado}" id="modalDudoso" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">¡Gracias por tu reporte!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Marcaste este reporte como dudoso. ¡Estás ayudando a mantener la información confiable!
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:if="${dudosoMarcado}">
+    var modal = new bootstrap.Modal(document.getElementById('modalDudoso'));
+    modal.show();
+</script>
 </body>
 </html>

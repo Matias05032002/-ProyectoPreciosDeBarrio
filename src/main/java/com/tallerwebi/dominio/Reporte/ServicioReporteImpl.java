@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
+import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
@@ -85,8 +86,8 @@ public class ServicioReporteImpl implements ServicioReporte {
   }
 
   @Override
-  public Reporte marcarDudoso(Long id) {
-    return repositorioReporte.marcarDudoso(id);
+  public Reporte marcarDudoso(Long id, Usuario usuario) {
+    return repositorioReporte.marcarDudoso(id, usuario);
   }
 
   @Override

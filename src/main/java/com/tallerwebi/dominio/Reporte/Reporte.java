@@ -5,6 +5,8 @@ import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Usuario;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "Reporte")
@@ -27,6 +29,14 @@ public class Reporte {
 
   @ManyToOne
   private Producto producto;
+
+  @ManyToMany
+  @JoinTable(
+    name = "reporte_usuarios_dudoso",
+    joinColumns = @JoinColumn(name = "reporte_id"),
+    inverseJoinColumns = @JoinColumn(name = "usuario_id")
+  )
+  private List<Usuario> usuariosQueMarcaron = new ArrayList<>();
 
   public Reporte() {}
 
@@ -92,5 +102,13 @@ public class Reporte {
 
   public void setFechaDeReporte(LocalDateTime fechaDeReporte) {
     this.fechaDeReporte = fechaDeReporte;
+  }
+
+  public List<Usuario> getUsuariosQueMarcaron() {
+    return usuariosQueMarcaron;
+  }
+
+  public void setUsuariosQueMarcaron(List<Usuario> usuariosQueMarcaron) {
+    this.usuariosQueMarcaron = usuariosQueMarcaron;
   }
 }

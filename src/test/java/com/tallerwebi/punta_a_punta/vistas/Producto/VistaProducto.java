@@ -29,4 +29,12 @@ public class VistaProducto extends VistaWeb {
   public boolean hayBotonMarcarDudoso() {
     return page.locator("#btn-marcar-dudoso").count() > 0;
   }
+
+  public boolean hayModalDudoso() {
+    return page.locator("#modalDudoso").count() > 0;
+  }
+
+  public void darClickEnMarcarDudoso() {
+    page.locator("#btn-marcar-dudoso").first().click();
+  }
 }

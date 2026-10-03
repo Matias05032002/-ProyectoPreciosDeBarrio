@@ -78,7 +78,7 @@ public class RepositorioReporteTest {
     dadoQueExisteElReporte(reporte);
 
     int puntuacionAntes = reporte.getPuntuacion() != null ? reporte.getPuntuacion() : 0;
-    Reporte resultado = repositorioReporte.marcarDudoso(reporte.getId());
+    Reporte resultado = repositorioReporte.marcarDudoso(reporte.getId(), null);
 
     assertThat(resultado.getPuntuacion(), is(equalTo(puntuacionAntes + 1)));
   }
