@@ -5,7 +5,9 @@ import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
@@ -52,9 +54,24 @@ public class ControladorReporteTest {
 
   @Test
   public void guardarNuevoReporte() throws ReporteExistente {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
+
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen Don Jose");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+
     Reporte reporte = new Reporte();
     reporte.setPrecio(100.0);
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(null);
     when(this.servicioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
 
     ModelAndView modelAndView = this.controladorReporte.guardarReporte(reporte, requestMock);
@@ -83,7 +100,7 @@ public class ControladorReporteTest {
 
     ModelAndView modelAndView = this.controladorReporte.buscarReporte(1L);
 
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/reportes"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
     assertThat(modelAndView.getModel().get("reportes"), is(Collections.singletonList(reporte)));
     verify(this.servicioReporteMock, times(1)).buscarReporte(1L);
   }
@@ -97,7 +114,7 @@ public class ControladorReporteTest {
 
     ModelAndView modelAndView = this.controladorReporte.buscarPorNombre("Leche", requestMock);
 
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/reportes"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
     assertThat(modelAndView.getModel().get("reportes"), is(listaDeReportesPorNombre));
     verify(this.servicioReporteMock, times(1)).buscarPorNombre("Leche");
   }

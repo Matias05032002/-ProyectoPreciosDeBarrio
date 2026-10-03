@@ -67,6 +67,6 @@ public class ControladorReporteTest {
         .andReturn();
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/reportes"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
   }
 }
