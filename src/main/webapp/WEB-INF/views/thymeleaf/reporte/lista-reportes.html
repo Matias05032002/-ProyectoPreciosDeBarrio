@@ -19,7 +19,30 @@
             <input type="text" name="producto.marca" id="producto-marca" class="form-control" placeholder="Marca">
         </div>
         <div class="mb-3">
-            <input type="text" name="producto.categoria" id="producto-categoria" class="form-control" placeholder="Categoría">
+            <select name="producto.categoria" id="producto-categoria" class="form-select">
+                <option value="">Seleccionar categoria</option>
+                <option value="Almacen">Almacén</option>
+                <option value="Bebidas con alcohol">Bebidas con alcohol</option>
+                <option value="Bebidas sin alcohol">Bebidas sin alcohol</option>
+                <option value="Carnes y aves">Carnes y aves</option>
+                <option value="Cereales y legumbres">Cereales y legumbres</option>
+                <option value="Condimentos y salsas">Condimentos y salsas</option>
+                <option value="Congelados">Congelados</option>
+                <option value="Enlatados y conservas">Enlatados y conservas</option>
+                <option value="Farmacia y perfumeria">Farmacia y perfumería</option>
+                <option value="Ferreteria y bazar">Ferretería y bazar</option>
+                <option value="Fiambres y embutidos">Fiambres y embutidos</option>
+                <option value="Higiene personal">Higiene personal</option>
+                <option value="Lacteos">Lácteos</option>
+                <option value="Limpieza del hogar">Limpieza del hogar</option>
+                <option value="Mascotas">Mascotas</option>
+                <option value="Panaderia y reposteria">Panadería y repostería</option>
+                <option value="Pescados y mariscos">Pescados y mariscos</option>
+                <option value="Productos de dietetica">Productos de dietética</option>
+                <option value="Snacks y golosinas">Snacks y golosinas</option>
+                <option value="Tabaco">Tabaco</option>
+                <option value="Verduras y frutas">Verduras y frutas</option>
+            </select>
         </div>
         <div class="mb-3">
             <input type="text" name="producto.unidad" id="producto-unidad" class="form-control" placeholder="Unidad (ej: 1kg, 900ml)">
@@ -29,10 +52,63 @@
             <input type="text" name="comercio.nombre" id="comercio-nombre" class="form-control" placeholder="Nombre del comercio">
         </div>
         <div class="mb-3">
-            <input type="text" name="comercio.direccion" id="comercio-direccion" class="form-control" placeholder="Dirección">
+            <input type="text" name="comercio.direccion" id="comercio-direccion" class="form-control" placeholder="Direccion">
         </div>
         <div class="mb-3">
-            <input type="text" name="comercio.localidad" id="comercio-localidad" class="form-control" placeholder="Localidad">
+            <div class="mb-3">
+                <select name="comercio.localidad" id="comercio-localidad" class="form-select">
+                    <option value="">Seleccionar partido/localidad</option>
+                    <option value="Almirante Brown">Almirante Brown</option>
+                    <option value="Avellaneda">Avellaneda</option>
+                    <option value="Bahia Blanca">Bahía Blanca</option>
+                    <option value="Berazategui">Berazategui</option>
+                    <option value="Berisso">Berisso</option>
+                    <option value="Brandsen">Brandsen</option>
+                    <option value="Buenos Aires">Buenos Aires (CABA)</option>
+                    <option value="Campana">Campana</option>
+                    <option value="Canuelas">Cañuelas</option>
+                    <option value="Ensenada">Ensenada</option>
+                    <option value="Escobar">Escobar</option>
+                    <option value="Esteban Echeverria">Esteban Echeverría</option>
+                    <option value="Exaltacion de la Cruz">Exaltación de la Cruz</option>
+                    <option value="Ezeiza">Ezeiza</option>
+                    <option value="Florencio Varela">Florencio Varela</option>
+                    <option value="General Las Heras">General Las Heras</option>
+                    <option value="General Rodriguez">General Rodríguez</option>
+                    <option value="Hurlingham">Hurlingham</option>
+                    <option value="Ituzaingo">Ituzaingó</option>
+                    <option value="Jose C. Paz">José C. Paz</option>
+                    <option value="La Matanza">La Matanza</option>
+                    <option value="La Plata">La Plata</option>
+                    <option value="Lanus">Lanús</option>
+                    <option value="Lobos">Lobos</option>
+                    <option value="Lomas de Zamora">Lomas de Zamora</option>
+                    <option value="Lujan">Luján</option>
+                    <option value="Magdalena">Magdalena</option>
+                    <option value="Malvinas Argentinas">Malvinas Argentinas</option>
+                    <option value="Mar del Plata">Mar del Plata</option>
+                    <option value="Marcos Paz">Marcos Paz</option>
+                    <option value="Merlo">Merlo</option>
+                    <option value="Moreno">Moreno</option>
+                    <option value="Moron">Morón</option>
+                    <option value="Navarro">Navarro</option>
+                    <option value="Pilar">Pilar</option>
+                    <option value="Presidente Peron">Presidente Perón</option>
+                    <option value="Punta Indio">Punta Indio</option>
+                    <option value="Quilmes">Quilmes</option>
+                    <option value="Ramallo">Ramallo</option>
+                    <option value="San Fernando">San Fernando</option>
+                    <option value="San Isidro">San Isidro</option>
+                    <option value="San Martin">San Martín</option>
+                    <option value="San Miguel">San Miguel</option>
+                    <option value="San Nicolas">San Nicolás</option>
+                    <option value="San Vicente">San Vicente</option>
+                    <option value="Tigre">Tigre</option>
+                    <option value="Tres de Febrero">Tres de Febrero</option>
+                    <option value="Vicente Lopez">Vicente López</option>
+                    <option value="Zarate">Zárate</option>
+                </select>
+            </div>
         </div>
         <h6 class="text-muted mt-3">Precio</h6>
         <div class="mb-3">
@@ -43,5 +119,17 @@
     <div th:if="${error}" id="error" class="alert alert-danger mt-3" th:text="${error}"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var inputs = this.querySelectorAll('input[type="text"]');
+        inputs.forEach(function(input) {
+            input.value = input.value
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        });
+        this.submit();
+    });
+</script>
 </body>
 </html>

@@ -93,7 +93,7 @@ public class VistaProductoE2E {
     vistaReporte.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
     vistaReporte.escribirNombreProducto("Leche");
     vistaReporte.escribirMarcaProducto("La Serenisima");
-    vistaReporte.escribirCategoriaProducto("Lacteos");
+    vistaReporte.escribirCategoriaProducto("Tabaco");
     vistaReporte.escribirUnidadProducto("1L");
     vistaReporte.escribirNombreComercio("Almacen De Matias");
     vistaReporte.escribirDireccionComercio("Av. Mitre 123");

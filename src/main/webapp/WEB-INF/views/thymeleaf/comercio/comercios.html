@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Detalle del Comercio</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
@@ -20,34 +21,57 @@
 
         <hr>
 
-        <h4 class="mt-4">Productos reportados</h4>
+        <h4 class="mt-4">Productos del Comercio</h4>
 
         <div th:if="${#lists.isEmpty(reportes)}" class="alert alert-info mt-3">
             No hay productos reportados para este comercio.
         </div>
 
-        <table th:if="${not #lists.isEmpty(reportes)}" class="table table-bordered mt-3">
-            <thead class="table-dark">
-            <tr>
-                <th>Producto</th>
-                <th>Marca</th>
-                <th>Unidad</th>
-                <th>Precio</th>
-                <th>Fecha</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="reporte : ${reportes}">
-                <td th:text="${reporte.producto.nombre}"></td>
-                <td th:text="${reporte.producto.marca}"></td>
-                <td th:text="${reporte.producto.unidad}"></td>
-                <td th:text="'$' + ${reporte.precio}"></td>
-                <td th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy')}"></td>
-            </tr>
-            </tbody>
-        </table>
+        <div th:if="${not #lists.isEmpty(reportes)}" class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+            <div class="col" th:each="reporte : ${reportes}">
+                <div class="card h-100 shadow-sm" id="card-producto-comercio">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${reporte.producto.nombre}"></h5>
+                        <p class="card-text text-muted mb-1">
+                            <span th:text="${reporte.producto.marca}"></span> ·
+                            <span th:text="${reporte.producto.unidad}"></span>
+                        </p>
+                        <p class="card-text fw-bold text-success">
+                            $<span th:text="${reporte.precio}"></span>
+                        </p>
+                        <p class="card-text text-muted small"
+                           th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy')}">
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="mt-4">Ubicación del comercio</h4>
+        <div id="mapa-comercio" style="height: 300px; width: 100%;"
+             th:data-lat="${comercio.latitud}"
+             th:data-lon="${comercio.longitud}"
+             th:data-direccion="${comercio.direccion + ', ' + comercio.localidad}">
+        </div>
+
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const mapaDiv = document.getElementById('mapa-comercio');
+    const lat = mapaDiv.dataset.lat;
+    const lon = mapaDiv.dataset.lon;
+    const direccion = mapaDiv.dataset.direccion;
+
+    const map = L.map('mapa-comercio').setView([-34.65, -58.40], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    if (lat && lon) {
+        map.setView([lat, lon], 16);
+        L.marker([lat, lon]).addTo(map).bindPopup(direccion).openPopup();
+    }
+</script>
 </body>
 </html>

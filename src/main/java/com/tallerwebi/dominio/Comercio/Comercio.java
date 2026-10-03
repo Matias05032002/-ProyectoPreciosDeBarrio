@@ -18,6 +18,8 @@ public class Comercio {
   private String tipo;
   private Boolean activo;
   private LocalDateTime fechaRegistro;
+  private Double latitud;
+  private Double longitud;
 
   public Comercio() {}
 
@@ -35,6 +37,22 @@ public class Comercio {
 
   public void setNombre(String nombre) {
     this.nombre = nombre;
+  }
+
+  public Double getLatitud() {
+    return latitud;
+  }
+
+  public void setLatitud(Double latitud) {
+    this.latitud = latitud;
+  }
+
+  public Double getLongitud() {
+    return longitud;
+  }
+
+  public void setLongitud(Double longitud) {
+    this.longitud = longitud;
   }
 
   public String getLocalidad() {

@@ -62,9 +62,9 @@ public class VistaReporteE2E {
     dadoQueElUsuarioCargaUnReporte(
       "Leche",
       "La Serenisima",
-      "Lacteos",
+      "Tabaco",
       "1L",
-      "Almacen De Matias",
+      "Supermercado Dia",
       "Av. Mitre 123",
       "Lomas de Zamora",
       "250"
@@ -77,6 +77,12 @@ public class VistaReporteE2E {
   void deberiaMostrarLaPaginaDeReportesAlIniciarSesion() throws MalformedURLException {
     String url = vistaReporte.obtenerURLActual().getPath();
     assertThat(url.contains("reporte"), is(true));
+  }
+
+  @Test
+  void deberiaValidarQueLosCamposSonObligatorios() {
+    vistaReporte.darClickEnGuardarReporte();
+    assertThat(vistaReporte.hayError(), is(true));
   }
 
   private void dadoQueElUsuarioCargaUnReporte(

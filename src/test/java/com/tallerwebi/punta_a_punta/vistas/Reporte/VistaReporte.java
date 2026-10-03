@@ -1,6 +1,7 @@
 package com.tallerwebi.punta_a_punta.vistas.Reporte;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.SelectOption;
 import com.tallerwebi.punta_a_punta.vistas.VistaWeb;
 
 public class VistaReporte extends VistaWeb {
@@ -31,7 +32,7 @@ public class VistaReporte extends VistaWeb {
   }
 
   public void escribirCategoriaProducto(String categoria) {
-    this.escribirEnElElemento("#producto-categoria", categoria);
+    page.locator("#producto-categoria").selectOption(categoria);
   }
 
   public void escribirUnidadProducto(String unidad) {
@@ -47,7 +48,7 @@ public class VistaReporte extends VistaWeb {
   }
 
   public void escribirLocalidadComercio(String localidad) {
-    this.escribirEnElElemento("#comercio-localidad", localidad);
+    page.locator("#comercio-localidad").selectOption(localidad);
   }
 
   public void escribirPrecio(String precio) {
@@ -63,6 +64,15 @@ public class VistaReporte extends VistaWeb {
   }
 
   public boolean hayReportesEnLaTabla() {
-    return page.locator("#error").count() == 0;
+    return page.url().contains("/reporte") && page.locator("#error").count() == 0;
+  }
+
+  public boolean hayError() {
+    try {
+      page.waitForSelector("#error", new Page.WaitForSelectorOptions().setTimeout(3000));
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

@@ -82,6 +82,22 @@ public class VistaComercioE2E {
     assertThat(vistaComercio.hayProductosEnElDetalle(), is(true));
   }
 
+  @Test
+  void deberiaVerLosProductosComoCardsEnElDetalle() {
+    dadoQueExisteUnReporteCargado();
+    vistaComercio = new VistaComercio(context.pages().get(0));
+    vistaComercio.darClickEnVerDetalle();
+    assertThat(vistaComercio.hayCardsDeProductos(), is(true));
+  }
+
+  @Test
+  void deberiaAparecerUnMapaDelComercioEnElDetalle() {
+    dadoQueExisteUnReporteCargado();
+    vistaComercio = new VistaComercio(context.pages().get(0));
+    vistaComercio.darClickEnVerDetalle();
+    assertThat(vistaComercio.hayMapaEnElDetalle(), is(true));
+  }
+
   private void dadoQueElUsuarioBuscaUnComercioPorNombre(String nombre) {
     vistaComercio.escribirNombreDelComercioABuscar(nombre);
     vistaComercio.darClickEnBuscar();
@@ -97,7 +113,7 @@ public class VistaComercioE2E {
     vistaReporte.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
     vistaReporte.escribirNombreProducto("Leche");
     vistaReporte.escribirMarcaProducto("La Serenisima");
-    vistaReporte.escribirCategoriaProducto("Lacteos");
+    vistaReporte.escribirCategoriaProducto("Tabaco");
     vistaReporte.escribirUnidadProducto("1L");
     vistaReporte.escribirNombreComercio("Almacen De Matias");
     vistaReporte.escribirDireccionComercio("Av. Mitre 123");
