@@ -9,6 +9,8 @@ import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.presentacion.ControladorProducto;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
+
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -84,7 +86,8 @@ public class ControladorProductoTest {
       "Lacteos",
       150.0,
       "Almacen Central",
-      1L
+      1L,
+      null
     );
 
     assertThat(dto.getNombre(), equalTo("Leche"));
@@ -97,5 +100,51 @@ public class ControladorProductoTest {
 
     dto.setReporteId(2L);
     assertThat(dto.getReporteId(), equalTo(2L));
+  }
+  @Test
+  public void calcularAntiguedadNullDeUnProducto(){
+    ProductoConPrecio dto = new ProductoConPrecio(
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            null
+    );
+
+
+
+    assertThat(dto.getAntiguedad(), equalTo("Desconocido"));
+  }
+  @Test
+  public void productoConFechaDeHacePocoEsFresco() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+            "Leche", "La Serenisima", "litro", "Lacteos",
+            150.0, "Almacen Central", 1L,
+            LocalDateTime.now().minusDays(3)
+    );
+    assertThat(dto.getAntiguedad(), equalTo("Fresco"));
+  }
+
+  @Test
+  public void productoConFechaDeHace15DiasEsDesactualizado() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+            "Leche", "La Serenisima", "litro", "Lacteos",
+            150.0, "Almacen Central", 1L,
+            LocalDateTime.now().minusDays(15)
+    );
+    assertThat(dto.getAntiguedad(), equalTo("Desactualizado"));
+  }
+
+  @Test
+  public void productoConFechaDeHace30DiasEsVencido() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+            "Leche", "La Serenisima", "litro", "Lacteos",
+            150.0, "Almacen Central", 1L,
+            LocalDateTime.now().minusDays(50)
+    );
+    assertThat(dto.getAntiguedad(), equalTo("Vencido"));
   }
 }

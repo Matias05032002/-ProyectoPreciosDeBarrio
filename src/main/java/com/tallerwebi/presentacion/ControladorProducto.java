@@ -82,7 +82,8 @@ public class ControladorProducto {
             producto.getCategoria(),
             reporte.getPrecio(),
             nombreComercio,
-            reporte.getId()
+            reporte.getId(),
+            reporte.getFechaDeReporte()
           )
         );
       }

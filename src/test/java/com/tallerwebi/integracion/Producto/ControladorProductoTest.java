@@ -6,8 +6,12 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Producto.Producto;
+import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,4 +69,43 @@ public class ControladorProductoTest {
     assert modelAndView != null;
     assertThat(modelAndView.getModel().containsKey("productos"), is(true));
   }
+  @Autowired
+  private org.hibernate.SessionFactory sessionFactory;
+
+  @Test
+  @Transactional
+  public void cuandoSeBuscaUnProductoMuestraLaAntiguedadCorrecta() throws Exception {
+
+    org.hibernate.Session session = sessionFactory.getCurrentSession();
+
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setUnidad("1000ml");
+    producto.setCategoria("Lacteos");
+    session.save(producto);
+
+  Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen Central");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+    session.save(comercio);
+
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(150.0);
+    reporte.setFechaDeReporte(java.time.LocalDateTime.now().minusDays(3));
+    session.save(reporte);
+
+
+    MvcResult result = this.mockMvc.perform(get("/producto/buscar?nombre=Leche"))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    String html = result.getResponse().getContentAsString();
+    assertThat(html.contains("Fresco"), is(true));
+  }
+
+
 }
