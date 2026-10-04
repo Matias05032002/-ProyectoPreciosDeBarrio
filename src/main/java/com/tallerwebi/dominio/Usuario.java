@@ -60,4 +60,17 @@ public class Usuario {
   public void activar() {
     activo = true;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    Usuario usuario = (Usuario) obj;
+    return id != null && id.equals(usuario.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return id != null ? id.hashCode() : 0;
+  }
 }
