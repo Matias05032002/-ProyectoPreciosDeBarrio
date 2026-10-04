@@ -10,7 +10,10 @@ import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
+import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
+import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -39,11 +42,16 @@ public class ServicioReporteTest {
   }
 
   @Test
-  public void guardarReporteNuevo() throws ReporteExistente {
+  public void guardarReporteNuevo() throws Exception {
     Producto producto = new Producto();
     producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
     Comercio comercio = new Comercio();
     comercio.setNombre("Almacen de matias");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
     Reporte reporte = new Reporte();
     reporte.setProducto(producto);
     reporte.setComercio(comercio);
@@ -136,12 +144,17 @@ public class ServicioReporteTest {
   }
 
   @Test
-  public void guardarReporteDuplicadoDeberiaLanzarExcepcion() throws ReporteExistente {
+  public void guardarReporteDuplicadoDeberiaLanzarExcepcion() throws Exception {
     Producto producto = new Producto();
     producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
     producto.setId(1L);
     Comercio comercio = new Comercio();
     comercio.setNombre("Almacen");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
     comercio.setId(1L);
     Usuario usuario = new Usuario();
     usuario.setId(1L);
@@ -149,6 +162,7 @@ public class ServicioReporteTest {
     reporte.setProducto(producto);
     reporte.setComercio(comercio);
     reporte.setUsuario(usuario);
+    reporte.setPrecio(100.0);
 
     when(this.servicioProductoMock.buscarProductoPorNombreExacto("Leche")).thenReturn(producto);
     when(this.servicioComercioMock.buscarComercioPorNombre("Almacen"))
@@ -193,5 +207,81 @@ public class ServicioReporteTest {
 
     assertThat(listaDeComerciosBuscados, equalTo(listaDeReportes));
     verify(this.repositorioReporteMock, times(1)).buscarPorComercio(comercio.getId());
+  }
+
+  @Test
+  public void guardarReporteConPrecioNuloDeberiaLanzarPrecioIncorrecto() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(null);
+
+    assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarReporteConPrecioCeroDeberiaLanzarPrecioIncorrecto() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(0.0);
+
+    assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarReporteConUnidadInvalidaDeberiaLanzarUnidadInvalida() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("litro");
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(100.0);
+
+    assertThrows(UnidadInvalida.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarReporteConCampoVacioDeberiaLanzarCamposObligatoriosVacios() {
+    Producto producto = new Producto();
+    producto.setNombre("");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(100.0);
+
+    assertThrows(CamposObligatoriosVacios.class, () -> servicioReporte.guardarReporte(reporte));
   }
 }

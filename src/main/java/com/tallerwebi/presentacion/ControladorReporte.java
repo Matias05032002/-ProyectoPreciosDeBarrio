@@ -6,7 +6,10 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
+import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
+import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
@@ -47,10 +50,6 @@ public class ControladorReporte {
     if (request.getSession().getAttribute("ROL") == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    String error = validarReporte(reporte);
-    if (error != null) {
-      return vistaConError(error);
-    }
     try {
       String email = (String) request.getSession().getAttribute("EMAIL");
       Usuario usuario = servicioLogin.buscarPorEmail(email);
@@ -58,6 +57,8 @@ public class ControladorReporte {
       servicioReporte.guardarReporte(reporte);
     } catch (ReporteExistente e) {
       return vistaConError("Ya reportaste este precio hoy");
+    } catch (CamposObligatoriosVacios | UnidadInvalida | PrecioIncorrecto e) {
+      return vistaConError(e.getMessage());
     }
     return new ModelAndView("redirect:/reporte?guardado=true");
   }
@@ -134,55 +135,5 @@ public class ControladorReporte {
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
     return mav;
-  }
-
-  private boolean esVacio(String valor) {
-    return valor == null || valor.trim().isEmpty();
-  }
-
-  private String validarReporte(Reporte reporte) {
-    String errorCampos = validarCamposObligatorios(reporte);
-    if (errorCampos != null) return errorCampos;
-
-    String errorUnidad = validarUnidad(reporte.getProducto().getUnidad());
-    if (errorUnidad != null) return errorUnidad;
-
-    String errorPrecio = validarPrecio(reporte.getPrecio());
-    if (errorPrecio != null) return errorPrecio;
-
-    return null;
-  }
-
-  private String validarCamposObligatorios(Reporte reporte) {
-    if (reporte.getProducto() == null || reporte.getComercio() == null) {
-      return "Todos los campos son obligatorios";
-    }
-    List<String> campos = java.util.Arrays.asList(
-      reporte.getProducto().getNombre(),
-      reporte.getProducto().getMarca(),
-      reporte.getProducto().getCategoria(),
-      reporte.getProducto().getUnidad(),
-      reporte.getComercio().getNombre(),
-      reporte.getComercio().getDireccion(),
-      reporte.getComercio().getLocalidad()
-    );
-    if (campos.stream().anyMatch(this::esVacio)) {
-      return "Todos los campos son obligatorios";
-    }
-    return null;
-  }
-
-  private String validarUnidad(String unidad) {
-    if (!unidad.matches("^[0-9]+(\\.[0-9]+)?(?i)(g|kg|gr|ml|l)$")) {
-      return "La unidad debe ser un número seguido de g, kg, ml, L o gr (ej: 500g, 1kg, 250ml)";
-    }
-    return null;
-  }
-
-  private String validarPrecio(Double precio) {
-    if (precio == null || precio <= 0) {
-      return "El precio debe ser mayor a cero";
-    }
-    return null;
   }
 }

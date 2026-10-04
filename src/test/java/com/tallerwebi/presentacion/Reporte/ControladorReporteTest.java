@@ -56,7 +56,7 @@ public class ControladorReporteTest {
   }
 
   @Test
-  public void guardarNuevoReporte() throws ReporteExistente {
+  public void guardarNuevoReporte() throws Exception {
     Producto producto = new Producto();
     producto.setNombre("Leche");
     producto.setMarca("La Serenisima");
@@ -138,7 +138,7 @@ public class ControladorReporteTest {
   }
 
   @Test
-  public void guardarReporteRedirigeConParametroGuardado() throws ReporteExistente {
+  public void guardarReporteRedirigeConParametroGuardado() throws Exception {
     Producto producto = new Producto();
     producto.setNombre("Leche");
     producto.setMarca("La Serenisima");
