@@ -27,6 +27,7 @@ public class ControladorReporte {
   private static final String NOMBRE_PRODUCTOS = "productos";
   private static final String NOMBRE_COMERCIOS = "comercios";
   private static final String NOMBRE_REPORTES = "reportes";
+  private static final String REDIRECT_LOGIN = "redirect:/login";
 
   @Autowired
   public ControladorReporte(
@@ -44,7 +45,7 @@ public class ControladorReporte {
   @RequestMapping(method = RequestMethod.POST)
   public ModelAndView guardarReporte(@ModelAttribute Reporte reporte, HttpServletRequest request) {
     if (request.getSession().getAttribute("ROL") == null) {
-      return new ModelAndView("redirect:/login");
+      return new ModelAndView(REDIRECT_LOGIN);
     }
     String error = validarReporte(reporte);
     if (error != null) {
@@ -64,6 +65,9 @@ public class ControladorReporte {
   @RequestMapping(path = "/{id}", method = RequestMethod.GET)
   public ModelAndView buscarReporte(@PathVariable("id") Long id) {
     Reporte reporte = servicioReporte.buscarReporte(id);
+    if (reporte == null) {
+      return new ModelAndView("redirect:/reporte");
+    }
     ModelAndView mav = new ModelAndView(VISTA_REPORTES);
     mav.addObject(NOMBRE_REPORTES, Collections.singletonList(reporte));
     return mav;
@@ -75,7 +79,7 @@ public class ControladorReporte {
     @RequestParam(value = "guardado", required = false) Boolean guardado
   ) {
     if (request.getSession().getAttribute("ROL") == null) {
-      return new ModelAndView("redirect:/login");
+      return new ModelAndView(REDIRECT_LOGIN);
     }
     List<Reporte> reportes = servicioReporte.listarTodos();
     ModelAndView mav = new ModelAndView("reporte/lista-reportes");
@@ -93,7 +97,13 @@ public class ControladorReporte {
     HttpServletRequest request
   ) {
     String email = (String) request.getSession().getAttribute("EMAIL");
+    if (email == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
     Usuario usuario = servicioLogin.buscarPorEmail(email);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
     servicioReporte.marcarDudoso(id, usuario);
     return new ModelAndView(
       "redirect:/producto/buscar?nombre=" + nombreProducto + "&dudosoMarcado=true"
@@ -106,7 +116,7 @@ public class ControladorReporte {
     HttpServletRequest request
   ) {
     if (request.getSession().getAttribute("ROL") == null) {
-      return new ModelAndView("redirect:/login");
+      return new ModelAndView(REDIRECT_LOGIN);
     }
     List<Reporte> resultados = servicioReporte.buscarPorNombre(nombre);
     ModelAndView mav = new ModelAndView(VISTA_REPORTES);
@@ -163,7 +173,7 @@ public class ControladorReporte {
   }
 
   private String validarUnidad(String unidad) {
-    if (!unidad.matches("^[0-9]+(g|kg|ml|ML|L|gr|Kg|KG)$")) {
+    if (!unidad.matches("^[0-9]+(\\.[0-9]+)?(?i)(g|kg|gr|ml|l)$")) {
       return "La unidad debe ser un número seguido de g, kg, ml, L o gr (ej: 500g, 1kg, 250ml)";
     }
     return null;

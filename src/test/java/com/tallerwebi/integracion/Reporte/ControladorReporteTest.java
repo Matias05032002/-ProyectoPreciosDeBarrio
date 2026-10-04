@@ -69,12 +69,13 @@ public class ControladorReporteTest {
     assert modelAndView != null;
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
   }
+
   @Test
   public void cuandoSeGuardaUnReporteElModeloContieneGuardadoTrue() throws Exception {
     MvcResult result =
-            this.mockMvc.perform(get("/reporte").param("guardado", "true").sessionAttr("ROL", "USER"))
-                    .andExpect(status().isOk())
-                    .andReturn();
+      this.mockMvc.perform(get("/reporte").param("guardado", "true").sessionAttr("ROL", "USER"))
+        .andExpect(status().isOk())
+        .andReturn();
 
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;

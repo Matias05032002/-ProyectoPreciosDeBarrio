@@ -1,6 +1,5 @@
 package com.tallerwebi.infraestructura;
 
-import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.Usuario;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Repository;
 public class RepositorioReporteImpl implements RepositorioReporte {
 
   private SessionFactory sessionFactory;
-  private static final int PUNTUACION_MAXIMA = 10;
 
   @Autowired
   public RepositorioReporteImpl(SessionFactory sessionFactory) {
@@ -68,7 +66,7 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       if (usuario != null) {
         reporte.getUsuariosQueMarcaron().add(usuario);
       }
-      if (reporte.getPuntuacion() > PUNTUACION_MAXIMA) {
+      if (reporte.getPuntuacion() > Reporte.PUNTUACION_MAXIMA) {
         sessionFactory.getCurrentSession().remove(reporte);
         return null;
       }

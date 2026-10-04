@@ -75,4 +75,12 @@ public class VistaReporte extends VistaWeb {
       return false;
     }
   }
+
+  public void escribirLatitud(String latitud) {
+    page.fill("#latitud", latitud);
+  }
+
+  public void escribirLongitud(String longitud) {
+    page.fill("#longitud", longitud);
+  }
 }

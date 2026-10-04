@@ -29,7 +29,7 @@
 
         <div th:if="${not #lists.isEmpty(reportes)}" class="row row-cols-1 row-cols-md-3 g-4 mt-2">
             <div class="col" th:each="reporte : ${reportes}">
-                <div class="card h-100 shadow-sm" id="card-producto-comercio">
+                <div class="card h-100 shadow-sm" th:id="'card-producto-comercio-' + ${reporte.id}">
                     <div class="card-body">
                         <h5 class="card-title" th:text="${reporte.producto.nombre}"></h5>
                         <p class="card-text text-muted mb-1">
@@ -65,12 +65,12 @@
     const lon = mapaDiv.dataset.lon;
     const direccion = mapaDiv.dataset.direccion;
 
-    const map = L.map('mapa-comercio').setView([-34.65, -58.40], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
     if (lat && lon) {
-        map.setView([lat, lon], 16);
+        const map = L.map('mapa-comercio').setView([lat, lon], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         L.marker([lat, lon]).addTo(map).bindPopup(direccion).openPopup();
+    } else {
+        mapaDiv.innerHTML = '<p class="text-muted mt-2">Este comercio no tiene ubicación registrada.</p>';
     }
 </script>
 </body>

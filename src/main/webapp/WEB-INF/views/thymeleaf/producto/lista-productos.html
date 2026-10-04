@@ -22,14 +22,15 @@
 
     <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
         <div class="col" th:each="producto : ${productos}">
-            <div class="card h-100 shadow-sm" id="card-producto">
+            <div class="card h-100 shadow-sm" th:id="'card-producto-' + ${producto.reporteId}">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-1">
                         <h5 class="card-title mb-0" th:text="${producto.nombre}"></h5>
                         <span th:text="${producto.antiguedad}"
                               th:classappend="${producto.antiguedad == 'Fresco'} ? 'bg-success' : (${producto.antiguedad == 'Desactualizado'} ? 'bg-warning text-dark' : 'bg-danger')"
-                              class="badge" id="badge-antiguedad">
-                        </span>
+                              class="badge" th:id="'badge-antiguedad-' + ${producto.reporteId}">
+</span>
+
                         <span th:if="${producto.esDudoso}" class="badge bg-secondary ms-1">Dudoso</span>
                     </div>
                     <p class="card-text text-muted mb-1">
@@ -48,7 +49,12 @@
                           th:action="@{/reporte/{id}/dudoso(id=${producto.reporteId})}"
                           method="post" class="mt-2">
                         <input type="hidden" name="nombreProducto" th:value="${producto.nombre}">
-                        <button type="submit" id="btn-marcar-dudoso" class="btn btn-outline-danger btn-sm">Marcar dudoso</button>
+                    <button type="submit"
+                            th:id="'btn-marcar-dudoso-' + ${producto.reporteId}"
+                            class="btn btn-outline-danger btn-sm"
+                            th:disabled="${producto.yaMarcoDudoso}"
+                            th:text="${producto.yaMarcoDudoso} ? 'Ya marcaste dudoso' : 'Marcar dudoso'">
+                    </button>
                     </form>
                     </p>
                 </div>

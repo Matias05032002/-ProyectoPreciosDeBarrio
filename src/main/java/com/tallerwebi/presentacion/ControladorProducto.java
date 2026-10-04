@@ -2,9 +2,10 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
-import com.tallerwebi.dominio.Reporte.Reporte;
-import com.tallerwebi.dominio.Reporte.ServicioReporte;
+import com.tallerwebi.dominio.ServicioLogin;
+import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,13 +17,13 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorProducto {
 
   private ServicioProducto servicioProducto;
-  private ServicioReporte servicioReporte;
+  private ServicioLogin servicioLogin;
   private static final String VISTA_PRODUCTOS = "producto/lista-productos";
 
   @Autowired
-  public ControladorProducto(ServicioProducto servicioProducto, ServicioReporte servicioReporte) {
+  public ControladorProducto(ServicioProducto servicioProducto, ServicioLogin servicioLogin) {
     this.servicioProducto = servicioProducto;
-    this.servicioReporte = servicioReporte;
+    this.servicioLogin = servicioLogin;
   }
 
   @RequestMapping(method = RequestMethod.POST)
@@ -33,7 +34,7 @@ public class ControladorProducto {
 
   @RequestMapping(method = RequestMethod.GET)
   public ModelAndView listarProductos() {
-    ModelAndView mav = new ModelAndView("producto/lista-productos");
+    ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
     mav.addObject("productos", Collections.emptyList());
     return mav;
   }
@@ -41,17 +42,14 @@ public class ControladorProducto {
   @RequestMapping(path = "/buscar", method = RequestMethod.GET)
   public ModelAndView buscarProducto(
     @RequestParam("nombre") String nombre,
-    @RequestParam(value = "dudosoMarcado", required = false) Boolean dudosoMarcado
+    @RequestParam(value = "dudosoMarcado", required = false) Boolean dudosoMarcado,
+    HttpServletRequest request
   ) {
-    List<Producto> productos = servicioProducto.buscarPorNombre(nombre);
-    List<Reporte> reportes = servicioReporte.listarTodos();
-    if (reportes == null) reportes = Collections.emptyList();
-    List<ProductoConPrecio> productosConPrecio = new ArrayList<>();
-    for (Producto producto : productos) {
-      productosConPrecio.addAll(construirProductoConPrecio(producto, reportes));
-    }
+    String email = (String) request.getSession().getAttribute("EMAIL");
+    Usuario usuario = email != null ? servicioLogin.buscarPorEmail(email) : null;
+    List<ProductoConPrecio> productos = servicioProducto.buscarProductosConPrecio(nombre, usuario);
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
-    mav.addObject("productos", productosConPrecio);
+    mav.addObject("productos", productos);
     mav.addObject("dudosoMarcado", dudosoMarcado != null && dudosoMarcado);
     return mav;
   }
@@ -59,41 +57,11 @@ public class ControladorProducto {
   @RequestMapping(path = "/buscar/{id}", method = RequestMethod.GET)
   public ModelAndView buscarPorId(@PathVariable Long id) {
     Producto producto = servicioProducto.buscarProductoPorId(id);
+    if (producto == null) {
+      return new ModelAndView("redirect:/producto/lista");
+    }
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
     mav.addObject("productos", Collections.singletonList(producto));
     return mav;
-  }
-
-  private List<ProductoConPrecio> construirProductoConPrecio(
-    Producto producto,
-    List<Reporte> reportes
-  ) {
-    List<ProductoConPrecio> resultado = new ArrayList<>();
-    for (Reporte reporte : reportes) {
-      if (
-        reporte.getProducto() != null &&
-        reporte.getProducto().getId() != null &&
-        reporte.getProducto().getId().equals(producto.getId())
-      ) {
-        String nombreComercio = (reporte.getComercio() != null)
-          ? reporte.getComercio().getNombre()
-          : null;
-        resultado.add(
-          new ProductoConPrecio(
-            producto.getNombre(),
-            producto.getMarca(),
-            producto.getUnidad(),
-            producto.getCategoria(),
-            reporte.getPrecio(),
-            nombreComercio,
-            reporte.getId(),
-            reporte.getFechaDeReporte(),
-            reporte.getPuntuacion()
-          )
-        );
-      }
-    }
-    resultado.sort(Comparator.comparingDouble(ProductoConPrecio::getPrecioMinimo));
-    return resultado;
   }
 }

@@ -4,7 +4,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Reporte.RepositorioReporte;
+import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,11 +16,14 @@ public class ServicioProductoTest {
 
   private ServicioProducto servicioProducto;
   private RepositorioProducto repositorioProductoMock;
+  private RepositorioReporte repositorioReporteMock;
 
   @BeforeEach
   public void init() {
     this.repositorioProductoMock = mock(RepositorioProducto.class);
-    this.servicioProducto = new ServicioProductoImpl(this.repositorioProductoMock);
+    this.repositorioReporteMock = mock(RepositorioReporte.class);
+    this.servicioProducto =
+      new ServicioProductoImpl(this.repositorioProductoMock, this.repositorioReporteMock);
   }
 
   @Test
@@ -114,5 +120,17 @@ public class ServicioProductoTest {
     assertThat(producto.getMarca(), equalTo("La Serenisima"));
     assertThat(producto.getDisponible(), equalTo(true));
     assertThat(producto.getFechaDeSubida(), equalTo(fecha));
+  }
+
+  @Test
+  public void buscarProductosConPrecioRetornaListaVaciaSiNoHayReportes() {
+    when(this.repositorioProductoMock.buscarPorNombre("Leche"))
+      .thenReturn(Arrays.asList(new Producto()));
+    when(this.repositorioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    List<ProductoConPrecio> resultado =
+      this.servicioProducto.buscarProductosConPrecio("Leche", null);
+
+    assertThat(resultado, equalTo(Collections.emptyList()));
   }
 }

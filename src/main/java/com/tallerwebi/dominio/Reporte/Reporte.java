@@ -19,7 +19,8 @@ public class Reporte {
   private LocalDateTime fechaDeReporte;
   private Integer puntuacion;
   private Double precio;
-  private Boolean vigente;
+  public static final int PUNTUACION_DUDOSO = 6;
+  public static final int PUNTUACION_MAXIMA = 10;
 
   @ManyToOne
   private Usuario usuario;
@@ -86,14 +87,6 @@ public class Reporte {
 
   public void setPrecio(Double precio) {
     this.precio = precio;
-  }
-
-  public Boolean getVigente() {
-    return vigente;
-  }
-
-  public void setVigente(Boolean vigente) {
-    this.vigente = vigente;
   }
 
   public LocalDateTime getFechaDeReporte() {

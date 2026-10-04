@@ -12,6 +12,7 @@ import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
+import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import com.tallerwebi.presentacion.ControladorReporte;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ public class ControladorReporteTest {
   private ServicioLogin servicioLoginMock;
   private HttpServletRequest requestMock;
   private HttpSession sessionMock;
+  private Usuario usuarioMock;
 
   @BeforeEach
   public void init() {
@@ -39,6 +41,7 @@ public class ControladorReporteTest {
     this.servicioComercioMock = mock(ServicioComercio.class);
     this.servicioLoginMock = mock(ServicioLogin.class);
     this.servicioReporteMock = mock(ServicioReporte.class);
+    this.usuarioMock = mock(Usuario.class);
     this.controladorReporte =
       new ControladorReporte(
         servicioReporteMock,
@@ -122,15 +125,16 @@ public class ControladorReporteTest {
   @Test
   public void marcarDudosoUnReporte() {
     Reporte reporte = new Reporte();
-    when(this.servicioReporteMock.marcarDudoso(1L, null)).thenReturn(reporte);
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    when(servicioReporteMock.marcarDudoso(1L, usuarioMock)).thenReturn(reporte);
 
-    ModelAndView modelAndView = this.controladorReporte.marcarDudoso(1L, "Leche", requestMock);
+    ModelAndView modelAndView = controladorReporte.marcarDudoso(1L, "Leche", requestMock);
 
     assertThat(
       modelAndView.getViewName(),
       equalToIgnoringCase("redirect:/producto/buscar?nombre=Leche&dudosoMarcado=true")
     );
-    verify(this.servicioReporteMock, times(1)).marcarDudoso(1L, null);
+    verify(servicioReporteMock, times(1)).marcarDudoso(1L, usuarioMock);
   }
 
   @Test

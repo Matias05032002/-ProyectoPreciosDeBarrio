@@ -6,9 +6,11 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
-import com.tallerwebi.dominio.Reporte.ServicioReporte;
+import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.presentacion.ControladorProducto;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,13 +23,19 @@ public class ControladorProductoTest {
 
   private ControladorProducto controladorProducto;
   private ServicioProducto servicioProductoMock;
-  private ServicioReporte servicioReporteMock;
+  private ServicioLogin servicioLoginMock;
+  private HttpServletRequest requestMock;
+  private HttpSession sessionMock;
 
   @BeforeEach
   public void init() {
     this.servicioProductoMock = mock(ServicioProducto.class);
-    this.servicioReporteMock = mock(ServicioReporte.class);
-    this.controladorProducto = new ControladorProducto(servicioProductoMock, servicioReporteMock);
+    this.servicioLoginMock = mock(ServicioLogin.class);
+    this.controladorProducto = new ControladorProducto(servicioProductoMock, servicioLoginMock);
+    this.requestMock = mock(HttpServletRequest.class);
+    this.sessionMock = mock(HttpSession.class);
+    when(requestMock.getSession()).thenReturn(sessionMock);
+    when(sessionMock.getAttribute("EMAIL")).thenReturn("test@test.com");
   }
 
   @Test
@@ -55,13 +63,21 @@ public class ControladorProductoTest {
 
   @Test
   public void buscarUnProductoPorNombre() {
-    Producto producto = new Producto();
-    List<Producto> lista = Arrays.asList(producto);
-    producto.setNombre("Leche");
-    when(this.servicioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
-    when(this.servicioProductoMock.buscarPorNombre("Leche")).thenReturn(lista);
+    ProductoConPrecio dto = new ProductoConPrecio(
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen",
+      1L,
+      null,
+      0
+    );
+    when(this.servicioProductoMock.buscarProductosConPrecio("Leche", null))
+      .thenReturn(Arrays.asList(dto));
 
-    ModelAndView modelAndView = controladorProducto.buscarProducto("Leche", null);
+    ModelAndView modelAndView = controladorProducto.buscarProducto("Leche", null, requestMock);
 
     assertThat(modelAndView.getViewName(), equalTo("producto/lista-productos"));
     assertThat(modelAndView.getModel().get("productos"), is(notNullValue()));
@@ -69,10 +85,11 @@ public class ControladorProductoTest {
 
   @Test
   public void buscarUnProductoQueNoExisteDevuelveListaVacia() {
-    when(this.servicioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
+    when(this.servicioProductoMock.buscarProductosConPrecio("Producto Inexistente", null))
+      .thenReturn(Collections.emptyList());
 
     ModelAndView modelAndView =
-      this.controladorProducto.buscarProducto("Producto Inexistente", null);
+      this.controladorProducto.buscarProducto("Producto Inexistente", null, requestMock);
 
     assertThat((List<?>) modelAndView.getModel().get("productos"), is(empty()));
   }
@@ -116,7 +133,6 @@ public class ControladorProductoTest {
       null,
       6
     );
-
     assertThat(dto.getAntiguedad(), equalTo("Desconocido"));
   }
 

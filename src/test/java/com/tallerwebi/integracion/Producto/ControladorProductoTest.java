@@ -35,6 +35,9 @@ public class ControladorProductoTest {
   @Autowired
   private WebApplicationContext wac;
 
+  @Autowired
+  private SessionFactory sessionFactory;
+
   private MockMvc mockMvc;
 
   @BeforeEach
@@ -55,7 +58,9 @@ public class ControladorProductoTest {
   @Test
   public void verificarQueBuscarUnProductoDevuelveLaVistaProductos() throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/producto/buscar?nombre=Leche"))
+      this.mockMvc.perform(
+          get("/producto/buscar?nombre=Leche").sessionAttr("EMAIL", "test@test.com")
+        )
         .andExpect(status().isOk())
         .andReturn();
     ModelAndView modelAndView = result.getModelAndView();
@@ -72,9 +77,6 @@ public class ControladorProductoTest {
     assertThat(modelAndView.getModel().containsKey("productos"), is(true));
   }
 
-  @Autowired
-  private SessionFactory sessionFactory;
-
   @Test
   @Transactional
   public void cuandoSeBuscaUnProductoMuestraLaAntiguedadCorrecta() throws Exception {
@@ -85,23 +87,25 @@ public class ControladorProductoTest {
     producto.setMarca("La Serenisima");
     producto.setUnidad("1000ml");
     producto.setCategoria("Lacteos");
-    session.save(producto);
+    session.persist(producto);
 
     Comercio comercio = new Comercio();
     comercio.setNombre("Almacen Central");
     comercio.setDireccion("Av. Siempreviva 123");
     comercio.setLocalidad("La Matanza");
-    session.save(comercio);
+    session.persist(comercio);
 
     Reporte reporte = new Reporte();
     reporte.setProducto(producto);
     reporte.setComercio(comercio);
     reporte.setPrecio(150.0);
     reporte.setFechaDeReporte(java.time.LocalDateTime.now().minusDays(3));
-    session.save(reporte);
+    session.persist(reporte);
 
     MvcResult result =
-      this.mockMvc.perform(get("/producto/buscar?nombre=Leche"))
+      this.mockMvc.perform(
+          get("/producto/buscar?nombre=Leche").sessionAttr("EMAIL", "test@test.com")
+        )
         .andExpect(status().isOk())
         .andReturn();
 
@@ -119,23 +123,26 @@ public class ControladorProductoTest {
     producto.setMarca("La Serenisima");
     producto.setUnidad("1000ml");
     producto.setCategoria("Lacteos");
-    session.save(producto);
+    session.persist(producto);
 
     Comercio comercio = new Comercio();
     comercio.setNombre("Almacen Central");
     comercio.setDireccion("Av. Siempreviva 123");
     comercio.setLocalidad("La Matanza");
-    session.save(comercio);
+    session.persist(comercio);
 
     Reporte reporte = new Reporte();
     reporte.setProducto(producto);
     reporte.setComercio(comercio);
     reporte.setPrecio(150.0);
     reporte.setFechaDeReporte(java.time.LocalDateTime.now().minusDays(3));
-    session.save(reporte);
+    session.persist(reporte);
 
     MvcResult result =
-      this.mockMvc.perform(get("/producto/buscar?nombre=Leche&dudosoMarcado=true"))
+      this.mockMvc.perform(
+          get("/producto/buscar?nombre=Leche&dudosoMarcado=true")
+            .sessionAttr("EMAIL", "test@test.com")
+        )
         .andExpect(status().isOk())
         .andReturn();
 

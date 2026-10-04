@@ -24,7 +24,7 @@
 
     <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
         <div class="col" th:each="comercio : ${comercios}">
-            <div class="card h-100 shadow-sm" id="card-comercio">
+            <div class="card h-100 shadow-sm" th:id="'card-comercio-' + ${comercio.id}">
                 <div class="card-body">
                     <h5 class="card-title" th:text="${comercio.nombre}"></h5>
                     <span class="badge bg-secondary mb-2" th:text="${comercio.tipo}"></span>
@@ -37,7 +37,9 @@
                     </p>
                 </div>
                 <div class="card-footer bg-transparent">
-                    <a th:href="@{/comercio/{id}(id=${comercio.id})}" id="btn-ver-detalle" class="btn btn-outline-primary btn-sm w-100">
+                    <a th:href="@{/comercio/{id}(id=${comercio.id})}"
+                       th:id="'btn-ver-detalle-' + ${comercio.id}"
+                       class="btn btn-outline-primary btn-sm w-100">
                         Ver detalle
                     </a>
                 </div>

@@ -1,8 +1,10 @@
 package com.tallerwebi.presentacion.DTO;
 
+import com.tallerwebi.dominio.Reporte.Reporte;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+@SuppressWarnings("PMD.TooManyFields")
 public class ProductoConPrecio {
 
   private final String antiguedad;
@@ -13,10 +15,12 @@ public class ProductoConPrecio {
   private Double precioMinimo;
   private String comercio;
   private Long reporteId;
-  LocalDateTime fechaDeReporte;
+  private LocalDateTime fechaDeReporte;
   private static final int DIAS_FRESCO = 7;
   private static final int DIAS_DESACTUALIZADO = 45;
   private boolean esDudoso;
+  private boolean yaMarcoDudoso;
+  private Integer puntuacion;
 
   public ProductoConPrecio(
     String nombre,
@@ -37,7 +41,8 @@ public class ProductoConPrecio {
     this.comercio = comercio;
     this.reporteId = reporteId;
     this.antiguedad = calcularAntiguedadDelProducto(fechaDeReporte);
-    this.esDudoso = puntuacion != null && puntuacion > 6;
+    this.esDudoso = puntuacion != null && puntuacion > Reporte.PUNTUACION_DUDOSO;
+    this.puntuacion = puntuacion;
   }
 
   public String getNombre() {
@@ -82,6 +87,18 @@ public class ProductoConPrecio {
 
   public void setFechaDeReporte(LocalDateTime fechaDeReporte) {
     this.fechaDeReporte = fechaDeReporte;
+  }
+
+  public boolean isYaMarcoDudoso() {
+    return yaMarcoDudoso;
+  }
+
+  public void setYaMarcoDudoso(boolean yaMarcoDudoso) {
+    this.yaMarcoDudoso = yaMarcoDudoso;
+  }
+
+  public Integer getPuntuacion() {
+    return puntuacion;
   }
 
   private String calcularAntiguedadDelProducto(LocalDateTime fechaDeReporte) {

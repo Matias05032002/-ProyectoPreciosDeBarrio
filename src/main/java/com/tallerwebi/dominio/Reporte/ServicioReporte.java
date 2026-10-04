@@ -1,6 +1,5 @@
 package com.tallerwebi.dominio.Reporte;
 
-import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import java.time.LocalDate;

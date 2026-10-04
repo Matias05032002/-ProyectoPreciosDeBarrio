@@ -42,11 +42,7 @@ public class VistaComercio extends VistaWeb {
     return page.locator("#card-producto-comercio").count() > 0;
   }
 
-  public boolean hayCardsDeProductos() {
-    return page.locator("#card-producto-comercio").count() > 0;
-  }
-
   public boolean hayMapaEnElDetalle() {
-    return page.locator(("#mapa-comercio")).count() > 0;
+    return page.locator((".leaflet-marker-icon")).count() > 0;
   }
 }
