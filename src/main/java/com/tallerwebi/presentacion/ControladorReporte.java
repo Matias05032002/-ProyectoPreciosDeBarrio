@@ -58,7 +58,7 @@ public class ControladorReporte {
     } catch (ReporteExistente e) {
       return vistaConError("Ya reportaste este precio hoy");
     }
-    return new ModelAndView("redirect:/reporte");
+    return new ModelAndView("redirect:/reporte?guardado=true");
   }
 
   @RequestMapping(path = "/{id}", method = RequestMethod.GET)
@@ -70,7 +70,10 @@ public class ControladorReporte {
   }
 
   @RequestMapping(method = RequestMethod.GET)
-  public ModelAndView listarTodos(HttpServletRequest request) {
+  public ModelAndView listarTodos(
+    HttpServletRequest request,
+    @RequestParam(value = "guardado", required = false) Boolean guardado
+  ) {
     if (request.getSession().getAttribute("ROL") == null) {
       return new ModelAndView("redirect:/login");
     }
@@ -79,6 +82,7 @@ public class ControladorReporte {
     mav.addObject(NOMBRE_REPORTES, reportes);
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+    mav.addObject("guardado", guardado != null && guardado);
     return mav;
   }
 

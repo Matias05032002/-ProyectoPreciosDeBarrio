@@ -76,7 +76,7 @@ public class ControladorReporteTest {
 
     ModelAndView modelAndView = this.controladorReporte.guardarReporte(reporte, requestMock);
 
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/reporte"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
     verify(this.servicioReporteMock, times(1)).guardarReporte(reporte);
   }
 
@@ -87,7 +87,7 @@ public class ControladorReporteTest {
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
     when(this.servicioReporteMock.listarTodos()).thenReturn(listaDeReportes);
 
-    ModelAndView modelAndView = this.controladorReporte.listarTodos(requestMock);
+    ModelAndView modelAndView = this.controladorReporte.listarTodos(requestMock, null);
 
     assertThat(modelAndView.getModel().get("reportes"), is(listaDeReportes));
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
@@ -131,5 +131,42 @@ public class ControladorReporteTest {
       equalToIgnoringCase("redirect:/producto/buscar?nombre=Leche&dudosoMarcado=true")
     );
     verify(this.servicioReporteMock, times(1)).marcarDudoso(1L, null);
+  }
+
+  @Test
+  public void guardarReporteRedirigeConParametroGuardado() throws ReporteExistente {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
+
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen Don Jose");
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+
+    Reporte reporte = new Reporte();
+    reporte.setPrecio(100.0);
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(null);
+    when(this.servicioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
+
+    ModelAndView mav = controladorReporte.guardarReporte(reporte, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
+  }
+
+  @Test
+  public void listarTodosConGuardadoTruePasaAtributoAlModelo() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(this.servicioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    ModelAndView mav = controladorReporte.listarTodos(requestMock, true);
+
+    assertThat(mav.getModel().get("guardado"), is(true));
   }
 }

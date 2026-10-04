@@ -115,6 +115,9 @@
             <input type="number" step="0.01" name="precio" id="precio" class="form-control" placeholder="Precio">
         </div>
         <button type="submit" id="btn-guardar-reporte" class="btn btn-primary">Guardar reporte</button>
+        <div th:if="${guardado}" class="alert alert-success mt-3" role="alert">
+            ¡Reporte guardado con éxito!
+        </div>
     </form>
     <div th:if="${error}" id="error" class="alert alert-danger mt-3" th:text="${error}"></div>
 </div>
