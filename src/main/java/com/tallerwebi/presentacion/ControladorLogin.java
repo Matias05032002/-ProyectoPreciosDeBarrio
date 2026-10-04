@@ -2,6 +2,8 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -17,6 +19,8 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorLogin {
 
   private ServicioLogin servicioLogin;
+  private static final String VISTA_NUEVO_USUARIO = "nuevo-usuario";
+  private static final String ATTR_ERROR = "error";
 
   @Autowired
   public ControladorLogin(ServicioLogin servicioLogin) {
@@ -45,7 +49,7 @@ public class ControladorLogin {
       return new ModelAndView("redirect:/home");
     } else {
       Map<String, Object> model = new ModelMap();
-      model.put("error", "Usuario o clave incorrecta");
+      model.put(ATTR_ERROR, "Usuario o clave incorrecta");
       return new ModelAndView("login", model);
     }
   }
@@ -56,11 +60,14 @@ public class ControladorLogin {
     try {
       servicioLogin.registrar(usuario);
     } catch (UsuarioExistente e) {
-      model.put("error", "El usuario ya existe");
-      return new ModelAndView("nuevo-usuario", model);
+      model.put(ATTR_ERROR, "El usuario ya existe");
+      return new ModelAndView(VISTA_NUEVO_USUARIO, model);
+    } catch (EmailInvalido | ContrasenaInvalida e) {
+      model.put(ATTR_ERROR, e.getMessage());
+      return new ModelAndView(VISTA_NUEVO_USUARIO, model);
     } catch (Exception e) {
-      model.put("error", "Error al registrar el nuevo usuario");
-      return new ModelAndView("nuevo-usuario", model);
+      model.put(ATTR_ERROR, "Error al registrar el nuevo usuario");
+      return new ModelAndView(VISTA_NUEVO_USUARIO, model);
     }
     return new ModelAndView("redirect:/login");
   }
@@ -69,7 +76,7 @@ public class ControladorLogin {
   public ModelAndView nuevoUsuario() {
     Map<String, Object> model = new ModelMap();
     model.put("usuario", new Usuario());
-    return new ModelAndView("nuevo-usuario", model);
+    return new ModelAndView(VISTA_NUEVO_USUARIO, model);
   }
 
   @RequestMapping(path = "/home", method = RequestMethod.GET)

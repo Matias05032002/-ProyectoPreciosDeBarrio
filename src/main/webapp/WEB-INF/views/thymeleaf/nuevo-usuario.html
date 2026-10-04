@@ -30,12 +30,20 @@
           <h3 class="form-signin-heading">Nuevo Usuario</h3>
           <hr class="colorgraph"><br>
 
-          <input th:field="*{email}" id="email" class="form-control" required />
-          <input th:field="*{password}" type="password" id="password" class="form-control" required />
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input th:field="*{email}" id="email" type="email" class="form-control" placeholder="ejemplo@correo.com" required />
+          </div>
 
-          <button id="btn-registrarme" class="btn btn-lg btn-primary btn-block" Type="Submit">Registrarme</button>
-          <p th:if="${error != null}" class="alert alert-danger" th:text="'Error ' + ${error}">
-          </p>
+          <div class="mb-3">
+            <label for="password" class="form-label">Contraseña</label>
+            <input th:field="*{password}" type="password" id="password" class="form-control" required />
+            <div class="form-text">Mínimo 8 caracteres y al menos una mayúscula.</div>
+          </div>
+
+          <button id="btn-registrarme" class="btn btn-lg btn-primary btn-block" type="submit">Registrarme</button>
+
+          <div th:if="${error != null}" class="alert alert-danger mt-3" th:text="${error}"></div>
         </form>
 
       </div>

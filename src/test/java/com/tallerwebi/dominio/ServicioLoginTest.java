@@ -5,6 +5,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,11 +39,12 @@ public class ServicioLoginTest {
   }
 
   @Test
-  public void registrarUsuarioSiNoExisteDeberiaGuardarlo() throws UsuarioExistente {
+  public void registrarUsuarioSiNoExisteDeberiaGuardarlo()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
     // preparacion
     Usuario usuario = new Usuario();
     usuario.setEmail("nuevo@test.com");
-    usuario.setPassword("123");
+    usuario.setPassword("Contrasena1");
     when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
 
     // ejecucion
@@ -56,11 +59,41 @@ public class ServicioLoginTest {
     // preparacion
     Usuario usuario = new Usuario();
     usuario.setEmail("existe@test.com");
-    usuario.setPassword("123");
+    usuario.setPassword("Contrasena1");
     when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(new Usuario());
 
     // ejecucion y validacion
     assertThrows(UsuarioExistente.class, () -> this.servicioLogin.registrar(usuario));
+    verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
+  }
+
+  @Test
+  public void registrarUsuarioConEmailInvalidoDeberiaLanzarExcepcion() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("emailinvalido");
+    usuario.setPassword("Contrasena1");
+
+    assertThrows(EmailInvalido.class, () -> this.servicioLogin.registrar(usuario));
+    verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
+  }
+
+  @Test
+  public void registrarUsuarioConContrasenaSinMayusculaDeberiaLanzarExcepcion() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("test@test.com");
+    usuario.setPassword("contrasena1");
+
+    assertThrows(ContrasenaInvalida.class, () -> this.servicioLogin.registrar(usuario));
+    verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
+  }
+
+  @Test
+  public void registrarUsuarioConContrasenaMuyCortaDeberiaLanzarExcepcion() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("test@test.com");
+    usuario.setPassword("Pass1");
+
+    assertThrows(ContrasenaInvalida.class, () -> this.servicioLogin.registrar(usuario));
     verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
   }
 }

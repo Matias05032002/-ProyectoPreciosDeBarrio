@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -71,7 +73,7 @@ public class ControladorLoginTest {
 
   @Test
   public void registrameSiUsuarioNoExisteDeberiaCrearUsuarioYVolverAlLogin()
-    throws UsuarioExistente {
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
     // ejecucion
     ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
 
@@ -82,7 +84,7 @@ public class ControladorLoginTest {
 
   @Test
   public void registrarmeSiUsuarioExisteDeberiaVolverAFormularioYMostrarError()
-    throws UsuarioExistente {
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
     // preparacion
     doThrow(UsuarioExistente.class).when(servicioLoginMock).registrar(usuarioMock);
 
@@ -98,7 +100,8 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void errorEnRegistrarmeDeberiaVolverAFormularioYMostrarError() throws UsuarioExistente {
+  public void errorEnRegistrarmeDeberiaVolverAFormularioYMostrarError()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
     // preparacion
     doThrow(RuntimeException.class).when(servicioLoginMock).registrar(usuarioMock);
 
