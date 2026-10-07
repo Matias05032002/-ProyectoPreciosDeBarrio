@@ -16,7 +16,9 @@ public class Reporte {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Column(name = "fechaDeReporte")
   private LocalDateTime fechaDeReporte;
+
   private Integer puntuacion;
   private Double precio;
   public static final int PUNTUACION_DUDOSO = 6;

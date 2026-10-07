@@ -9,16 +9,24 @@
 <nav th:replace="~{navbar :: navbar}"></nav>
 <div class="container mt-4">
 
-    <form th:action="@{/producto/buscar}" method="get" class="mb-4">
+    <form th:action="@{/producto/buscar}" method="get" class="mb-4" id="form-buscar">
         <div class="input-group">
             <input type="text" name="nombre" id="buscador-producto" class="form-control form-control-lg"
-                   placeholder="¿Qué producto buscás?">
+                   placeholder="¿Qué producto buscás?" th:value="${busqueda}">
+            <select name="orden" id="orden-productos" class="form-select form-select-lg">
+                <option value="precio" th:selected="${orden == 'precio'}">Menor precio</option>
+                <option value="reciente" th:selected="${orden == 'reciente'}">Más reciente</option>
+                <option value="cercania" th:selected="${orden == 'cercania'}">Más cercano</option>
+            </select>
+            <input type="hidden" name="lat" id="lat-usuario" th:value="${lat}">
+            <input type="hidden" name="lng" id="lng-usuario" th:value="${lng}">
             <button type="submit" id="btn-buscar-producto" class="btn btn-primary">Buscar</button>
         </div>
     </form>
 
     <h2>Productos del barrio</h2>
     <p class="text-muted">Encontrá dónde está más barato antes de salir a comprar.</p>
+
 
     <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
         <div class="col" th:each="producto : ${productos}">
@@ -41,20 +49,23 @@
                         <span class="text-muted small" th:text="${producto.categoria}"></span>
                     </p>
                     <p class="card-text fw-bold text-success" th:if="${producto.precioMinimo != null}">
-                        Desde $<span th:text="${producto.precioMinimo}"></span>
+                        Desde <span th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'COMMA', 2, 'POINT')}"></span>
                     </p>
                     <p class="card-text text-muted small" th:if="${producto.comercio != null}">
                         en <span th:text="${producto.comercio}"></span>
+                        <span th:if="${producto.distanciaKm != null}">
+                            · <span th:text="${#numbers.formatDecimal(producto.distanciaKm, 1, 2) + ' km'}"></span>
+                        </span>
                     <form th:if="${producto.reporteId != null}"
                           th:action="@{/reporte/{id}/dudoso(id=${producto.reporteId})}"
                           method="post" class="mt-2">
                         <input type="hidden" name="nombreProducto" th:value="${producto.nombre}">
-                    <button type="submit"
-                            th:id="'btn-marcar-dudoso-' + ${producto.reporteId}"
-                            class="btn btn-outline-danger btn-sm"
-                            th:disabled="${producto.yaMarcoDudoso}"
-                            th:text="${producto.yaMarcoDudoso} ? 'Ya marcaste dudoso' : 'Marcar dudoso'">
-                    </button>
+                        <button type="submit"
+                                th:id="'btn-marcar-dudoso-' + ${producto.reporteId}"
+                                class="btn btn-outline-danger btn-sm"
+                                th:disabled="${producto.yaMarcoDudoso}"
+                                th:text="${producto.yaMarcoDudoso} ? 'Ya marcaste dudoso' : 'Marcar dudoso'">
+                        </button>
                     </form>
                     </p>
                 </div>
@@ -89,6 +100,28 @@
 <script th:if="${dudosoMarcado}">
     var modal = new bootstrap.Modal(document.getElementById('modalDudoso'));
     modal.show();
+</script>
+<script>
+    document.getElementById('form-buscar').addEventListener('submit', function(e) {
+        var orden = document.getElementById('orden-productos').value;
+        if (orden === 'cercania') {
+            var latInput = document.getElementById('lat-usuario');
+            var lngInput = document.getElementById('lng-usuario');
+            if (!latInput.value || !lngInput.value) {
+                e.preventDefault();
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    latInput.value = pos.coords.latitude;
+                    lngInput.value = pos.coords.longitude;
+                    document.getElementById('form-buscar').submit();
+                }, function() {
+                    alert('No se pudo obtener tu ubicación. Activá el GPS o los permisos del navegador.');
+                });
+            }
+        } else {
+            document.getElementById('lat-usuario').value = '';
+            document.getElementById('lng-usuario').value = '';
+        }
+    });
 </script>
 </body>
 </html>

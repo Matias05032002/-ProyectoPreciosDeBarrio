@@ -10,5 +10,11 @@ public interface ServicioProducto {
   Producto buscarProductoPorId(Long id);
   List<Producto> buscarPorNombre(String nombre);
   Producto buscarProductoPorNombreExacto(String nombre);
-  List<ProductoConPrecio> buscarProductosConPrecio(String nombre, Usuario usuario);
+  List<ProductoConPrecio> buscarProductosConPrecio(
+    String nombre,
+    Usuario usuario,
+    OrdenProducto orden,
+    Double latUsuario,
+    Double lngUsuario
+  );
 }

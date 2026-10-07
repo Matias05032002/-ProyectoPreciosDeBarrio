@@ -79,7 +79,6 @@ public class ServicioReporteImpl implements ServicioReporte {
         throw new ReporteExistente();
       }
     }
-
     return repositorioReporte.guardarReporte(reporte);
   }
 

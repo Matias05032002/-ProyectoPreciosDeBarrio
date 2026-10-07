@@ -21,6 +21,7 @@ public class ProductoConPrecio {
   private boolean esDudoso;
   private boolean yaMarcoDudoso;
   private Integer puntuacion;
+  private Double distanciaKm;
 
   public ProductoConPrecio(
     String nombre,
@@ -40,6 +41,7 @@ public class ProductoConPrecio {
     this.precioMinimo = precioMinimo;
     this.comercio = comercio;
     this.reporteId = reporteId;
+    this.fechaDeReporte = fechaDeReporte;
     this.antiguedad = calcularAntiguedadDelProducto(fechaDeReporte);
     this.esDudoso = puntuacion != null && puntuacion > Reporte.PUNTUACION_DUDOSO;
     this.puntuacion = puntuacion;
@@ -117,5 +119,13 @@ public class ProductoConPrecio {
 
   public boolean isEsDudoso() {
     return esDudoso;
+  }
+
+  public Double getDistanciaKm() {
+    return distanciaKm;
+  }
+
+  public void setDistanciaKm(Double distanciaKm) {
+    this.distanciaKm = distanciaKm;
   }
 }

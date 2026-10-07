@@ -22,6 +22,7 @@ public class RepositorioReporteImpl implements RepositorioReporte {
   @Override
   public Reporte guardarReporte(Reporte reporte) {
     sessionFactory.getCurrentSession().persist(reporte);
+    sessionFactory.getCurrentSession().flush();
     return reporte;
   }
 
@@ -46,10 +47,7 @@ public class RepositorioReporteImpl implements RepositorioReporte {
   public List<Reporte> buscarPorNombre(String nombreProducto) {
     return sessionFactory
       .getCurrentSession()
-      .createQuery(
-        "from Reporte where producto.nombre like :nombreProducto order by precio asc",
-        Reporte.class
-      )
+      .createQuery("from Reporte where producto.nombre like :nombreProducto", Reporte.class)
       .setParameter("nombreProducto", "%" + nombreProducto + "%")
       .list();
   }

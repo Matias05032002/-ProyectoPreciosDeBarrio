@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.matchers.Or;
 
 public class ServicioProductoTest {
 
@@ -128,8 +129,13 @@ public class ServicioProductoTest {
       .thenReturn(Arrays.asList(new Producto()));
     when(this.repositorioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
 
-    List<ProductoConPrecio> resultado =
-      this.servicioProducto.buscarProductosConPrecio("Leche", null);
+    List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
+      "algo",
+      null,
+      OrdenProducto.PRECIO,
+      null,
+      null
+    );
 
     assertThat(resultado, equalTo(Collections.emptyList()));
   }

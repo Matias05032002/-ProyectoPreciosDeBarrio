@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Producto.OrdenProducto;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.ServicioLogin;
@@ -74,10 +75,25 @@ public class ControladorProductoTest {
       null,
       0
     );
-    when(this.servicioProductoMock.buscarProductosConPrecio("Leche", null))
+    when(
+      this.servicioProductoMock.buscarProductosConPrecio(
+          "Leche",
+          null,
+          OrdenProducto.PRECIO,
+          null,
+          null
+        )
+    )
       .thenReturn(Arrays.asList(dto));
 
-    ModelAndView modelAndView = controladorProducto.buscarProducto("Leche", null, requestMock);
+    ModelAndView modelAndView = controladorProducto.buscarProducto(
+      "Leche",
+      "precio",
+      null,
+      null, // lat
+      null, // lng
+      requestMock
+    );
 
     assertThat(modelAndView.getViewName(), equalTo("producto/lista-productos"));
     assertThat(modelAndView.getModel().get("productos"), is(notNullValue()));
@@ -85,11 +101,26 @@ public class ControladorProductoTest {
 
   @Test
   public void buscarUnProductoQueNoExisteDevuelveListaVacia() {
-    when(this.servicioProductoMock.buscarProductosConPrecio("Producto Inexistente", null))
+    when(
+      this.servicioProductoMock.buscarProductosConPrecio(
+          "Producto Inexistente",
+          null,
+          OrdenProducto.PRECIO,
+          null,
+          null
+        )
+    )
       .thenReturn(Collections.emptyList());
 
     ModelAndView modelAndView =
-      this.controladorProducto.buscarProducto("Producto Inexistente", null, requestMock);
+      this.controladorProducto.buscarProducto(
+          "Producto Inexistente",
+          "PRECIO",
+          null,
+          null,
+          null,
+          requestMock
+        );
 
     assertThat((List<?>) modelAndView.getModel().get("productos"), is(empty()));
   }

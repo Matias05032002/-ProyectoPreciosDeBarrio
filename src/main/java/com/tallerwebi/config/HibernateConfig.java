@@ -66,6 +66,7 @@ public class HibernateConfig {
     properties.setProperty("hibernate.connection.characterEncoding", "utf8");
     properties.setProperty("hibernate.connection.CharSet", "utf8");
     properties.setProperty("hibernate.connection.useUnicode", "true");
+    properties.setProperty("hibernate.jdbc.time_zone", "UTC");
     return properties;
   }
 }
