@@ -1,5 +1,7 @@
 package com.tallerwebi.dominio.Comercio;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 public class ServicioComercioImpl implements ServicioComercio {
 
   private RepositorioComercio repositorioComercio;
+  private ObjectMapper objectMapper = new ObjectMapper();
 
   @Autowired
   public ServicioComercioImpl(RepositorioComercio repositorioComercio) {
@@ -39,13 +42,15 @@ public class ServicioComercioImpl implements ServicioComercio {
         response = scanner.useDelimiter("\\A").next();
       }
 
-      int latIdx = response.indexOf("\"lat\":\"") + 7;
-      int latEnd = response.indexOf("\"", latIdx);
-      int lonIdx = response.indexOf("\"lon\":\"") + 7;
-      int lonEnd = response.indexOf("\"", lonIdx);
-
-      comercio.setLatitud(Double.parseDouble(response.substring(latIdx, latEnd)));
-      comercio.setLongitud(Double.parseDouble(response.substring(lonIdx, lonEnd)));
+      JsonNode results = objectMapper.readTree(response);
+      if (results.isArray() && results.size() > 0) {
+        JsonNode primero = results.get(0);
+        comercio.setLatitud(primero.get("lat").asDouble());
+        comercio.setLongitud(primero.get("lon").asDouble());
+      } else {
+        comercio.setLatitud(null);
+        comercio.setLongitud(null);
+      }
     } catch (Exception e) {
       comercio.setLatitud(null);
       comercio.setLongitud(null);

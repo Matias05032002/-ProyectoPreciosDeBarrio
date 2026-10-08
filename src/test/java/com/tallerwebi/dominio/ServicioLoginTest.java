@@ -26,16 +26,21 @@ public class ServicioLoginTest {
   public void consultarUsuarioDeberiaLlamarAlRepositorio() {
     // preparacion
     String email = "test@test.com";
-    String password = "password";
+    String password = "Password1";
     Usuario usuarioEsperado = new Usuario();
-    when(this.repositorioUsuarioMock.buscarUsuario(email, password)).thenReturn(usuarioEsperado);
+    usuarioEsperado.setEmail(email);
+    usuarioEsperado.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password));
+    usuarioEsperado.activar();
+    when(this.repositorioUsuarioMock.buscar(email)).thenReturn(usuarioEsperado);
 
     // ejecucion
     Usuario usuarioObtenido = this.servicioLogin.consultarUsuario(email, password);
 
     // validacion
     assertThat(usuarioObtenido, equalTo(usuarioEsperado));
-    verify(this.repositorioUsuarioMock, times(1)).buscarUsuario(email, password);
+    assertThat(usuarioEsperado.getPassword().startsWith("$2a$"), equalTo(true));
+    assertThat(usuarioEsperado.getActivo(), equalTo(true));
+    verify(this.repositorioUsuarioMock, times(1)).buscar(email);
   }
 
   @Test

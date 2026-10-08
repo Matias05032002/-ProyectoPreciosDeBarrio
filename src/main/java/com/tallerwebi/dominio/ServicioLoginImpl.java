@@ -6,21 +6,27 @@ import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Service("servicioLogin")
 @Transactional
 public class ServicioLoginImpl implements ServicioLogin {
 
   private RepositorioUsuario repositorioUsuario;
+  private BCryptPasswordEncoder passwordEncoder;
 
   @Autowired
   public ServicioLoginImpl(RepositorioUsuario repositorioUsuario) {
     this.repositorioUsuario = repositorioUsuario;
+    this.passwordEncoder = new BCryptPasswordEncoder();
   }
 
   @Override
   public Usuario consultarUsuario(String email, String password) {
-    return repositorioUsuario.buscarUsuario(email, password);
+    Usuario usuario = repositorioUsuario.buscar(email);
+    if (usuario == null || !usuario.getActivo()) return null;
+    if (!passwordEncoder.matches(password, usuario.getPassword())) return null;
+    return usuario;
   }
 
   @Override
@@ -33,6 +39,8 @@ public class ServicioLoginImpl implements ServicioLogin {
       throw new UsuarioExistente();
     }
     usuario.setRol("USER");
+    usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+    usuario.activar();
     repositorioUsuario.guardar(usuario);
   }
 
