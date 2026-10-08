@@ -29,7 +29,9 @@ public class ServicioLoginTest {
     String password = "Password1";
     Usuario usuarioEsperado = new Usuario();
     usuarioEsperado.setEmail(email);
-    usuarioEsperado.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password));
+    usuarioEsperado.setPassword(
+      new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password)
+    );
     usuarioEsperado.activar();
     when(this.repositorioUsuarioMock.buscar(email)).thenReturn(usuarioEsperado);
 
