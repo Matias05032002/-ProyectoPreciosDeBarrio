@@ -11,6 +11,16 @@
     <h2>Reporta el precio del producto para ayudar a tus vecinos</h2>
     <h4 class="mt-5">Cargar precio</h4>
     <form th:action="@{/reporte}" method="post" class="mt-3">
+        <h6 class="text-muted mt-3">Foto del producto</h6>
+
+        <div class="mb-3">
+            <input type="file"
+                   name="foto"
+                   id="foto"
+                   class="form-control"
+                   accept="image/*">
+            <input type="hidden" name="fotoBase64" id="foto-base64">
+        </div>
         <h6 class="text-muted mt-3">Datos del producto</h6>
         <div class="mb-3">
             <input type="text" name="producto.nombre" id="producto-nombre" class="form-control" placeholder="Nombre del producto">
@@ -125,16 +135,29 @@
 <script>
     document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
+        var formulario = this;
         var inputs = this.querySelectorAll('input[type="text"]');
         inputs.forEach(function(input) {
             input.value = input.value
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '');
         });
-        if (this.reportValidity()) {
+        if (!this.reportValidity()) return;
+
+        var foto = document.getElementById('foto');
+        if (!foto.files.length) {
             this.submit();
+            return;
         }
+
+        var lector = new FileReader();
+        lector.onload = function(evento) {
+            document.getElementById('foto-base64').value = evento.target.result;
+            formulario.submit();
+        };
+        lector.readAsDataURL(foto.files[0]);
     });
 </script>
+
 </body>
 </html>

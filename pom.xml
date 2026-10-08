@@ -403,7 +403,7 @@
             <plugin>
                 <groupId>org.eclipse.jetty.ee10</groupId>
                 <artifactId>jetty-ee10-maven-plugin</artifactId>
-                <version>12.0.37</version>
+                <version>12.0.39</version>
                 <configuration>
                     <scanIntervalSeconds>2</scanIntervalSeconds>
                     <httpConnector>

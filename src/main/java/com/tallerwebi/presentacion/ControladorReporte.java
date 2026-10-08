@@ -11,6 +11,7 @@ import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,14 +46,26 @@ public class ControladorReporte {
     this.servicioLogin = servicioLogin;
   }
 
-  @RequestMapping(method = RequestMethod.POST)
   public ModelAndView guardarReporte(@ModelAttribute Reporte reporte, HttpServletRequest request) {
+    return guardarReporte(reporte, null, request);
+  }
+
+  @RequestMapping(method = RequestMethod.POST)
+  public ModelAndView guardarReporte(
+    @ModelAttribute Reporte reporte,
+    @RequestParam(value = "fotoBase64", required = false) String fotoBase64,
+    HttpServletRequest request
+  ) {
     if (request.getSession().getAttribute("ROL") == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     try {
       String email = (String) request.getSession().getAttribute("EMAIL");
       Usuario usuario = servicioLogin.buscarPorEmail(email);
+      String errorDeFoto = guardarFoto(reporte, fotoBase64);
+      if (errorDeFoto != null) {
+        return vistaConError(errorDeFoto);
+      }
       reporte.setUsuario(usuario);
       servicioReporte.guardarReporte(reporte);
     } catch (ReporteExistente e) {
@@ -72,6 +85,18 @@ public class ControladorReporte {
     ModelAndView mav = new ModelAndView(VISTA_REPORTES);
     mav.addObject(NOMBRE_REPORTES, Collections.singletonList(reporte));
     return mav;
+  }
+
+  @GetMapping("/{id}/foto")
+  @ResponseBody
+  public byte[] obtenerFoto(@PathVariable("id") Long id) {
+    Reporte reporte = servicioReporte.buscarReporte(id);
+
+    if (reporte == null || reporte.getFoto() == null) {
+      return new byte[0];
+    }
+
+    return reporte.getFoto();
   }
 
   @RequestMapping(method = RequestMethod.GET)
@@ -135,5 +160,28 @@ public class ControladorReporte {
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
     return mav;
+  }
+
+  private String guardarFoto(Reporte reporte, String fotoBase64) {
+    if (fotoBase64 == null || fotoBase64.isBlank()) {
+      return null;
+    }
+    if (!fotoBase64.startsWith("data:image/")) {
+      return "El archivo seleccionado debe ser una imagen";
+    }
+    int inicioDelContenido = fotoBase64.indexOf(',');
+    if (inicioDelContenido < 0) {
+      return "No se pudo cargar la foto";
+    }
+    try {
+      byte[] foto = Base64.getDecoder().decode(fotoBase64.substring(inicioDelContenido + 1));
+      if (foto.length > 10 * 1024 * 1024) {
+        return "La foto no puede superar los 10 MB";
+      }
+      reporte.setFoto(foto);
+      return null;
+    } catch (IllegalArgumentException e) {
+      return "No se pudo cargar la foto";
+    }
   }
 }

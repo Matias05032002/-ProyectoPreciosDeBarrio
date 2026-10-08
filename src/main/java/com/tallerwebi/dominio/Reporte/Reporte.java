@@ -21,6 +21,10 @@ public class Reporte {
 
   private Integer puntuacion;
   private Double precio;
+
+  @Lob
+  private byte[] foto;
+
   public static final int PUNTUACION_DUDOSO = 6;
   public static final int PUNTUACION_MAXIMA = 10;
 
@@ -105,5 +109,15 @@ public class Reporte {
 
   public void setUsuariosQueMarcaron(List<Usuario> usuariosQueMarcaron) {
     this.usuariosQueMarcaron = usuariosQueMarcaron;
+  }
+
+  public byte[] getFoto() {
+    return foto == null ? null : foto.clone();
+  }
+
+  public void setFoto(byte[] foto) {
+    if (foto != null) {
+      this.foto = foto.clone();
+    }
   }
 }

@@ -165,6 +165,21 @@ public class ControladorReporteTest {
   }
 
   @Test
+  public void guardarReporteGuardaLaFotoRecibida() throws Exception {
+    Reporte reporte = new Reporte();
+    String fotoBase64 = "data:image/jpeg;base64,AQID";
+
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+
+    ModelAndView mav = controladorReporte.guardarReporte(reporte, fotoBase64, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
+    assertThat(reporte.getFoto(), is(new byte[] { 1, 2, 3 }));
+    verify(servicioReporteMock).guardarReporte(reporte);
+  }
+
+  @Test
   public void listarTodosConGuardadoTruePasaAtributoAlModelo() {
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
     when(this.servicioReporteMock.listarTodos()).thenReturn(Collections.emptyList());

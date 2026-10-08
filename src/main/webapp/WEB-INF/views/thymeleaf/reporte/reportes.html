@@ -18,6 +18,7 @@
             <th>Comercio</th>
             <th>Precio</th>
             <th>Fecha</th>
+            <th>Foto</th>
             <th></th>
         </tr>
         </thead>
@@ -27,6 +28,12 @@
             <td th:text="${reporte.comercio.nombre}"></td>
             <td th:text="${reporte.precio}"></td>
             <td th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')}"></td>
+            <td>
+                <img th:if="${reporte.foto != null}"
+                     th:src="@{/reporte/{id}/foto(id=${reporte.id})}"
+                     alt="Foto del producto"
+                     style="width: 100px; height: 100px; object-fit: cover;">
+            </td>
             <td>
                 <form th:action="@{/reporte/{id}/dudoso(id=${reporte.id})}" method="post">
                     <input type="hidden" name="nombreProducto" th:value="${reporte.producto.nombre}">
