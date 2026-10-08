@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y wget && \
     tar -xzvf jetty.tar.gz -C $JETTY_HOME --strip-components=1 && \
     rm jetty.tar.gz && \
     cd $JETTY_HOME && echo "y" | java -jar start.jar --add-modules=server,http,deploy,ee10-deploy,ee10-webapp,ee10-servlet,ee10-annotations,ee10-jsp && \
-    echo "jetty.httpConfig.maxFormContentSize=20971520" >> start.d/http.ini
+    echo "-Dorg.eclipse.jetty.server.Request.maxFormContentSize=20971520" >> start.d/server.ini
 
 COPY target/tallerwebi-base-1.0-SNAPSHOT.war $JETTY_HOME/webapps/spring.war
 
