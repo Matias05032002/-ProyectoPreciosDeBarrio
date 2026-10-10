@@ -46,6 +46,7 @@ public class ControladorLogin {
     if (usuarioBuscado != null) {
       request.getSession().setAttribute("ROL", usuarioBuscado.getRol());
       request.getSession().setAttribute("EMAIL", usuarioBuscado.getEmail());
+      request.getSession().setAttribute("ID", usuarioBuscado.getId());
       return new ModelAndView("redirect:/home");
     } else {
       Map<String, Object> model = new ModelMap();

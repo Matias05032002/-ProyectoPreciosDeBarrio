@@ -41,6 +41,24 @@
             <div class="form-text">Mínimo 8 caracteres y al menos una mayúscula.</div>
           </div>
 
+          <div class="mb-3">
+            <label class="form-label">Tipo de cuenta</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" th:field="*{rol}" value="USER" id="rolUsuario" checked />
+                <label class="form-check-label" for="rolUsuario">
+                  <strong>Usuario</strong> - busco precios en el barrio
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" th:field="*{rol}" value="COMERCIO" id="rolComercio" />
+                <label class="form-check-label" for="rolComercio">
+                  <strong>Comercio</strong> - tengo un local y quiero publicitar
+                </label>
+              </div>
+            </div>
+          </div>
+
           <button id="btn-registrarme" class="btn btn-lg btn-primary btn-block" type="submit">Registrarme</button>
 
           <div th:if="${error != null}" class="alert alert-danger mt-3" th:text="${error}"></div>
