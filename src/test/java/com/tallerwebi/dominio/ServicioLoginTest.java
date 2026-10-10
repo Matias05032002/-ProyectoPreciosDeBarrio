@@ -10,6 +10,7 @@ import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class ServicioLoginTest {
 
@@ -157,5 +158,11 @@ public class ServicioLoginTest {
 
     // validacion
     assertThat(resultado, equalTo(null));
+  }
+  @Test
+  void generarHash() {
+    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    System.out.println("test: " + encoder.encode("test"));
+    System.out.println("TestComercio1: " + encoder.encode("TestComercio1"));
   }
 }

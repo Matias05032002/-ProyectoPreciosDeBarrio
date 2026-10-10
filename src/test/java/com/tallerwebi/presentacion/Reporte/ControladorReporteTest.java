@@ -188,4 +188,34 @@ public class ControladorReporteTest {
 
     assertThat(mav.getModel().get("guardado"), is(true));
   }
+
+  @Test
+  public void misProductosDevuelveLaVistaCuandoComercioNoExiste() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(null);
+
+    ModelAndView mav = controladorReporte.misProductos(requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/mis-productos-comercio"));
+    assertThat(mav.getModel().get("reportes"), is(Collections.emptyList()));
+  }
+
+  @Test
+  public void misProductosDevuelveLosReportesDelComercio() {
+    Comercio comercio = new Comercio();
+    comercio.setId(5L);
+    Reporte reporte = new Reporte();
+    List<Reporte> reportes = Arrays.asList(reporte);
+
+    when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
+    when(servicioReporteMock.buscarPorComercio(5L)).thenReturn(reportes);
+
+    ModelAndView mav = controladorReporte.misProductos(requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/mis-productos-comercio"));
+    assertThat(mav.getModel().get("reportes"), is(reportes));
+  }
 }

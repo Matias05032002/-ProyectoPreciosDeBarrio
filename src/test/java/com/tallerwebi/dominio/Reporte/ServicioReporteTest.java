@@ -307,4 +307,22 @@ public class ServicioReporteTest {
     assertThat(resultado, equalTo(Collections.emptyList()));
     verify(this.repositorioReporteMock, times(1)).buscarPorUsuarioId(99L);
   }
+
+  @Test
+  public void buscarReportesPorComercioIdDeberiaRetornarLosReportesDelComercio() {
+    Reporte reporte = new Reporte();
+    List<Reporte> reportes = Arrays.asList(reporte);
+    when(this.repositorioReporteMock.buscarPorComercio(3L)).thenReturn(reportes);
+    List<Reporte> resultado = this.servicioReporte.buscarPorComercio(3L);
+    assertThat(resultado, equalTo(reportes));
+    verify(this.repositorioReporteMock, times(1)).buscarPorComercio(3L);
+  }
+
+  @Test
+  public void buscarReportesPorComercioIdSinReportesDeberiaRetornarListaVacia() {
+    when(this.repositorioReporteMock.buscarPorComercio(99L)).thenReturn(Collections.emptyList());
+    List<Reporte> resultado = this.servicioReporte.buscarPorComercio(99L);
+    assertThat(resultado, equalTo(Collections.emptyList()));
+    verify(this.repositorioReporteMock, times(1)).buscarPorComercio(99L);
+  }
 }

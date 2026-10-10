@@ -1,5 +1,6 @@
 package com.tallerwebi.presentacion;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.Reporte;
@@ -172,6 +173,23 @@ public class ControladorReporte {
     mav.addObject(NOMBRE_REPORTES, servicioReporte.listarTodos());
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+    return mav;
+  }
+
+  @RequestMapping(path = "/mis-productos", method = RequestMethod.GET)
+  public ModelAndView misProductos(HttpServletRequest request) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    Comercio comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
+    ModelAndView mav = new ModelAndView("reporte/mis-productos-comercio");
+    if (comercio == null) {
+      mav.addObject("reportes", java.util.Collections.emptyList());
+    } else {
+      List<Reporte> reportes = servicioReporte.buscarPorComercio(comercio.getId());
+      mav.addObject("reportes", reportes);
+    }
     return mav;
   }
 

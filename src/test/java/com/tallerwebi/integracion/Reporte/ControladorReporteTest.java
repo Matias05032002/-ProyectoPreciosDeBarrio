@@ -109,4 +109,32 @@ public class ControladorReporteTest {
     assert modelAndView != null;
     assertThat(modelAndView.getModel().containsKey("reportes"), is(true));
   }
+
+  @Test
+  public void verificarQueGetMisProductosDevuelveDosCientosYlaVista() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(
+          get("/reporte/mis-productos").sessionAttr("ROL", "COMERCIO").sessionAttr("ID", 1L)
+        )
+        .andExpect(status().isOk())
+        .andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/mis-productos-comercio"));
+  }
+
+  @Test
+  public void verificarQueGetMisProductosDevuelveElModeloConReportes() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(
+          get("/reporte/mis-productos").sessionAttr("ROL", "COMERCIO").sessionAttr("ID", 1L)
+        )
+        .andExpect(status().isOk())
+        .andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getModel().containsKey("reportes"), is(true));
+  }
 }

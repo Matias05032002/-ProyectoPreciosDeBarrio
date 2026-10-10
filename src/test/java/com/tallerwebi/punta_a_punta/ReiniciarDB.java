@@ -15,7 +15,8 @@ public class ReiniciarDB {
         : "user";
 
       // BCrypt hash de "test"
-      String hashTest = "$2a$10$u0JSZTkmovHkFAof49mXzerj1eyN4oNtaPs0eOk3PHKAw1rbuuhTe";
+      String hashTest = "$2a$10$PBL5JMWUB3K.CaSCXa.VQ.hqBGTDm0DhQcj6h5YcpOxD.ntfvyUkm";
+      String hashComercio = "$2a$10$EPoQNoGYxgyTzPKHeDWXKO3iMozi8M.FDJjphwWXGmQ40E0NLXpkW";
 
       String sqlCommands =
         "DELETE FROM reporte_usuarios_dudoso; " +
@@ -27,7 +28,10 @@ public class ReiniciarDB {
         "ALTER TABLE Usuario AUTO_INCREMENT = 1; " +
         "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test@unlam.edu.ar', '" +
         hashTest +
-        "', 'ADMIN', b'1');";
+        "', 'ADMIN', b'1'); " +
+        "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test-comercio@unlam.edu.ar', '" +
+        hashComercio +
+        "', 'COMERCIO', b'1');";
 
       String dockerCmd = String.format(
         "docker exec tallerwebi-mysql mysql -h %s -P %s -u %s -p%s %s -e \"%s\"",
