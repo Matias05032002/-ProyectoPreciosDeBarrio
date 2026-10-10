@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -53,5 +54,22 @@ public class ControladorComercio {
     ModelAndView mav = new ModelAndView("comercio/lista-comercios");
     mav.addObject("comercios", comercios);
     return mav;
+  }
+
+  @RequestMapping(path = "/perfil", method = RequestMethod.GET)
+  public ModelAndView verPerfil(HttpServletRequest request) {
+    Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    Comercio comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
+    ModelAndView mav = new ModelAndView("comercio/perfil-comercio");
+    mav.addObject("comercio", comercio);
+    return mav;
+  }
+
+  @RequestMapping(path = "/perfil", method = RequestMethod.POST)
+  public ModelAndView guardarPerfil(@ModelAttribute Comercio comercio, HttpServletRequest request) {
+    Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    comercio.setUsuarioId(usuarioId);
+    servicioComercio.guardarComercio(comercio);
+    return new ModelAndView("redirect:/comercio/perfil");
   }
 }

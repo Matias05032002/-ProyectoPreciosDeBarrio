@@ -9,7 +9,9 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.tallerwebi.punta_a_punta.vistas.Comercio.VistaComercio;
+import com.tallerwebi.punta_a_punta.vistas.Comercio.VistaPerfil;
 import com.tallerwebi.punta_a_punta.vistas.Reporte.VistaReporte;
+import com.tallerwebi.punta_a_punta.vistas.VistaNuevoUsuario;
 import java.net.MalformedURLException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -110,9 +112,43 @@ public class VistaComercioE2E {
     vistaReporte.escribirNombreComercio("Almacen De Matias");
     vistaReporte.escribirDireccionComercio("Av. Mitre 123");
     vistaReporte.escribirLocalidadComercio("Lomas de Zamora");
-    vistaReporte.escribirLatitud("-34.7");
-    vistaReporte.escribirLongitud("-58.3");
     vistaReporte.escribirPrecio("250");
     vistaReporte.darClickEnGuardarReporte();
+  }
+
+  @Test
+  void deberiaPoderRegistrarPerfilDeComercio() {
+    dadoQueEstoyLogueadoComoComercio();
+    VistaPerfil vistaPerfil = new VistaPerfil(context.pages().get(0));
+    vistaPerfil.escribirNombreComercio("Mi Almacen Test");
+    vistaPerfil.seleccionarTipo("Almacen");
+    vistaPerfil.escribirDireccion("Av. Mitre 123");
+    vistaPerfil.escribirLocalidad("Lomas de Zamora");
+    vistaPerfil.escribirDescripcion("Almacen de barrio");
+    vistaPerfil.darClickEnGuardar();
+    assertThat(vistaPerfil.muestraDatosDelComercio(), is(true));
+  }
+
+  @Test
+  void deberiaVerFormularioSiNoTieneComercioRegistrado() {
+    dadoQueEstoyLogueadoComoComercio();
+    VistaPerfil vistaPerfil = new VistaPerfil(context.pages().get(0));
+    assertThat(vistaPerfil.muestraFormularioDeRegistro(), is(true));
+  }
+
+  private void dadoQueEstoyLogueadoComoComercio() {
+    com.tallerwebi.punta_a_punta.vistas.VistaLogin vistaLogin =
+      new com.tallerwebi.punta_a_punta.vistas.VistaLogin(context.pages().get(0));
+    VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
+
+    vistaLogin.darClickEnRegistrarse();
+    vistaNuevoUsuario.escribirEMAIL("comercio-test@unlam.edu.ar");
+    vistaNuevoUsuario.escribirClave("Contrasena1");
+    vistaNuevoUsuario.seleccionarRol("Comercio");
+    vistaNuevoUsuario.darClickEnRegistrarme();
+
+    vistaLogin.escribirEMAIL("comercio-test@unlam.edu.ar");
+    vistaLogin.escribirClave("Contrasena1");
+    vistaLogin.darClickEnIniciarSesion();
   }
 }

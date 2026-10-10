@@ -71,9 +71,9 @@ public class VistaLoginE2E {
   @Test
   void deberiaRegistrarUnUsuarioEIniciarSesionExistosamente() throws MalformedURLException {
     dadoQueElUsuarioNavegaALaVistaDeRegistro();
-    dadoQueElUsuarioSeRegistraCon("juan@unlam.edu.ar", "123456");
+    dadoQueElUsuarioSeRegistraCon("juan@unlam.edu.ar", "Juan1234");
     dadoQueElUsuarioEstaEnLaVistaDeLogin();
-    dadoQueElUsuarioCargaSusDatosDeLoginCon("juan@unlam.edu.ar", "123456");
+    dadoQueElUsuarioCargaSusDatosDeLoginCon("juan@unlam.edu.ar", "Juan1234");
     cuandoElUsuarioTocaElBotonDeLogin();
     entoncesDeberiaSerRedirigidoALaVistaDeHome();
   }

@@ -15,7 +15,7 @@ public class VistaComercio extends VistaWeb {
   }
 
   public boolean hayComerciosEnLaPagina() {
-    return page.locator("#card-comercio").count() > 0;
+    return page.locator("[id^='card-comercio-']").count() > 0;
   }
 
   public void escribirNombreDelComercioABuscar(String nombre) {
@@ -27,7 +27,7 @@ public class VistaComercio extends VistaWeb {
   }
 
   public boolean existeBotonVerDetalle() {
-    return page.locator("#btn-ver-detalle").count() > 0;
+    return page.locator("[id^='btn-ver-detalle-']").count() > 0;
   }
 
   public String obtenerNombreDelPrimerComercio() {
@@ -35,14 +35,14 @@ public class VistaComercio extends VistaWeb {
   }
 
   public void darClickEnVerDetalle() {
-    this.darClickEnElElemento("#btn-ver-detalle");
+    page.locator("[id^='btn-ver-detalle-']").first().click();
   }
 
   public boolean hayProductosEnElDetalle() {
-    return page.locator("#card-producto-comercio").count() > 0;
+    return page.locator("[id^='card-producto-comercio-']").count() > 0;
   }
 
   public boolean hayMapaEnElDetalle() {
-    return page.locator((".leaflet-marker-icon")).count() > 0;
+    return page.locator(".leaflet-marker-icon").count() > 0;
   }
 }

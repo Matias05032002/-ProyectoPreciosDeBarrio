@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Comercio")
+@SuppressWarnings("PMD.TooManyFields")
 public class Comercio {
 
   @Id
@@ -20,6 +21,7 @@ public class Comercio {
   private LocalDateTime fechaRegistro;
   private Double latitud;
   private Double longitud;
+  private Long usuarioId;
 
   public Comercio() {}
 
@@ -101,5 +103,13 @@ public class Comercio {
 
   public void setFechaRegistro(LocalDateTime fechaRegistro) {
     this.fechaRegistro = fechaRegistro;
+  }
+
+  public Long getUsuarioId() {
+    return usuarioId;
+  }
+
+  public void setUsuarioId(Long usuarioId) {
+    this.usuarioId = usuarioId;
   }
 }

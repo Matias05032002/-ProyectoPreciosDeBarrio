@@ -103,4 +103,27 @@ public class ServicioComercioTest {
     assertThat(comercio.getActivo(), equalTo(true));
     assertThat(comercio.getFechaRegistro(), equalTo(fecha));
   }
+
+  @Test
+  public void buscarComercioPorUsuarioIdDeberiaRetornarElComercioDelUsuario() {
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Mi Almacen");
+    comercio.setUsuarioId(5L);
+    when(this.repositorioComercioMock.buscarComercioPorUsuarioId(5L)).thenReturn(comercio);
+
+    Comercio resultado = this.servicioComercio.buscarComercioPorUsuarioId(5L);
+
+    assertThat(resultado, equalTo(comercio));
+    verify(this.repositorioComercioMock, times(1)).buscarComercioPorUsuarioId(5L);
+  }
+
+  @Test
+  public void buscarComercioPorUsuarioIdSiNoTieneComercioDeberiaRetornarNull() {
+    when(this.repositorioComercioMock.buscarComercioPorUsuarioId(99L)).thenReturn(null);
+
+    Comercio resultado = this.servicioComercio.buscarComercioPorUsuarioId(99L);
+
+    assertThat(resultado, equalTo(null));
+    verify(this.repositorioComercioMock, times(1)).buscarComercioPorUsuarioId(99L);
+  }
 }

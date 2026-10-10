@@ -14,14 +14,22 @@ public class ReiniciarDB {
         ? System.getenv("DB_PASSWORD")
         : "user";
 
-      String sqlCommands =
-        "DELETE FROM Reporte;\n" +
-        "ALTER TABLE Reporte AUTO_INCREMENT = 1;\n" +
-        "DELETE FROM Usuario;\n" +
-        "ALTER TABLE Usuario AUTO_INCREMENT = 1;\n" +
-        "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test@unlam.edu.ar', 'test', 'ADMIN', true);";
+      // BCrypt hash de "test"
+      String hashTest = "$2a$10$u0JSZTkmovHkFAof49mXzerj1eyN4oNtaPs0eOk3PHKAw1rbuuhTe";
 
-      String comando = String.format(
+      String sqlCommands =
+        "DELETE FROM reporte_usuarios_dudoso; " +
+        "DELETE FROM Reporte; " +
+        "ALTER TABLE Reporte AUTO_INCREMENT = 1; " +
+        "DELETE FROM Comercio; " +
+        "ALTER TABLE Comercio AUTO_INCREMENT = 1; " +
+        "DELETE FROM Usuario; " +
+        "ALTER TABLE Usuario AUTO_INCREMENT = 1; " +
+        "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test@unlam.edu.ar', '" +
+        hashTest +
+        "', 'ADMIN', b'1');";
+
+      String dockerCmd = String.format(
         "docker exec tallerwebi-mysql mysql -h %s -P %s -u %s -p%s %s -e \"%s\"",
         dbHost,
         dbPort,
@@ -31,7 +39,14 @@ public class ReiniciarDB {
         sqlCommands
       );
 
-      Process process = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", comando });
+      String[] comando;
+      if (System.getProperty("os.name").toLowerCase().contains("win")) {
+        comando = new String[] { "cmd.exe", "/c", dockerCmd };
+      } else {
+        comando = new String[] { "/bin/bash", "-c", dockerCmd };
+      }
+
+      Process process = Runtime.getRuntime().exec(comando);
       int exitCode = process.waitFor();
 
       if (exitCode == 0) {

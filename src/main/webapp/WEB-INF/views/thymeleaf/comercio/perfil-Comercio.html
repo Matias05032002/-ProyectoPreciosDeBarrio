@@ -1,0 +1,88 @@
+<!DOCTYPE HTML>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Mi Comercio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+
+<body>
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<main role="main" class="container mt-5">
+
+    <!-- Si no tiene comercio registrado: mostrar formulario -->
+    <div th:if="${comercio == null}">
+        <h2><i class="bi bi-shop"></i> Registrá tu comercio</h2>
+        <p class="text-muted">Completá los datos de tu local para aparecer en el mapa.</p>
+        <hr>
+        <form th:action="@{/comercio/perfil}" method="POST">
+            <div class="mb-3">
+                <label class="form-label">Nombre del comercio</label>
+                <input type="text" name="nombre" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Tipo</label>
+                <select name="tipo" class="form-select" required>
+                    <option value="">Seleccioná un tipo...</option>
+                    <option value="Almacen">Almacen</option>
+                    <option value="Verduleria">Verduleria</option>
+                    <option value="Carniceria">Carniceria</option>
+                    <option value="Kiosco">Kiosco</option>
+                    <option value="Supermercado">Supermercado</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Dirección</label>
+                <input type="text" name="direccion" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Localidad</label>
+                <input type="text" name="localidad" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea name="descripcion" class="form-control" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar comercio</button>
+        </form>
+    </div>
+
+    <!-- Si ya tiene comercio: mostrar datos -->
+    <div th:if="${comercio != null}">
+        <h2><i class="bi bi-shop"></i> Mi comercio</h2>
+        <hr>
+        <dl class="row">
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9" th:text="${comercio.nombre}"></dd>
+
+            <dt class="col-sm-3">Tipo</dt>
+            <dd class="col-sm-9" th:text="${comercio.tipo}"></dd>
+
+            <dt class="col-sm-3">Dirección</dt>
+            <dd class="col-sm-9" th:text="${comercio.direccion}"></dd>
+
+            <dt class="col-sm-3">Localidad</dt>
+            <dd class="col-sm-9" th:text="${comercio.localidad}"></dd>
+
+            <dt class="col-sm-3">Descripción</dt>
+            <dd class="col-sm-9" th:text="${comercio.descripcion}"></dd>
+        </dl>
+        <a th:href="@{/comercio/{id}(id=${comercio.id})}" class="btn btn-outline-primary">
+            <i class="bi bi-eye"></i> Ver página pública
+        </a>
+    </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+        crossorigin="anonymous"></script>
+</body>
+</html>

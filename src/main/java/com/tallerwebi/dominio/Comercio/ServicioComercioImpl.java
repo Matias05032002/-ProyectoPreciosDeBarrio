@@ -72,4 +72,9 @@ public class ServicioComercioImpl implements ServicioComercio {
   public List<Comercio> buscarComercioPorNombre(String nombre) {
     return repositorioComercio.buscarComercioPorNombre(nombre);
   }
+
+  @Override
+  public Comercio buscarComercioPorUsuarioId(Long usuarioId) {
+    return repositorioComercio.buscarComercioPorUsuarioId(usuarioId);
+  }
 }

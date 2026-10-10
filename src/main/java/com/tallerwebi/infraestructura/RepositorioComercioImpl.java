@@ -41,4 +41,13 @@ public class RepositorioComercioImpl implements RepositorioComercio {
       .setParameter("nombre", "%" + nombre + "%")
       .list();
   }
+
+  @Override
+  public Comercio buscarComercioPorUsuarioId(Long usuarioId) {
+    return (Comercio) sessionFactory
+      .getCurrentSession()
+      .createQuery("FROM Comercio WHERE usuarioId = :usuarioId")
+      .setParameter("usuarioId", usuarioId)
+      .uniqueResult();
+  }
 }
