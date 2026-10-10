@@ -18,4 +18,5 @@ public interface ServicioReporte {
   Reporte buscarReporteDuplicado(Long usuarioId, Long productoId, Long comercioId, LocalDate fecha);
   List<Reporte> buscarPorNombre(String nombreProducto);
   List<Reporte> buscarPorComercio(Long comercioId);
+  List<Reporte> buscarPorUsuarioId(Long usuarioId);
 }

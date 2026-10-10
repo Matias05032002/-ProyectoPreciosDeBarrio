@@ -115,4 +115,13 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       .setParameter("comercioId", comercioId)
       .list();
   }
+
+  @Override
+  public List<Reporte> buscarPorUsuarioId(Long usuarioId) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery("FROM Reporte r WHERE r.usuario.id = :usuarioId", Reporte.class)
+      .setParameter("usuarioId", usuarioId)
+      .getResultList();
+  }
 }

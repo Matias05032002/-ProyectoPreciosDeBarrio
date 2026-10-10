@@ -13,4 +13,5 @@ public interface RepositorioReporte {
   List<Reporte> listarTodos();
   Reporte buscarReporteDuplicado(Long usuarioId, Long productoId, Long comercioId, LocalDate fecha);
   List<Reporte> buscarPorComercio(Long comercioId);
+  List<Reporte> buscarPorUsuarioId(Long usuarioId);
 }

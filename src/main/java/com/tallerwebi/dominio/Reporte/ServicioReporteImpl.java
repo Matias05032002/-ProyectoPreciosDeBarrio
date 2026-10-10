@@ -140,6 +140,11 @@ public class ServicioReporteImpl implements ServicioReporte {
     }
   }
 
+  @Override
+  public List<Reporte> buscarPorUsuarioId(Long usuarioId) {
+    return repositorioReporte.buscarPorUsuarioId(usuarioId);
+  }
+
   private void validarUnidad(String unidad) throws UnidadInvalida {
     if (!unidad.matches("^[0-9]+(\\.[0-9]+)?(?i)(g|kg|gr|ml|l)$")) {
       throw new UnidadInvalida(

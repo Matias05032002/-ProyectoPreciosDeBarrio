@@ -17,6 +17,7 @@ import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -283,5 +284,27 @@ public class ServicioReporteTest {
     reporte.setPrecio(100.0);
 
     assertThrows(CamposObligatoriosVacios.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void buscarReportesPorUsuarioIdDeberiaRetornarLosReportesDelUsuario() {
+    Reporte reporte = new Reporte();
+    List<Reporte> reportes = Arrays.asList(reporte);
+    when(this.repositorioReporteMock.buscarPorUsuarioId(5L)).thenReturn(reportes);
+
+    List<Reporte> resultado = this.servicioReporte.buscarPorUsuarioId(5L);
+
+    assertThat(resultado, equalTo(reportes));
+    verify(this.repositorioReporteMock, times(1)).buscarPorUsuarioId(5L);
+  }
+
+  @Test
+  public void buscarReportesPorUsuarioIdSinReportesDeberiaRetornarListaVacia() {
+    when(this.repositorioReporteMock.buscarPorUsuarioId(99L)).thenReturn(Collections.emptyList());
+
+    List<Reporte> resultado = this.servicioReporte.buscarPorUsuarioId(99L);
+
+    assertThat(resultado, equalTo(Collections.emptyList()));
+    verify(this.repositorioReporteMock, times(1)).buscarPorUsuarioId(99L);
   }
 }

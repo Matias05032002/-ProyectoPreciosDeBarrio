@@ -32,6 +32,7 @@ public class ControladorReporte {
   private static final String NOMBRE_COMERCIOS = "comercios";
   private static final String NOMBRE_REPORTES = "reportes";
   private static final String REDIRECT_LOGIN = "redirect:/login";
+  private static final String SESSION_ROL = "ROL";
 
   @Autowired
   public ControladorReporte(
@@ -56,7 +57,7 @@ public class ControladorReporte {
     @RequestParam(value = "fotoBase64", required = false) String fotoBase64,
     HttpServletRequest request
   ) {
-    if (request.getSession().getAttribute("ROL") == null) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     try {
@@ -104,7 +105,7 @@ public class ControladorReporte {
     HttpServletRequest request,
     @RequestParam(value = "guardado", required = false) Boolean guardado
   ) {
-    if (request.getSession().getAttribute("ROL") == null) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     List<Reporte> reportes = servicioReporte.listarTodos();
@@ -141,7 +142,7 @@ public class ControladorReporte {
     @RequestParam("nombre") String nombre,
     HttpServletRequest request
   ) {
-    if (request.getSession().getAttribute("ROL") == null) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     List<Reporte> resultados = servicioReporte.buscarPorNombre(nombre);
@@ -150,6 +151,18 @@ public class ControladorReporte {
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
     mav.addObject("busqueda", nombre);
+    return mav;
+  }
+
+  @RequestMapping(path = "/mis-reportes", method = RequestMethod.GET)
+  public ModelAndView misReportes(HttpServletRequest request) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    List<Reporte> reportes = servicioReporte.buscarPorUsuarioId(usuarioId);
+    ModelAndView mav = new ModelAndView("reporte/mis-reportes-comercio");
+    mav.addObject(NOMBRE_REPORTES, reportes);
     return mav;
   }
 
