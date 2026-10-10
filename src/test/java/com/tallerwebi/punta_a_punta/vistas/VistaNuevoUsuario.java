@@ -20,6 +20,10 @@ public class VistaNuevoUsuario extends VistaWeb {
     this.darClickEnElElemento("#btn-registrarme");
   }
 
+  public void seleccionarRol(String rol) {
+    this.darClickEnElElemento("#rol" + rol);
+  }
+
   public String obtenerMensajeDeError() {
     return this.obtenerTextoDelElemento("p.alert.alert-danger");
   }

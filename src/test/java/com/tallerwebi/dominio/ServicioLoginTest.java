@@ -103,4 +103,59 @@ public class ServicioLoginTest {
     assertThrows(ContrasenaInvalida.class, () -> this.servicioLogin.registrar(usuario));
     verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
   }
+
+  @Test
+  public void registrarUsuarioConRolComercioDeberiaGuardarRolComercio()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    // preparacion
+    Usuario usuario = new Usuario();
+    usuario.setEmail("comercio@test.com");
+    usuario.setPassword("Contrasena1");
+    usuario.setRol("COMERCIO");
+    when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
+
+    // ejecucion
+    this.servicioLogin.registrar(usuario);
+
+    // validacion
+    assertThat(usuario.getRol(), equalTo("COMERCIO"));
+    verify(this.repositorioUsuarioMock, times(1)).guardar(usuario);
+  }
+
+  @Test
+  public void registrarUsuarioSinRolDeberiaAsignarRolUserPorDefecto()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    // preparacion
+    Usuario usuario = new Usuario();
+    usuario.setEmail("vecino@test.com");
+    usuario.setPassword("Contrasena1");
+    when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
+
+    // ejecucion
+    this.servicioLogin.registrar(usuario);
+
+    // validacion
+    assertThat(usuario.getRol(), equalTo("USER"));
+    verify(this.repositorioUsuarioMock, times(1)).guardar(usuario);
+  }
+
+  @Test
+  public void consultarUsuarioInactivoDeberiaRetornarNull() {
+    // preparacion
+    String email = "inactivo@test.com";
+    String password = "Password1";
+    Usuario usuarioInactivo = new Usuario();
+    usuarioInactivo.setEmail(email);
+    usuarioInactivo.setPassword(
+      new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password)
+    );
+    // no se llama a activar(), queda activo = false
+    when(this.repositorioUsuarioMock.buscar(email)).thenReturn(usuarioInactivo);
+
+    // ejecucion
+    Usuario resultado = this.servicioLogin.consultarUsuario(email, password);
+
+    // validacion
+    assertThat(resultado, equalTo(null));
+  }
 }

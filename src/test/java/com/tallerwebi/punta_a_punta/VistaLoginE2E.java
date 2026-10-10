@@ -78,6 +78,16 @@ public class VistaLoginE2E {
     entoncesDeberiaSerRedirigidoALaVistaDeHome();
   }
 
+  @Test
+  void deberiaRegistrarUnComercioYVerHomeDeComercio() throws MalformedURLException {
+    dadoQueElUsuarioNavegaALaVistaDeRegistro();
+    dadoQueElUsuarioSeRegistraComoComercio("comercio@unlam.edu.ar", "Contrasena1");
+    dadoQueElUsuarioEstaEnLaVistaDeLogin();
+    dadoQueElUsuarioCargaSusDatosDeLoginCon("comercio@unlam.edu.ar", "Contrasena1");
+    cuandoElUsuarioTocaElBotonDeLogin();
+    entoncesDeberiaVerElHomeDeComercios();
+  }
+
   private void entoncesDeberiaVerUNLAMEnElNavbar() {
     String texto = vistaLogin.obtenerTextoDeLaBarraDeNavegacion();
     assertThat("UNLAM", equalToIgnoringCase(texto));
@@ -116,5 +126,18 @@ public class VistaLoginE2E {
     vistaNuevoUsuario.escribirEMAIL(email);
     vistaNuevoUsuario.escribirClave(clave);
     vistaNuevoUsuario.darClickEnRegistrarme();
+  }
+
+  private void dadoQueElUsuarioSeRegistraComoComercio(String email, String clave) {
+    VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
+    vistaNuevoUsuario.escribirEMAIL(email);
+    vistaNuevoUsuario.escribirClave(clave);
+    vistaNuevoUsuario.seleccionarRol("Comercio");
+    vistaNuevoUsuario.darClickEnRegistrarme();
+  }
+
+  private void entoncesDeberiaVerElHomeDeComercios() {
+    Page page = context.pages().get(0);
+    assertThat(page.textContent("body"), org.hamcrest.Matchers.containsString("Mi comercio"));
   }
 }
