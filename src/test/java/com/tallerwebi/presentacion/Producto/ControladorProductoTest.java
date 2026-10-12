@@ -3,6 +3,8 @@ package com.tallerwebi.presentacion.Producto;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Producto.OrdenProducto;
 import com.tallerwebi.dominio.Producto.Producto;
@@ -11,6 +13,8 @@ import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.presentacion.ControladorProducto;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -41,14 +45,17 @@ public class ControladorProductoTest {
 
   @Test
   public void listarProductosDeberiaRetornarVistaConListaDeProductos() {
-    Producto productos = new Producto();
-    List<Producto> listaDeProductos = Arrays.asList(productos);
-    when(this.servicioProductoMock.listarTodos()).thenReturn(listaDeProductos);
+    HttpServletRequest request = mock(HttpServletRequest.class);
+    HttpSession session = mock(HttpSession.class);
 
-    ModelAndView modelAndView = controladorProducto.listarProductos();
+    when(request.getSession(false)).thenReturn(session);
+    when(session.getAttribute("HISTORIAL_BUSQUEDAS")).thenReturn(Collections.emptyList());
+
+    ModelAndView modelAndView = controladorProducto.listarProductos(request);
 
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("producto/lista-productos"));
     assertThat(modelAndView.getModel().get("productos"), is(Collections.emptyList()));
+    assertThat(modelAndView.getModel().get("historialBusquedas"), is(Collections.emptyList()));
   }
 
   @Test

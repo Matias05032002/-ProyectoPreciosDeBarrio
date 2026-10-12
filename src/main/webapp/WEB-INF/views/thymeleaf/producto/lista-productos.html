@@ -30,6 +30,19 @@
         </div>
     </form>
 
+    <div th:if="${historialBusquedas != null and !#lists.isEmpty(historialBusquedas)}"
+         class="mb-4">
+        <h6 class="text-muted">Búsquedas recientes</h6>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a th:each="busquedaAnterior : ${historialBusquedas}"
+               th:href="@{/producto/buscar(nombre=${busquedaAnterior}, orden='precio')}"
+               th:text="${busquedaAnterior}"
+               class="btn btn-outline-secondary btn-sm">
+            </a>
+        </div>
+    </div>
+
     <h2>Productos del barrio</h2>
     <p class="text-muted">Encontrá dónde está más barato antes de salir a comprar.</p>
 
