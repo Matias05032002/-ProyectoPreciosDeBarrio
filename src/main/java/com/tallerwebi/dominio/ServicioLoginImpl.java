@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ServicioLoginImpl implements ServicioLogin {
 
+  private static final String ROL_COMERCIO = "COMERCIO";
+  private static final String ROL_USUARIO = "USER";
+
   private RepositorioUsuario repositorioUsuario;
   private BCryptPasswordEncoder passwordEncoder;
 
@@ -38,8 +41,10 @@ public class ServicioLoginImpl implements ServicioLogin {
     if (usuarioEncontrado != null) {
       throw new UsuarioExistente();
     }
-    if (usuario.getRol() == null || usuario.getRol().isEmpty()) {
-      usuario.setRol("USER");
+    if (ROL_COMERCIO.equals(usuario.getRol())) {
+      usuario.setRol(ROL_COMERCIO);
+    } else {
+      usuario.setRol(ROL_USUARIO);
     }
     usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
     usuario.activar();
