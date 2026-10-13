@@ -8,4 +8,9 @@ public interface RepositorioComercio {
   Comercio buscarComercio(Long id);
   List<Comercio> buscarComercioPorNombre(String nombre);
   Comercio buscarComercioPorUsuarioId(Long usuarioId);
+  Comercio buscarComercioPorNombreDireccionYLocalidad(
+    String nombre,
+    String direccion,
+    String localidad
+  );
 }

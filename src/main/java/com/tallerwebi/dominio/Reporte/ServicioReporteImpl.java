@@ -55,11 +55,40 @@ public class ServicioReporteImpl implements ServicioReporte {
       reporte.setProducto(productoExistente);
     }
 
-    List<Comercio> comerciosExistentes = servicioComercio.buscarComercioPorNombre(reporte.getComercio().getNombre());
-    if (comerciosExistentes == null || comerciosExistentes.isEmpty()) {
-      servicioComercio.guardarComercio(reporte.getComercio());
+    List<Comercio> comerciosExistentes = servicioComercio.buscarComercioPorNombre(
+      reporte.getComercio().getNombre()
+    );
+
+    Comercio comercioExistente = null;
+
+    if (comerciosExistentes != null) {
+      comercioExistente =
+        comerciosExistentes
+          .stream()
+          .filter(comercio ->
+            comercio.getDireccion() != null &&
+            reporte.getComercio().getDireccion() != null &&
+            comercio
+              .getDireccion()
+              .trim()
+              .equalsIgnoreCase(reporte.getComercio().getDireccion().trim()) &&
+            comercio.getLocalidad() != null &&
+            reporte.getComercio().getLocalidad() != null &&
+            comercio
+              .getLocalidad()
+              .trim()
+              .equalsIgnoreCase(reporte.getComercio().getLocalidad().trim())
+          )
+          .findFirst()
+          .orElse(null);
+    }
+
+    if (comercioExistente == null) {
+      Comercio comercioGuardado = servicioComercio.guardarComercio(reporte.getComercio());
+
+      reporte.setComercio(comercioGuardado);
     } else {
-      reporte.setComercio(comerciosExistentes.get(0));  // ← reutiliza el que ya existe
+      reporte.setComercio(comercioExistente);
     }
 
     reporte.setFechaDeReporte(LocalDateTime.now());

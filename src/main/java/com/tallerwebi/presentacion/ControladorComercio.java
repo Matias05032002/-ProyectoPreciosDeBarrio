@@ -68,8 +68,9 @@ public class ControladorComercio {
   @RequestMapping(path = "/perfil", method = RequestMethod.POST)
   public ModelAndView guardarPerfil(@ModelAttribute Comercio comercio, HttpServletRequest request) {
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
-    comercio.setUsuarioId(usuarioId);
-    servicioComercio.guardarComercio(comercio);
+
+    servicioComercio.vincularComercioAUsuario(comercio, usuarioId);
+
     return new ModelAndView("redirect:/comercio/perfil");
   }
 }

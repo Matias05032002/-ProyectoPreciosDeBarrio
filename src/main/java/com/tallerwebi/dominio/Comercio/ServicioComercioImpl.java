@@ -59,6 +59,23 @@ public class ServicioComercioImpl implements ServicioComercio {
   }
 
   @Override
+  public Comercio vincularComercioAUsuario(Comercio comercio, Long usuarioId) {
+    Comercio existente = repositorioComercio.buscarComercioPorNombreDireccionYLocalidad(
+      comercio.getNombre(),
+      comercio.getDireccion(),
+      comercio.getLocalidad()
+    );
+
+    if (existente != null) {
+      existente.setUsuarioId(usuarioId);
+      return existente;
+    }
+
+    comercio.setUsuarioId(usuarioId);
+    return guardarComercio(comercio);
+  }
+
+  @Override
   public List<Comercio> listarTodos() {
     return repositorioComercio.listarTodos();
   }

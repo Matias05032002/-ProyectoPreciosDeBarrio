@@ -8,4 +8,5 @@ public interface ServicioComercio {
   Comercio buscarComercio(Long id);
   List<Comercio> buscarComercioPorNombre(String nombre);
   Comercio buscarComercioPorUsuarioId(Long usuarioId);
+  Comercio vincularComercioAUsuario(Comercio comercio, Long usuarioId);
 }
