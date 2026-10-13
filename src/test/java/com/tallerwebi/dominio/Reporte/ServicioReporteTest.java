@@ -325,4 +325,76 @@ public class ServicioReporteTest {
     assertThat(resultado, equalTo(Collections.emptyList()));
     verify(this.repositorioReporteMock, times(1)).buscarPorComercio(99L);
   }
+
+  @Test
+  public void guardarReporteConMismoNombreYDistintaDireccionGuardaNuevoComercio() throws Exception {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
+
+    Comercio comercioExistente = new Comercio();
+    comercioExistente.setNombre("Supermercado Dia");
+    comercioExistente.setDireccion("Av. Rivadavia 100");
+    comercioExistente.setLocalidad("La Matanza");
+    comercioExistente.setId(1L);
+
+    Comercio comercioNuevo = new Comercio();
+    comercioNuevo.setNombre("Supermercado Dia");
+    comercioNuevo.setDireccion("Av. Rivadavia 500");
+    comercioNuevo.setLocalidad("La Matanza");
+    comercioNuevo.setId(2L);
+
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercioNuevo);
+    reporte.setPrecio(100.0);
+
+    when(servicioProductoMock.buscarProductoPorNombreExacto("Leche")).thenReturn(producto);
+    when(servicioComercioMock.buscarComercioPorNombre("Supermercado Dia"))
+      .thenReturn(Collections.singletonList(comercioExistente));
+    when(servicioComercioMock.guardarComercio(comercioNuevo)).thenReturn(comercioNuevo);
+    when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
+
+    servicioReporte.guardarReporte(reporte);
+
+    verify(servicioComercioMock).guardarComercio(comercioNuevo);
+    assertThat(reporte.getComercio(), equalTo(comercioNuevo));
+  }
+
+  @Test
+  public void guardarReporteConMismoNombreYDireccionReutilizaComercio() throws Exception {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setCategoria("Lacteos");
+    producto.setUnidad("1000ml");
+
+    Comercio comercioExistente = new Comercio();
+    comercioExistente.setNombre("Supermercado Dia");
+    comercioExistente.setDireccion("Av. Rivadavia 100");
+    comercioExistente.setLocalidad("La Matanza");
+    comercioExistente.setId(1L);
+
+    Comercio comercioIngresado = new Comercio();
+    comercioIngresado.setNombre("Supermercado Dia");
+    comercioIngresado.setDireccion("Av. Rivadavia 100");
+    comercioIngresado.setLocalidad("La Matanza");
+
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercioIngresado);
+    reporte.setPrecio(100.0);
+
+    when(servicioProductoMock.buscarProductoPorNombreExacto("Leche")).thenReturn(producto);
+    when(servicioComercioMock.buscarComercioPorNombre("Supermercado Dia"))
+      .thenReturn(Collections.singletonList(comercioExistente));
+    when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
+
+    servicioReporte.guardarReporte(reporte);
+
+    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
+    assertThat(reporte.getComercio(), equalTo(comercioExistente));
+  }
 }

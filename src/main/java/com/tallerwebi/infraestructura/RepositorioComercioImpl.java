@@ -50,4 +50,26 @@ public class RepositorioComercioImpl implements RepositorioComercio {
       .setParameter("usuarioId", usuarioId)
       .uniqueResult();
   }
+
+  @Override
+  public Comercio buscarComercioPorNombreDireccionYLocalidad(
+    String nombre,
+    String direccion,
+    String localidad
+  ) {
+    List<Comercio> comercios = sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "from Comercio where lower(nombre) = lower(:nombre) " +
+        "and lower(direccion) = lower(:direccion) " +
+        "and lower(localidad) = lower(:localidad)",
+        Comercio.class
+      )
+      .setParameter("nombre", nombre.trim())
+      .setParameter("direccion", direccion.trim())
+      .setParameter("localidad", localidad.trim())
+      .list();
+
+    return comercios.isEmpty() ? null : comercios.get(0);
+  }
 }

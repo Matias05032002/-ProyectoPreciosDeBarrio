@@ -126,4 +126,59 @@ public class ServicioComercioTest {
     assertThat(resultado, equalTo(null));
     verify(this.repositorioComercioMock, times(1)).buscarComercioPorUsuarioId(99L);
   }
+
+  @Test
+  public void vincularComercioAUsuarioSiExisteLoReutiliza() {
+    Comercio existente = new Comercio();
+    existente.setNombre("Supermercado Prueba");
+    existente.setDireccion("San Martin 100");
+    existente.setLocalidad("La Matanza");
+
+    Comercio formulario = new Comercio();
+    formulario.setNombre("Supermercado Prueba");
+    formulario.setDireccion("San Martin 100");
+    formulario.setLocalidad("La Matanza");
+
+    when(
+      repositorioComercioMock.buscarComercioPorNombreDireccionYLocalidad(
+        "Supermercado Prueba",
+        "San Martin 100",
+        "La Matanza"
+      )
+    )
+      .thenReturn(existente);
+
+    Comercio resultado = servicioComercio.vincularComercioAUsuario(formulario, 7L);
+
+    assertThat(resultado, equalTo(existente));
+    assertThat(resultado.getUsuarioId(), equalTo(7L));
+
+    verify(repositorioComercioMock, never()).guardarComercio(formulario);
+  }
+
+  @Test
+  public void vincularComercioAUsuarioSiNoExisteGuardaUnoNuevo() {
+    Comercio nuevo = new Comercio();
+    nuevo.setNombre("Supermercado Nuevo");
+    nuevo.setDireccion("Rivadavia 200");
+    nuevo.setLocalidad("La Matanza");
+
+    when(
+      repositorioComercioMock.buscarComercioPorNombreDireccionYLocalidad(
+        "Supermercado Nuevo",
+        "Rivadavia 200",
+        "La Matanza"
+      )
+    )
+      .thenReturn(null);
+
+    when(repositorioComercioMock.guardarComercio(nuevo)).thenReturn(nuevo);
+
+    Comercio resultado = servicioComercio.vincularComercioAUsuario(nuevo, 8L);
+
+    assertThat(resultado, equalTo(nuevo));
+    assertThat(resultado.getUsuarioId(), equalTo(8L));
+
+    verify(repositorioComercioMock).guardarComercio(nuevo);
+  }
 }
