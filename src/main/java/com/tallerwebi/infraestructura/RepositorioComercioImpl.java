@@ -72,4 +72,9 @@ public class RepositorioComercioImpl implements RepositorioComercio {
 
     return comercios.isEmpty() ? null : comercios.get(0);
   }
+
+  @Override
+  public void actualizarComercio(Comercio comercio) {
+    sessionFactory.getCurrentSession().merge(comercio);
+  }
 }

@@ -50,9 +50,7 @@ public class RepositorioListaImpl implements RepositorioLista {
   public void eliminarItem(Long itemId) {
     ItemLista item = buscarItemPorId(itemId);
     if (item != null) {
-      Lista lista = item.getLista();
-      lista.getItems().remove(item);
-      sessionFactory.getCurrentSession().merge(lista);
+      sessionFactory.getCurrentSession().remove(item);
     }
   }
 

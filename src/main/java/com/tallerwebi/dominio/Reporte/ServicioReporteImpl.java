@@ -62,24 +62,24 @@ public class ServicioReporteImpl implements ServicioReporte {
 
     if (comerciosExistentes != null) {
       comercioExistente =
-              comerciosExistentes
-                      .stream()
-                      .filter(comercio ->
-                              comercio.getDireccion() != null &&
-                                      reporte.getComercio().getDireccion() != null &&
-                                      comercio
-                                              .getDireccion()
-                                              .trim()
-                                              .equalsIgnoreCase(reporte.getComercio().getDireccion().trim()) &&
-                                      comercio.getLocalidad() != null &&
-                                      reporte.getComercio().getLocalidad() != null &&
-                                      comercio
-                                              .getLocalidad()
-                                              .trim()
-                                              .equalsIgnoreCase(reporte.getComercio().getLocalidad().trim())
-                      )
-                      .findFirst()
-                      .orElse(null);
+        comerciosExistentes
+          .stream()
+          .filter(comercio ->
+            comercio.getDireccion() != null &&
+            reporte.getComercio().getDireccion() != null &&
+            comercio
+              .getDireccion()
+              .trim()
+              .equalsIgnoreCase(reporte.getComercio().getDireccion().trim()) &&
+            comercio.getLocalidad() != null &&
+            reporte.getComercio().getLocalidad() != null &&
+            comercio
+              .getLocalidad()
+              .trim()
+              .equalsIgnoreCase(reporte.getComercio().getLocalidad().trim())
+          )
+          .findFirst()
+          .orElse(null);
     }
 
     if (comercioExistente == null) {

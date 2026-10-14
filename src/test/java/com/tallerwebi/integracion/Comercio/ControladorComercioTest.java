@@ -86,4 +86,31 @@ public class ControladorComercioTest {
     assertThat(modelAndView.getModel().containsKey("comercio"), is(true));
     assertThat(modelAndView.getModel().containsKey("reportes"), is(true));
   }
+
+  @Test
+  public void deberiaRedirigirALoginSiNoHaySesionEnGetPerfil() throws Exception {
+    this.mockMvc.perform(get("/comercio/perfil")).andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  public void deberiaMostrarPerfilCuandoHaySesion() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(get("/comercio/perfil").sessionAttr("ID", 1L))
+        .andExpect(status().isOk())
+        .andReturn();
+    ModelAndView mav = result.getModelAndView();
+    assertThat(mav.getModel().containsKey("comercio"), is(true));
+  }
+
+  @Test
+  public void deberiaRedirigirALoginSiNoHaySesionEnPostPerfil() throws Exception {
+    this.mockMvc.perform(
+        org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+          .post("/comercio/perfil")
+          .param("nombre", "Test")
+          .param("direccion", "Av Test 123")
+          .param("localidad", "La Matanza")
+      )
+      .andExpect(status().is3xxRedirection());
+  }
 }

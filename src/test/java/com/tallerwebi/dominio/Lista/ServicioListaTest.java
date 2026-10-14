@@ -113,4 +113,10 @@ public class ServicioListaTest {
 
     assertThat(lista.getTotal(), is(450.0));
   }
+
+  @Test
+  void deberiaEditarCantidadDeUnItem() {
+    servicioLista.editarCantidadItem(1L, 5);
+    verify(repositorioLista).editarCantidadItem(1L, 5);
+  }
 }

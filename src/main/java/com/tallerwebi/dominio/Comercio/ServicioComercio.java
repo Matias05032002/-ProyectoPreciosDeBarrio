@@ -9,4 +9,5 @@ public interface ServicioComercio {
   List<Comercio> buscarComercioPorNombre(String nombre);
   Comercio buscarComercioPorUsuarioId(Long usuarioId);
   Comercio vincularComercioAUsuario(Comercio comercio, Long usuarioId);
+  void actualizarComercio(Comercio comercio);
 }

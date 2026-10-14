@@ -71,4 +71,90 @@ public class ControladorListaTest {
       .andExpect(status().is3xxRedirection())
       .andExpect(redirectedUrlPattern("/mis-listas/*"));
   }
+
+  @Test
+  public void deberiaRedirigirSiNoHaySesionAlCrearLista() throws Exception {
+    this.mockMvc.perform(post("/mis-listas/crear").param("nombre", "Test"))
+      .andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  public void deberiaRedirigirSiNoHaySesionAlAgregarProducto() throws Exception {
+    this.mockMvc.perform(
+        post("/mis-listas/agregar-producto")
+          .param("listaId", "1")
+          .param("reporteId", "1")
+          .param("cantidad", "1")
+      )
+      .andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  public void deberiaRedirigirSiNoHaySesionAlEliminarItem() throws Exception {
+    this.mockMvc.perform(
+        post("/mis-listas/eliminar-item").param("itemId", "1").param("listaId", "1")
+      )
+      .andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  public void deberiaRedirigirSiNoHaySesionAlEliminarLista() throws Exception {
+    this.mockMvc.perform(post("/mis-listas/eliminar").param("listaId", "1"))
+      .andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  public void deberiaRedirigirSiNoHaySesionAlEditarItem() throws Exception {
+    this.mockMvc.perform(
+        post("/mis-listas/editar-item")
+          .param("itemId", "1")
+          .param("listaId", "1")
+          .param("cantidad", "2")
+      )
+      .andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  public void deberiaRedirigirSiDetalleListaNoTieneSesion() throws Exception {
+    this.mockMvc.perform(get("/mis-listas/1")).andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  @Transactional
+  public void deberiaEditarItemYRedirigir() throws Exception {
+    this.mockMvc.perform(
+        post("/mis-listas/editar-item")
+          .param("itemId", "1")
+          .param("listaId", "1")
+          .param("cantidad", "3")
+          .sessionAttr("ID", 1L)
+      )
+      .andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  @Transactional
+  public void deberiaEliminarItemYRedirigir() throws Exception {
+    this.mockMvc.perform(
+        post("/mis-listas/eliminar-item")
+          .param("itemId", "1")
+          .param("listaId", "1")
+          .sessionAttr("ID", 1L)
+      )
+      .andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  @Transactional
+  public void deberiaEliminarListaInexistenteYRedirigir() throws Exception {
+    this.mockMvc.perform(post("/mis-listas/eliminar").param("listaId", "999").sessionAttr("ID", 1L))
+      .andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  @Transactional
+  public void deberiaRedirigirEnDetalleListaInexistente() throws Exception {
+    this.mockMvc.perform(get("/mis-listas/999").sessionAttr("ID", 1L))
+      .andExpect(status().is3xxRedirection());
+  }
 }

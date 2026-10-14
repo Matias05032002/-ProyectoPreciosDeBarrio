@@ -59,6 +59,7 @@ public class ControladorComercio {
   @RequestMapping(path = "/perfil", method = RequestMethod.GET)
   public ModelAndView verPerfil(HttpServletRequest request) {
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    if (usuarioId == null) return new ModelAndView("redirect:/login");
     Comercio comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
     ModelAndView mav = new ModelAndView("comercio/perfil-comercio");
     mav.addObject("comercio", comercio);
@@ -68,6 +69,7 @@ public class ControladorComercio {
   @RequestMapping(path = "/perfil", method = RequestMethod.POST)
   public ModelAndView guardarPerfil(@ModelAttribute Comercio comercio, HttpServletRequest request) {
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    if (usuarioId == null) return new ModelAndView("redirect:/login");
 
     servicioComercio.vincularComercioAUsuario(comercio, usuarioId);
 

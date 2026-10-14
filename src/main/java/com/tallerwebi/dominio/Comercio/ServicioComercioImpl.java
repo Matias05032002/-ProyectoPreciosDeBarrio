@@ -68,6 +68,7 @@ public class ServicioComercioImpl implements ServicioComercio {
 
     if (existente != null) {
       existente.setUsuarioId(usuarioId);
+      repositorioComercio.actualizarComercio(existente);
       return existente;
     }
 
@@ -93,5 +94,10 @@ public class ServicioComercioImpl implements ServicioComercio {
   @Override
   public Comercio buscarComercioPorUsuarioId(Long usuarioId) {
     return repositorioComercio.buscarComercioPorUsuarioId(usuarioId);
+  }
+
+  @Override
+  public void actualizarComercio(Comercio comercio) {
+    repositorioComercio.actualizarComercio(comercio);
   }
 }

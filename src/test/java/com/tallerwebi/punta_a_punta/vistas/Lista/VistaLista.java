@@ -238,7 +238,6 @@ public class VistaLista {
     page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
   }
 
-
   public void agregarProductoDirecto(long reporteId, long listaId, int cantidad) {
     Object finalUrl = page.evaluate(
       "(async () => {" +
@@ -262,5 +261,4 @@ public class VistaLista {
     page.waitForLoadState();
     page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
   }
-
 }

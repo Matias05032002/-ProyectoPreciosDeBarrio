@@ -16,10 +16,21 @@
 
         <div class="collapse navbar-collapse" id="navbarOpciones">
             <div class="navbar-nav ms-auto align-items-lg-center">
-                <a class="nav-link" th:href="@{/producto}">Productos</a>
-                <a class="nav-link" th:href="@{/comercio}">Comercios</a>
-                <a class="nav-link" th:href="@{/reporte}">Reportes</a>
-                <a class="nav-link" th:href="@{/mis-listas}">Mis listas</a>
+
+                <!-- Links para usuario VECINO (o sin sesión) -->
+                <th:block th:if="${session['ROL'] != 'COMERCIO'}">
+                    <a class="nav-link" th:href="@{/producto}">Productos</a>
+                    <a class="nav-link" th:href="@{/comercio}">Comercios</a>
+                    <a class="nav-link" th:href="@{/reporte}">Reportes</a>
+                    <a class="nav-link" th:if="${session['ROL'] != null}" th:href="@{/mis-listas}">Mis listas</a>
+                </th:block>
+
+                <!-- Links para usuario COMERCIO -->
+                <th:block th:if="${session['ROL'] == 'COMERCIO'}">
+                    <a class="nav-link" th:href="@{/reporte/mis-productos}">Mis productos</a>
+                    <a class="nav-link" th:href="@{/comercio/perfil}">Mi perfil</a>
+                    <a class="nav-link" th:href="@{/reporte}">Reportar producto</a>
+                </th:block>
 
                 <a th:if="${session['ROL'] == null}"
                    class="nav-link" th:href="@{/login}">Iniciar sesión</a>
@@ -40,31 +51,19 @@
                     <ul class="dropdown-menu dropdown-menu-end"
                         aria-labelledby="menuOpciones">
                         <li>
-                            <a class="dropdown-item"
-                               th:href="@{/sobre-la-app}">
-                                Sobre la app
-                            </a>
+                            <a class="dropdown-item" th:href="@{/sobre-la-app}">Sobre la app</a>
                         </li>
                         <li>
-                            <a class="dropdown-item"
-                               th:href="@{/feedback}">
-                                Dar feedback
-                            </a>
+                            <a class="dropdown-item" th:href="@{/feedback}">Dar feedback</a>
                         </li>
                         <li th:if="${session['ROL'] == 'ADMIN'}">
-                            <a class="dropdown-item"
-                               th:href="@{/admin/consultas}">
-                                Consultas recibidas
-                            </a>
+                            <a class="dropdown-item" th:href="@{/admin/consultas}">Consultas recibidas</a>
                         </li>
                         <li th:if="${session['ROL'] != null}">
                             <hr class="dropdown-divider">
                         </li>
                         <li th:if="${session['ROL'] != null}">
-                            <a class="dropdown-item"
-                               th:href="@{/logout}">
-                                Cerrar sesión
-                            </a>
+                            <a class="dropdown-item" th:href="@{/logout}">Cerrar sesión</a>
                         </li>
                     </ul>
                 </div>
