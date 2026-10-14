@@ -8,6 +8,7 @@
             <a class="nav-link" th:href="@{/producto}">Productos</a>
             <a class="nav-link" th:href="@{/comercio}">Comercios</a>
             <a class="nav-link" th:href="@{/reporte}">Reportes</a>
+            <a class="nav-link" th:href="@{/mis-listas}">Mis listas</a>
             <a th:if="${session['ROL'] == null}" class="nav-link" th:href="@{/login}">Iniciar sesión</a>
             <a th:if="${session['ROL'] == null}" class="nav-link" th:href="@{/nuevo-usuario}">Registrarse</a>
             <a th:if="${session['ROL'] != null}" class="nav-link" th:href="@{/logout}">Cerrar sesión</a>

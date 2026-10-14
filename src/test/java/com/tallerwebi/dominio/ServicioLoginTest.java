@@ -159,6 +159,7 @@ public class ServicioLoginTest {
     // validacion
     assertThat(resultado, equalTo(null));
   }
+
   @Test
   void generarHash() {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();

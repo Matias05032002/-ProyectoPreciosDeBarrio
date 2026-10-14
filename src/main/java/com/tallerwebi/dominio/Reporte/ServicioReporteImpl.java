@@ -55,11 +55,13 @@ public class ServicioReporteImpl implements ServicioReporte {
       reporte.setProducto(productoExistente);
     }
 
-    List<Comercio> comerciosExistentes = servicioComercio.buscarComercioPorNombre(reporte.getComercio().getNombre());
+    List<Comercio> comerciosExistentes = servicioComercio.buscarComercioPorNombre(
+      reporte.getComercio().getNombre()
+    );
     if (comerciosExistentes == null || comerciosExistentes.isEmpty()) {
       servicioComercio.guardarComercio(reporte.getComercio());
     } else {
-      reporte.setComercio(comerciosExistentes.get(0));  // ← reutiliza el que ya existe
+      reporte.setComercio(comerciosExistentes.get(0)); // ← reutiliza el que ya existe
     }
 
     reporte.setFechaDeReporte(LocalDateTime.now());

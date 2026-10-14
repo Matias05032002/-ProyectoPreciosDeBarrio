@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.Lista.ServicioLista;
 import com.tallerwebi.dominio.Producto.OrdenProducto;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
@@ -31,12 +32,15 @@ public class ControladorProductoTest {
   private ServicioLogin servicioLoginMock;
   private HttpServletRequest requestMock;
   private HttpSession sessionMock;
+  private ServicioLista servicioListaMock;
 
   @BeforeEach
   public void init() {
     this.servicioProductoMock = mock(ServicioProducto.class);
     this.servicioLoginMock = mock(ServicioLogin.class);
-    this.controladorProducto = new ControladorProducto(servicioProductoMock, servicioLoginMock);
+    this.servicioListaMock = mock(ServicioLista.class);
+    this.controladorProducto =
+      new ControladorProducto(servicioProductoMock, servicioLoginMock, servicioListaMock);
     this.requestMock = mock(HttpServletRequest.class);
     this.sessionMock = mock(HttpSession.class);
     when(requestMock.getSession()).thenReturn(sessionMock);

@@ -1,5 +1,6 @@
 package com.tallerwebi.presentacion;
 
+import com.tallerwebi.dominio.Lista.ServicioLista;
 import com.tallerwebi.dominio.Producto.OrdenProducto;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
@@ -22,15 +23,21 @@ public class ControladorProducto {
 
   private ServicioProducto servicioProducto;
   private ServicioLogin servicioLogin;
+  private ServicioLista servicioLista;
 
   private static final String VISTA_PRODUCTOS = "producto/lista-productos";
   private static final String HISTORIAL_BUSQUEDAS = "HISTORIAL_BUSQUEDAS";
   private static final int MAX_HISTORIAL_BUSQUEDAS = 5;
 
   @Autowired
-  public ControladorProducto(ServicioProducto servicioProducto, ServicioLogin servicioLogin) {
+  public ControladorProducto(
+    ServicioProducto servicioProducto,
+    ServicioLogin servicioLogin,
+    ServicioLista servicioLista
+  ) {
     this.servicioProducto = servicioProducto;
     this.servicioLogin = servicioLogin;
+    this.servicioLista = servicioLista;
   }
 
   @RequestMapping(method = RequestMethod.POST)
@@ -49,12 +56,14 @@ public class ControladorProducto {
     if (session != null) {
       @SuppressWarnings("unchecked")
       List<String> historial = (List<String>) session.getAttribute(HISTORIAL_BUSQUEDAS);
-
       mav.addObject("historialBusquedas", historial != null ? historial : Collections.emptyList());
+      Long usuarioId = (Long) session.getAttribute("ID");
+      if (usuarioId != null) {
+        mav.addObject("listas", servicioLista.obtenerListasDeUsuario(usuarioId));
+      }
     } else {
       mav.addObject("historialBusquedas", Collections.emptyList());
     }
-
     return mav;
   }
 
@@ -111,7 +120,10 @@ public class ControladorProducto {
     mav.addObject("lat", lat);
     mav.addObject("lng", lng);
     mav.addObject("historialBusquedas", historial);
-
+    Long usuarioId = (Long) session.getAttribute("ID");
+    if (usuarioId != null) {
+      mav.addObject("listas", servicioLista.obtenerListasDeUsuario(usuarioId));
+    }
     return mav;
   }
 
