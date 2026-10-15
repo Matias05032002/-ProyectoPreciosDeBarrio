@@ -137,4 +137,37 @@ public class ControladorReporteTest {
     assert modelAndView != null;
     assertThat(modelAndView.getModel().containsKey("reportes"), is(true));
   }
+
+  @Test
+  public void verificarQueGetTicketDevuelveDosCientosYlaVista() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(get("/reporte/ticket").sessionAttr("ROL", "USER"))
+        .andExpect(status().isOk())
+        .andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("reporte/subir-ticket"));
+  }
+
+  @Test
+  public void verificarQueGetTicketDevuelveElModeloConComercios() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(get("/reporte/ticket").sessionAttr("ROL", "USER"))
+        .andExpect(status().isOk())
+        .andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getModel().containsKey("comercios"), is(true));
+  }
+
+  @Test
+  public void verificarQueGetTicketSinSesionRedirige() throws Exception {
+    MvcResult result = this.mockMvc.perform(get("/reporte/ticket")).andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
 }

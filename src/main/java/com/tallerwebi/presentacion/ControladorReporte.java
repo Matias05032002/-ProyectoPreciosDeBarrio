@@ -2,8 +2,11 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
+import com.tallerwebi.dominio.Reporte.ItemTicket;
 import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Reporte.ServicioOcr;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
@@ -15,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -34,18 +38,24 @@ public class ControladorReporte {
   private static final String NOMBRE_REPORTES = "reportes";
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String SESSION_ROL = "ROL";
+  private ServicioOcr servicioOcr;
+
+  @Autowired
+  private ServicioOcr servicioOCR;
 
   @Autowired
   public ControladorReporte(
     ServicioReporte servicioReporte,
     ServicioProducto servicioProducto,
     ServicioComercio servicioComercio,
-    ServicioLogin servicioLogin
+    ServicioLogin servicioLogin,
+    ServicioOcr servicioOcr
   ) {
     this.servicioReporte = servicioReporte;
     this.servicioProducto = servicioProducto;
     this.servicioComercio = servicioComercio;
     this.servicioLogin = servicioLogin;
+    this.servicioOcr = servicioOcr;
   }
 
   public ModelAndView guardarReporte(@ModelAttribute Reporte reporte, HttpServletRequest request) {
@@ -191,6 +201,98 @@ public class ControladorReporte {
       mav.addObject("reportes", reportes);
     }
     return mav;
+  }
+
+  @RequestMapping(path = "/ticket", method = RequestMethod.GET)
+  public ModelAndView verFormularioTicket(HttpServletRequest request) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    ModelAndView mav = new ModelAndView("reporte/subir-ticket");
+    mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+    return mav;
+  }
+
+  @RequestMapping(path = "/ticket", method = RequestMethod.POST)
+  public ModelAndView analizarTicket(
+    @RequestParam("ticketBase64") String ticketBase64,
+    @RequestParam("comercio.nombre") String comercioNombre,
+    @RequestParam("comercio.direccion") String comercioDireccion,
+    @RequestParam("comercio.localidad") String comercioLocalidad,
+    HttpServletRequest request
+  ) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    if (ticketBase64 == null || ticketBase64.isBlank()) {
+      ModelAndView mav = new ModelAndView("reporte/subir-ticket");
+      mav.addObject("error", "Debes subir una foto del ticket");
+      mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+      return mav;
+    }
+    try {
+      int inicio = ticketBase64.indexOf(',');
+      byte[] bytes = java.util.Base64.getDecoder().decode(ticketBase64.substring(inicio + 1));
+      List<ItemTicket> items = servicioOCR.extraerProductosDeTicket(bytes);
+      ModelAndView mav = new ModelAndView("reporte/confirmar-ticket");
+      mav.addObject("items", items);
+      mav.addObject("comercioNombre", comercioNombre);
+      mav.addObject("comercioDireccion", comercioDireccion);
+      mav.addObject("comercioLocalidad", comercioLocalidad);
+      return mav;
+    } catch (Exception e) {
+      ModelAndView mav = new ModelAndView("reporte/subir-ticket");
+      mav.addObject("error", "No se pudo procesar el ticket");
+      mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+      return mav;
+    }
+  }
+
+  @RequestMapping(path = "/ticket/guardar", method = RequestMethod.POST)
+  public ModelAndView guardarTicket(
+    @RequestParam("comercioNombre") String comercioNombre,
+    @RequestParam("comercioDireccion") String comercioDireccion,
+    @RequestParam("comercioLocalidad") String comercioLocalidad,
+    @RequestParam Map<String, String> params,
+    HttpServletRequest request
+  ) throws CamposObligatoriosVacios, ReporteExistente, UnidadInvalida, PrecioIncorrecto {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    String email = (String) request.getSession().getAttribute("EMAIL");
+    Usuario usuario = servicioLogin.buscarPorEmail(email);
+
+    Comercio comercio = new Comercio();
+    comercio.setNombre(comercioNombre);
+    comercio.setDireccion(comercioDireccion);
+    comercio.setLocalidad(comercioLocalidad);
+
+    int indice = 0;
+    while (params.containsKey("items[" + indice + "].nombre")) {
+      String incluir = params.get("incluir[" + indice + "]");
+      if (incluir != null) {
+        String nombre = params.get("items[" + indice + "].nombre");
+        String precioStr = params.get("items[" + indice + "].precio");
+        try {
+          double precio = Double.parseDouble(precioStr);
+          Producto producto = new Producto();
+          producto.setNombre(nombre);
+          producto.setMarca("Sin marca");
+          producto.setCategoria("Varios");
+          producto.setUnidad("1g");
+          Reporte reporte = new Reporte();
+          reporte.setProducto(producto);
+          reporte.setPrecio(precio);
+          reporte.setComercio(comercio);
+          reporte.setUsuario(usuario);
+          servicioReporte.guardarReporte(reporte);
+        } catch (NumberFormatException ex) {
+          assert ex != null;
+        }
+      }
+      indice++;
+    }
+    return new ModelAndView("redirect:/reporte?guardado=true");
   }
 
   private String guardarFoto(Reporte reporte, String fotoBase64) {
