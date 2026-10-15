@@ -32,7 +32,7 @@
                         <span th:text="${lista.cantidadProductos}"></span> productos
                     </p>
                     <p class="card-text text-muted small"
-                       th:text="${#temporals.format(lista.fechaCreacion, 'dd/MM/yyyy')}">
+                       th:text="${lista.fechaCreacion.toLocalDate()}">
                     </p>
                 </div>
                 <div class="card-footer bg-transparent d-flex gap-2">
