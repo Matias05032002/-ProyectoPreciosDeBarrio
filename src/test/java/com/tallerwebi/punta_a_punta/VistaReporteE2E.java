@@ -85,6 +85,27 @@ public class VistaReporteE2E {
     assertThat(vistaReporte.hayError(), is(true));
   }
 
+  @Test
+  void deberiaMostrarPreviewAlConfirmarElRecorte() {
+    vistaReporte.subirFotoYConfirmarRecorte("src/test/resources/imagen-test.jpeg");
+    assertThat(vistaReporte.hayPreviewDeFoto(), is(true));
+  }
+
+  @Test
+  void deberiaGuardarElReporteConFotoRecortada() {
+    vistaReporte.subirFotoYConfirmarRecorte("src/test/resources/imagen-test.jpeg");
+    vistaReporte.escribirNombreProducto("Leche");
+    vistaReporte.escribirMarcaProducto("La Serenisima");
+    vistaReporte.escribirCategoriaProducto("Lacteos");
+    vistaReporte.escribirUnidadProducto("1L");
+    vistaReporte.escribirNombreComercio("Almacen De Matias");
+    vistaReporte.escribirDireccionComercio("Av. Mitre 123");
+    vistaReporte.escribirLocalidadComercio("Lomas de Zamora");
+    vistaReporte.escribirPrecio("1000");
+    vistaReporte.darClickEnGuardarReporte();
+    assertThat(vistaReporte.hayMensajeGuardado(), is(true));
+  }
+
   private void dadoQueElUsuarioCargaUnReporte(
     String nombreProducto,
     String marca,

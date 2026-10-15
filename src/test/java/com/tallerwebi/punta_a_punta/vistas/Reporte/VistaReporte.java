@@ -83,4 +83,36 @@ public class VistaReporte extends VistaWeb {
   public void escribirLongitud(String longitud) {
     page.fill("#longitud", longitud);
   }
+
+  public void subirFotoYConfirmarRecorte(String rutaImagen) {
+    // Cargar el archivo en el input
+    page.locator("#foto").setInputFiles(java.nio.file.Paths.get(rutaImagen));
+    // Esperar que el modal del cropper aparezca
+    page.waitForSelector("#modalCropper.show", new Page.WaitForSelectorOptions().setTimeout(5000));
+    // Hacer click en "Usar foto"
+    page.locator("#btn-confirmar-crop").click();
+    // Esperar que el modal se cierre
+    page.waitForSelector(
+      "#modalCropper:not(.show)",
+      new Page.WaitForSelectorOptions().setTimeout(5000)
+    );
+  }
+
+  public boolean hayModalCropperVisible() {
+    page.waitForTimeout(1000);
+    return page.locator("#modalCropper").isVisible();
+  }
+
+  public boolean hayPreviewDeFoto() {
+    return page.locator("#preview-foto").isVisible();
+  }
+
+  public boolean hayMensajeGuardado() {
+    try {
+      page.waitForSelector(".alert-success", new Page.WaitForSelectorOptions().setTimeout(5000));
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
 }

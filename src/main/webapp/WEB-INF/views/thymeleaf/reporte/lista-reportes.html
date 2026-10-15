@@ -5,6 +5,7 @@
     <title>Reportes de precios</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.css">
     <link rel="stylesheet" th:href="@{/css/main.css}" />
 </head>
 <body>
@@ -30,6 +31,49 @@
                    class="form-control"
                    accept="image/*">
             <input type="hidden" name="fotoBase64" id="foto-base64">
+        </div>
+
+        <!-- Modal del recortador -->
+        <div class="modal fade" id="modalCropper" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Recortar foto</h5>
+                    </div>
+                    <div class="modal-body" style="max-height: 60vh; overflow: hidden;">
+                        <img id="imagen-a-recortar" src="" alt="Foto a recortar"
+                             style="max-width: 100%; display: block;">
+                    </div>
+                    <div class="modal-footer d-flex justify-content-between align-items-center">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary" id="btn-rotar-izq"
+                                    title="Rotar 90° izquierda">
+                                <i class="bi bi-arrow-counterclockwise"></i> -90°
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-rotar-der"
+                                    title="Rotar 90° derecha">
+                                <i class="bi bi-arrow-clockwise"></i> +90°
+                            </button>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-danger" id="btn-cancelar-crop">
+                                Cancelar
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btn-confirmar-crop">
+                                <i class="bi bi-check-lg"></i> Usar foto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="preview-foto" class="mt-2" style="display: none;">
+            <img id="img-preview" src="" alt="Vista previa"
+                 style="max-height: 150px; border-radius: 8px; border: 1px solid #dee2e6;">
+            <br>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="btn-cambiar-foto">
+                <i class="bi bi-pencil"></i> Cambiar foto
+            </button>
         </div>
         <h6 class="text-muted mt-3">Datos del producto</h6>
         <div class="mb-3">
@@ -142,24 +186,121 @@
     <div th:if="${error}" id="error" class="alert alert-danger mt-3" th:text="${error}"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
 <script>
+    var cropper = null;
+    var modalCropper = new bootstrap.Modal(document.getElementById('modalCropper'));
+    var fotoBase64Recortada = null;
+
+    // Al elegir un archivo, abre el modal con Cropper
+    document.getElementById('foto').addEventListener('change', function() {
+        if (!this.files.length) return;
+
+        var file = this.files[0];
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var imgEl = document.getElementById('imagen-a-recortar');
+            imgEl.src = e.target.result;
+
+            // Destruir cropper anterior si existe
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+
+            modalCropper.show();
+
+            // Inicializar Cropper cuando el modal termina de abrirse
+            document.getElementById('modalCropper').addEventListener('shown.bs.modal', function init() {
+                cropper = new Cropper(imgEl, {
+                    aspectRatio: NaN,   // libre
+                    viewMode: 1,
+                    autoCropArea: 0.8,
+                    responsive: true,
+                    restore: false
+                });
+                // Remover listener para no duplicar
+                document.getElementById('modalCropper').removeEventListener('shown.bs.modal', init);
+            });
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Botones rotar
+    document.getElementById('btn-rotar-izq').addEventListener('click', function() {
+        if (cropper) cropper.rotate(-90);
+    });
+    document.getElementById('btn-rotar-der').addEventListener('click', function() {
+        if (cropper) cropper.rotate(90);
+    });
+
+    // Confirmar recorte
+    document.getElementById('btn-confirmar-crop').addEventListener('click', function() {
+        if (!cropper) return;
+
+        var canvas = cropper.getCroppedCanvas({
+            maxWidth: 1200,
+            maxHeight: 1200,
+            imageSmoothingQuality: 'high'
+        });
+
+        fotoBase64Recortada = canvas.toDataURL('image/jpeg', 0.85);
+        document.getElementById('foto-base64').value = fotoBase64Recortada;
+
+        // Mostrar preview
+        document.getElementById('img-preview').src = fotoBase64Recortada;
+        document.getElementById('preview-foto').style.display = 'block';
+
+        modalCropper.hide();
+    });
+
+    // Cancelar recorte — limpia el input
+    document.getElementById('btn-cancelar-crop').addEventListener('click', function() {
+        document.getElementById('foto').value = '';
+        fotoBase64Recortada = null;
+        document.getElementById('foto-base64').value = '';
+        document.getElementById('preview-foto').style.display = 'none';
+        modalCropper.hide();
+    });
+
+    // Cambiar foto
+    document.getElementById('btn-cambiar-foto').addEventListener('click', function() {
+        document.getElementById('foto').value = '';
+        fotoBase64Recortada = null;
+        document.getElementById('foto-base64').value = '';
+        document.getElementById('preview-foto').style.display = 'none';
+        document.getElementById('foto').click();
+    });
+
+    // Submit del form
     document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
         var formulario = this;
+
+        // Normalizar tildes
         var inputs = this.querySelectorAll('input[type="text"]');
         inputs.forEach(function(input) {
             input.value = input.value
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '');
         });
+
         if (!this.reportValidity()) return;
 
-        var foto = document.getElementById('foto');
-        if (!foto.files.length) {
-            this.submit();
+        // Si ya hay base64 recortado, enviar directamente
+        if (fotoBase64Recortada) {
+            formulario.submit();
             return;
         }
 
+        // Si hay archivo sin recortar (no debería pasar, pero por las dudas)
+        var foto = document.getElementById('foto');
+        if (!foto.files.length) {
+            formulario.submit();
+            return;
+        }
+
+        // Fallback: leer sin recortar
         var lector = new FileReader();
         lector.onload = function(evento) {
             document.getElementById('foto-base64').value = evento.target.result;
@@ -168,6 +309,5 @@
         lector.readAsDataURL(foto.files[0]);
     });
 </script>
-
 </body>
 </html>
