@@ -16,7 +16,7 @@ public class ControladorLista {
 
   private final ServicioLista servicioLista;
   private static final String REDIRECT_LOGIN = "redirect:/login";
-  private static final String REDIRECT_MIS_LISTAS = "redirect:/mis-listas/";
+  private static final String REDIRECT_MIS_LISTAS = "redirect:/mis-listas";
   private static final String PARAM_LISTA_ID = "listaId";
 
   @Autowired
@@ -41,7 +41,7 @@ public class ControladorLista {
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
     Lista lista = servicioLista.crearLista(nombre, usuarioId);
-    return new ModelAndView(REDIRECT_MIS_LISTAS + lista.getId());
+    return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + lista.getId());
   }
 
   @GetMapping("/mis-listas/{id}")
@@ -70,7 +70,7 @@ public class ControladorLista {
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
 
     servicioLista.agregarProductoALista(listaId, reporteId, cantidad);
-    return new ModelAndView(REDIRECT_MIS_LISTAS + listaId);
+    return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + listaId);
   }
 
   @PostMapping("/mis-listas/eliminar-item")
@@ -83,7 +83,7 @@ public class ControladorLista {
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
 
     servicioLista.eliminarItemDeLista(itemId);
-    return new ModelAndView(REDIRECT_MIS_LISTAS + listaId);
+    return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + listaId);
   }
 
   @PostMapping("/mis-listas/eliminar")
@@ -114,6 +114,6 @@ public class ControladorLista {
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
 
     servicioLista.editarCantidadItem(itemId, cantidad);
-    return new ModelAndView(REDIRECT_MIS_LISTAS + listaId);
+    return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + listaId);
   }
 }
