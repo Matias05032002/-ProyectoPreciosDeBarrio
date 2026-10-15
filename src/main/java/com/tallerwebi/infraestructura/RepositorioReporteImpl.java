@@ -120,7 +120,10 @@ public class RepositorioReporteImpl implements RepositorioReporte {
   public List<Reporte> buscarPorUsuarioId(Long usuarioId) {
     return sessionFactory
       .getCurrentSession()
-      .createQuery("FROM Reporte r WHERE r.usuario.id = :usuarioId", Reporte.class)
+      .createQuery(
+        "FROM Reporte r WHERE r.usuario.id = :usuarioId ORDER BY r.fechaDeReporte DESC",
+        Reporte.class
+      )
       .setParameter("usuarioId", usuarioId)
       .getResultList();
   }

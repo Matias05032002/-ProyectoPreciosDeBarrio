@@ -53,4 +53,9 @@ public class RepositorioUsuarioImpl implements RepositorioUsuario {
     }
     sessionFactory.getCurrentSession().merge(usuario);
   }
+
+  @Override
+  public Usuario buscarPorId(Long id) {
+    return sessionFactory.getCurrentSession().get(Usuario.class, id);
+  }
 }

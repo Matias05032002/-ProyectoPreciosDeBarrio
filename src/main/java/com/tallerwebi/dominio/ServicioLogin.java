@@ -8,4 +8,8 @@ public interface ServicioLogin {
   Usuario consultarUsuario(String email, String password);
   void registrar(Usuario usuario) throws UsuarioExistente, EmailInvalido, ContrasenaInvalida;
   Usuario buscarPorEmail(String email);
+
+  boolean actualizarEmail(Long usuarioId, String nuevoEmail);
+  boolean cambiarContrasena(Long usuarioId, String contrasenaActual, String contrasenaNueva);
+  Usuario buscarPorId(Long id);
 }
