@@ -32,6 +32,10 @@
                     <p class="card-text text-muted small"
                        th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy')}">
                     </p>
+                    <a th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
+                       class="btn btn-outline-primary btn-sm mt-2">
+                        Editar
+                    </a>
                 </div>
             </div>
         </div>

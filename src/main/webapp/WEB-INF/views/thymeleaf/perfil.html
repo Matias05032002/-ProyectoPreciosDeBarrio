@@ -132,6 +132,7 @@
                                 <th>Comercio</th>
                                 <th>Precio</th>
                                 <th>Fecha</th>
+                                <th></th>
                             </tr>
                             </thead>
                             <tbody>
@@ -143,14 +144,20 @@
                                     Comercio
                                 </td>
                                 <td th:text="${reporte.precio != null
-                                    ? '$ ' + #numbers.formatDecimal(reporte.precio, 1, 2)
-                                    : 'Sin precio'}">
+        ? '$ ' + #numbers.formatDecimal(reporte.precio, 1, 2)
+        : 'Sin precio'}">
                                     $ 0,00
                                 </td>
                                 <td th:text="${reporte.fechaDeReporte != null
-                                    ? #temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')
-                                    : '-'}">
+        ? #temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')
+        : '-'}">
                                     Fecha
+                                </td>
+                                <td>
+                                    <a th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
+                                       class="btn btn-outline-primary btn-sm">
+                                        Editar
+                                    </a>
                                 </td>
                             </tr>
                             </tbody>
