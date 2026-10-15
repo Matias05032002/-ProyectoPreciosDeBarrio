@@ -10,10 +10,14 @@ import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Reporte.ServicioOcr;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
+import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
+import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import com.tallerwebi.presentacion.ControladorReporte;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -34,6 +38,7 @@ public class ControladorReporteTest {
   private HttpServletRequest requestMock;
   private HttpSession sessionMock;
   private Usuario usuarioMock;
+  private ServicioOcr servicioOcrMock;
 
   @BeforeEach
   public void init() {
@@ -41,13 +46,15 @@ public class ControladorReporteTest {
     this.servicioComercioMock = mock(ServicioComercio.class);
     this.servicioLoginMock = mock(ServicioLogin.class);
     this.servicioReporteMock = mock(ServicioReporte.class);
+    this.servicioOcrMock = mock(ServicioOcr.class);
     this.usuarioMock = mock(Usuario.class);
     this.controladorReporte =
       new ControladorReporte(
         servicioReporteMock,
         servicioProductoMock,
         servicioComercioMock,
-        servicioLoginMock
+        servicioLoginMock,
+        servicioOcrMock
       );
     requestMock = mock(HttpServletRequest.class);
     sessionMock = mock(HttpSession.class);
@@ -217,5 +224,156 @@ public class ControladorReporteTest {
 
     assertThat(mav.getViewName(), equalToIgnoringCase("reporte/mis-productos-comercio"));
     assertThat(mav.getModel().get("reportes"), is(reportes));
+  }
+
+  @Test
+  public void verFormularioTicketRedirigeAlLoginSiNoHaySesion() {
+    when(sessionMock.getAttribute("ROL")).thenReturn(null);
+
+    ModelAndView mav = controladorReporte.verFormularioTicket(requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
+
+  @Test
+  public void verFormularioTicketDevuelveLaVistaSubirTicket() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioComercioMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    ModelAndView mav = controladorReporte.verFormularioTicket(requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/subir-ticket"));
+  }
+
+  @Test
+  public void analizarTicketRedirigeAlLoginSiNoHaySesion() {
+    when(sessionMock.getAttribute("ROL")).thenReturn(null);
+
+    ModelAndView mav = controladorReporte.analizarTicket(
+      "data:image/jpeg;base64,AQID",
+      "Almacen",
+      "Calle 1",
+      "La Matanza",
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
+
+  @Test
+  public void analizarTicketConBase64VacioDevuelveError() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioComercioMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    ModelAndView mav = controladorReporte.analizarTicket(
+      "",
+      "Almacen",
+      "Calle 1",
+      "La Matanza",
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/subir-ticket"));
+    assertThat(mav.getModel().get("error"), is("Debes subir una foto del ticket"));
+  }
+
+  @Test
+  public void guardarTicketRedirigeAlLoginSiNoHaySesion()
+    throws CamposObligatoriosVacios, ReporteExistente, UnidadInvalida, PrecioIncorrecto {
+    when(sessionMock.getAttribute("ROL")).thenReturn(null);
+
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    ModelAndView mav = controladorReporte.guardarTicket(
+      "Almacen",
+      "Calle 1",
+      "La Matanza",
+      params,
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
+
+  @Test
+  public void guardarTicketConItemsValidosGuardaYRedirige() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Leche");
+    params.put("items[0].precio", "150.0");
+    params.put("incluir[0]", "on");
+
+    ModelAndView mav = controladorReporte.guardarTicket(
+      "Almacen",
+      "Calle 1",
+      "La Matanza",
+      params,
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
+    verify(servicioReporteMock, times(1)).guardarReporte(any());
+  }
+
+  @Test
+  public void guardarTicketConPrecioInvalidoNoGuardaElItem() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Leche");
+    params.put("items[0].precio", "no-es-numero");
+    params.put("incluir[0]", "on");
+
+    ModelAndView mav = controladorReporte.guardarTicket(
+      "Almacen",
+      "Calle 1",
+      "La Matanza",
+      params,
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
+    verify(servicioReporteMock, never()).guardarReporte(any());
+  }
+
+  @Test
+  public void guardarTicketSinCheckboxNoGuardaElItem() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Leche");
+    params.put("items[0].precio", "150.0");
+    // sin incluir[0] → checkbox desmarcado
+
+    ModelAndView mav = controladorReporte.guardarTicket(
+      "Almacen",
+      "Calle 1",
+      "La Matanza",
+      params,
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
+    verify(servicioReporteMock, never()).guardarReporte(any());
+  }
+
+  @Test
+  public void analizarTicketConBase64InvalidoDevuelveError() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioComercioMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    ModelAndView mav = controladorReporte.analizarTicket(
+      "data:image/jpeg;base64,INVALIDO!!!!",
+      "Almacen",
+      "Calle 1",
+      "La Matanza",
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/subir-ticket"));
+    assertThat(mav.getModel().containsKey("error"), is(true));
   }
 }
