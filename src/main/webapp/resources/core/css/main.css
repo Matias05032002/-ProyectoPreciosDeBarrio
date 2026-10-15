@@ -1,19 +1,432 @@
+
+/* =========================================
+   MAPA DE PRECIOS DE BARRIO
+   Identidad visual global
+   ========================================= */
+
+:root {
+    --mp-bg: #F8FAFC;
+    --mp-surface: #FFFFFF;
+    --mp-dark: #111827;
+    --mp-dark-soft: #1F2937;
+    --mp-text: #1E293B;
+    --mp-muted: #64748B;
+    --mp-border: #E2E8F0;
+
+    --mp-primary: #10B981;
+    --mp-primary-hover: #059669;
+    --mp-primary-light: #D1FAE5;
+
+    --mp-accent: #8B5CF6;
+    --mp-accent-hover: #7C3AED;
+    --mp-accent-light: #EDE9FE;
+
+    --mp-danger: #DC2626;
+    --mp-warning: #D97706;
+
+    --mp-radius: 16px;
+    --mp-shadow: 0 8px 24px rgba(15, 23, 42, .08);
+}
+
+/* Base */
+
+html {
+    scroll-behavior: smooth;
+}
+
 body {
-  padding-top: 5rem;
-}
-.starter-template {
-  padding: 3rem 1.5rem;
-  text-align: center;
-}
-
-h1{
-	color:#0000FF;
+    padding-top: 5rem;
+    background: var(--mp-bg);
+    color: var(--mp-text);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.6;
 }
 
-h2{
-	color:#FF0000;
+h1, h2, h3, h4, h5, h6 {
+    color: var(--mp-dark);
+    font-weight: 700;
+    letter-spacing: -.025em;
 }
 
-.navbar-brand{
-    margin:0 2rem;
+a {
+    color: var(--mp-primary-hover);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--mp-accent-hover);
+}
+
+/* Navbar */
+
+.navbar {
+    background: var(--mp-dark) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+    box-shadow: 0 4px 18px rgba(15, 23, 42, .12);
+}
+
+.navbar-brand {
+    margin: 0;
+    color: #FFFFFF !important;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -.04em;
+}
+
+.navbar-brand:hover {
+    color: #A7F3D0 !important;
+}
+
+.navbar .nav-link {
+    padding: .65rem .75rem;
+    color: #CBD5E1 !important;
+    font-size: .92rem;
+    font-weight: 500;
+    transition: color .2s ease, background .2s ease;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+    color: #FFFFFF !important;
+    background: rgba(16, 185, 129, .12);
+    border-radius: 9px;
+}
+
+.navbar .dropdown-menu {
+    padding: .5rem;
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    box-shadow: var(--mp-shadow);
+}
+
+.navbar .dropdown-item {
+    padding: .65rem .8rem;
+    border-radius: 8px;
+}
+
+.navbar .dropdown-item:hover {
+    color: var(--mp-dark);
+    background: var(--mp-primary-light);
+}
+
+/* Botones */
+
+.btn {
+    padding: .65rem 1rem;
+    border-radius: 10px;
+    font-weight: 650;
+    transition: transform .2s ease, box-shadow .2s ease,
+    background .2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary,
+.btn-success {
+    color: #FFFFFF !important;
+    background: var(--mp-primary-hover) !important;
+    border-color: var(--mp-primary-hover) !important;
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+    background: #047857 !important;
+    border-color: #047857 !important;
+    box-shadow: 0 5px 14px rgba(16, 185, 129, .2);
+}
+
+.btn-secondary {
+    background: var(--mp-dark-soft);
+    border-color: var(--mp-dark-soft);
+}
+
+.btn-dark {
+    background: var(--mp-dark);
+    border-color: var(--mp-dark);
+}
+
+.btn-outline-primary {
+    color: var(--mp-primary-hover);
+    border-color: var(--mp-primary-hover);
+}
+
+.btn-outline-primary:hover {
+    color: #FFFFFF;
+    background: var(--mp-primary-hover);
+    border-color: var(--mp-primary-hover);
+}
+
+.btn-accent {
+    color: #FFFFFF;
+    background: var(--mp-accent);
+    border: 1px solid var(--mp-accent);
+}
+
+.btn-accent:hover {
+    color: #FFFFFF;
+    background: var(--mp-accent-hover);
+}
+
+/* Tarjetas y paneles */
+
+.card {
+    overflow: hidden;
+    border: 1px solid var(--mp-border) !important;
+    border-radius: var(--mp-radius);
+    background: var(--mp-surface);
+    box-shadow: var(--mp-shadow);
+}
+
+.card-header {
+    padding: 1rem 1.25rem;
+    background: #F1F5F9;
+    border-bottom: 1px solid var(--mp-border);
+    font-weight: 700;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.shadow-sm {
+    box-shadow: var(--mp-shadow) !important;
+}
+
+/* Formularios */
+
+.form-label {
+    color: var(--mp-text);
+    font-size: .93rem;
+    font-weight: 650;
+}
+
+.form-control,
+.form-select {
+    min-height: 44px;
+    padding: .65rem .85rem;
+    color: var(--mp-text);
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+}
+
+.form-control::placeholder {
+    color: #94A3B8;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--mp-primary);
+    box-shadow: 0 0 0 .22rem rgba(16, 185, 129, .15);
+}
+
+/* Tablas */
+
+.table {
+    --bs-table-color: var(--mp-text);
+    --bs-table-bg: transparent;
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+
+.table thead th {
+    padding: .9rem;
+    color: #475569;
+    background: #F1F5F9;
+    border-bottom: 1px solid var(--mp-border);
+    font-size: .85rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.table tbody td {
+    padding: .9rem;
+    border-color: var(--mp-border);
+}
+
+.table-hover tbody tr:hover > * {
+    --bs-table-bg-state: #ECFDF5;
+}
+
+/* Etiquetas */
+
+.badge {
+    padding: .45rem .7rem;
+    border-radius: 8px;
+    font-weight: 650;
+}
+
+.bg-success,
+.text-bg-success {
+    background-color: var(--mp-primary-hover) !important;
+}
+
+.bg-primary-subtle {
+    background-color: var(--mp-primary-light) !important;
+}
+
+.text-primary {
+    color: var(--mp-primary-hover) !important;
+}
+
+.text-success {
+    color: var(--mp-primary-hover) !important;
+}
+
+/* Alertas */
+
+.alert {
+    border: 1px solid transparent;
+    border-radius: 12px;
+}
+
+.alert-success {
+    color: #065F46;
+    background: #D1FAE5;
+    border-color: #A7F3D0;
+}
+
+.alert-danger {
+    color: #991B1B;
+    background: #FEE2E2;
+    border-color: #FECACA;
+}
+
+/* =========================================
+   PERFIL DE USUARIO
+   ========================================= */
+
+.perfil-page {
+    background:
+            radial-gradient(
+                    ellipse at 0% 0%,
+                    rgba(139, 92, 246, .08),
+                    transparent 38%
+            ),
+            var(--mp-bg);
+    color: var(--mp-text);
+}
+
+.perfil-page main.container {
+    max-width: 1200px;
+    padding-top: 2.5rem;
+    padding-bottom: 4rem;
+}
+
+.perfil-page .perfil-header {
+    margin-bottom: 2rem;
+}
+
+.perfil-page .perfil-header h1 {
+    margin-bottom: .5rem;
+    color: var(--mp-dark);
+}
+
+.perfil-page .perfil-header p {
+    color: var(--mp-muted) !important;
+}
+
+.perfil-page .card {
+    background: var(--mp-surface);
+    border-color: var(--mp-border) !important;
+    color: var(--mp-text);
+}
+
+.perfil-page .card h2 {
+    color: var(--mp-dark);
+}
+
+.perfil-page .card p,
+.perfil-page .card strong {
+    color: var(--mp-text);
+}
+
+.perfil-page .perfil-stat {
+    margin-top: 1.25rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #A7F3D0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+}
+
+.perfil-page .perfil-stat .stat-label {
+    color: #047857;
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+.perfil-page .perfil-stat .stat-value {
+    margin-top: .15rem;
+    color: #065F46;
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.perfil-page .form-text {
+    color: var(--mp-muted);
+}
+
+.perfil-page .perfil-reportes {
+    min-height: 250px;
+}
+
+.perfil-page .text-center .text-muted {
+    color: var(--mp-muted) !important;
+}
+
+/* Responsive */
+
+@media (min-width: 992px) {
+    .perfil-page .perfil-sidebar {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .perfil-page .perfil-reportes {
+        height: 100%;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .navbar .navbar-collapse {
+        padding: .75rem 0;
+    }
+
+    .navbar .navbar-nav {
+        align-items: stretch !important;
+    }
+
+    .perfil-page .perfil-reportes {
+        min-height: 220px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body {
+        padding-top: 4.5rem;
+    }
+
+    .perfil-page main.container {
+        padding-top: 1.5rem;
+    }
+
+    .card-body {
+        padding: 1.15rem;
+    }
+
+    .perfil-page .card-body {
+        padding: 1.25rem !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+    }
 }

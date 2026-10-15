@@ -52,8 +52,60 @@ public class ServicioLoginImpl implements ServicioLogin {
   }
 
   @Override
+  public Usuario buscarPorId(Long id) {
+    return repositorioUsuario.buscarPorId(id);
+  }
+
+  @Override
   public Usuario buscarPorEmail(String email) {
     return repositorioUsuario.buscar(email);
+  }
+
+  @Override
+  public boolean actualizarEmail(Long usuarioId, String nuevoEmail) {
+    if (nuevoEmail == null || !nuevoEmail.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+      return false;
+    }
+
+    Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
+    if (usuario == null) {
+      return false;
+    }
+
+    Usuario existente = repositorioUsuario.buscar(nuevoEmail.trim());
+    if (existente != null && !existente.getId().equals(usuarioId)) {
+      return false;
+    }
+
+    usuario.setEmail(nuevoEmail.trim());
+    repositorioUsuario.modificar(usuario);
+    return true;
+  }
+
+  @Override
+  public boolean cambiarContrasena(
+    Long usuarioId,
+    String contrasenaActual,
+    String contrasenaNueva
+  ) {
+    Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
+    if (
+      usuario == null ||
+      contrasenaActual == null ||
+      !passwordEncoder.matches(contrasenaActual, usuario.getPassword())
+    ) {
+      return false;
+    }
+
+    try {
+      validarContrasena(contrasenaNueva);
+    } catch (ContrasenaInvalida e) {
+      return false;
+    }
+
+    usuario.setPassword(passwordEncoder.encode(contrasenaNueva));
+    repositorioUsuario.modificar(usuario);
+    return true;
   }
 
   private void validarEmail(String email) throws EmailInvalido {

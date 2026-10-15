@@ -166,4 +166,133 @@ public class ServicioLoginTest {
     System.out.println("test: " + encoder.encode("test"));
     System.out.println("TestComercio1: " + encoder.encode("TestComercio1"));
   }
+
+  @Test
+  public void buscarPorIdDeberiaRetornarUsuarioEncontrado() {
+    // Preparación
+    Long id = 1L;
+    Usuario usuario = new Usuario();
+    usuario.setEmail("test@test.com");
+
+    when(this.repositorioUsuarioMock.buscarPorId(id)).thenReturn(usuario);
+
+    // Ejecución
+    Usuario resultado = this.servicioLogin.buscarPorId(id);
+
+    // Validación
+    assertThat(resultado, equalTo(usuario));
+    verify(this.repositorioUsuarioMock, times(1)).buscarPorId(id);
+  }
+
+  @Test
+  public void actualizarEmailConEmailValidoDeberiaActualizarUsuario() {
+    // Preparación
+    Long id = 1L;
+    Usuario usuario = new Usuario();
+    usuario.setEmail("anterior@test.com");
+    usuario.setId(id);
+
+    when(this.repositorioUsuarioMock.buscarPorId(id)).thenReturn(usuario);
+    when(this.repositorioUsuarioMock.buscar("nuevo@test.com")).thenReturn(null);
+
+    // Ejecución
+    boolean resultado = this.servicioLogin.actualizarEmail(id, "nuevo@test.com");
+
+    // Validación
+    assertThat(resultado, equalTo(true));
+    assertThat(usuario.getEmail(), equalTo("nuevo@test.com"));
+    verify(this.repositorioUsuarioMock, times(1)).modificar(usuario);
+  }
+
+  @Test
+  public void actualizarEmailConEmailInvalidoDeberiaRetornarFalse() {
+    // Ejecución
+    boolean resultado = this.servicioLogin.actualizarEmail(1L, "email-invalido");
+
+    // Validación
+    assertThat(resultado, equalTo(false));
+    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
+  }
+
+  @Test
+  public void actualizarEmailSiYaExisteDeberiaRetornarFalse() {
+    // Preparación
+    Long id = 1L;
+    Usuario usuario = new Usuario();
+    usuario.setId(id);
+    usuario.setEmail("anterior@test.com");
+
+    Usuario otroUsuario = new Usuario();
+    otroUsuario.setId(2L);
+    otroUsuario.setEmail("ocupado@test.com");
+
+    when(this.repositorioUsuarioMock.buscarPorId(id)).thenReturn(usuario);
+    when(this.repositorioUsuarioMock.buscar("ocupado@test.com")).thenReturn(otroUsuario);
+
+    // Ejecución
+    boolean resultado = this.servicioLogin.actualizarEmail(id, "ocupado@test.com");
+
+    // Validación
+    assertThat(resultado, equalTo(false));
+    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
+  }
+
+  @Test
+  public void cambiarContrasenaConDatosValidosDeberiaActualizarHash() {
+    // Preparación
+    Long id = 1L;
+    String contrasenaActual = "Contrasena1";
+    String contrasenaNueva = "NuevaClave1";
+
+    Usuario usuario = new Usuario();
+    usuario.setId(id);
+    usuario.setPassword(new BCryptPasswordEncoder().encode(contrasenaActual));
+
+    when(this.repositorioUsuarioMock.buscarPorId(id)).thenReturn(usuario);
+
+    // Ejecución
+    boolean resultado = this.servicioLogin.cambiarContrasena(id, contrasenaActual, contrasenaNueva);
+
+    // Validación
+    assertThat(resultado, equalTo(true));
+    assertThat(
+      new BCryptPasswordEncoder().matches(contrasenaNueva, usuario.getPassword()),
+      equalTo(true)
+    );
+    verify(this.repositorioUsuarioMock, times(1)).modificar(usuario);
+  }
+
+  @Test
+  public void cambiarContrasenaConContrasenaActualIncorrectaDeberiaRetornarFalse() {
+    // Preparación
+    Long id = 1L;
+    Usuario usuario = new Usuario();
+    usuario.setPassword(new BCryptPasswordEncoder().encode("Contrasena1"));
+
+    when(this.repositorioUsuarioMock.buscarPorId(id)).thenReturn(usuario);
+
+    // Ejecución
+    boolean resultado = this.servicioLogin.cambiarContrasena(id, "Incorrecta1", "NuevaClave1");
+
+    // Validación
+    assertThat(resultado, equalTo(false));
+    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
+  }
+
+  @Test
+  public void cambiarContrasenaConContrasenaNuevaInvalidaDeberiaRetornarFalse() {
+    // Preparación
+    Long id = 1L;
+    Usuario usuario = new Usuario();
+    usuario.setPassword(new BCryptPasswordEncoder().encode("Contrasena1"));
+
+    when(this.repositorioUsuarioMock.buscarPorId(id)).thenReturn(usuario);
+
+    // Ejecución: no contiene mayúscula
+    boolean resultado = this.servicioLogin.cambiarContrasena(id, "Contrasena1", "contrasena2");
+
+    // Validación
+    assertThat(resultado, equalTo(false));
+    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
+  }
 }
