@@ -57,7 +57,12 @@ public class ServicioListaImpl implements ServicioLista {
 
   @Override
   public void eliminarItemDeLista(Long itemId) {
-    repositorioLista.eliminarItem(itemId);
+    ItemLista item = repositorioLista.buscarItemPorId(itemId);
+    if (item != null) {
+      Lista lista = item.getLista();
+      lista.getItems().remove(item);
+      repositorioLista.guardar(lista);
+    }
   }
 
   @Override

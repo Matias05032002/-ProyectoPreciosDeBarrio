@@ -1,4 +1,4 @@
-package com.tallerwebi.dominio;
+package com.tallerwebi.dominio.Lista;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -93,9 +93,17 @@ public class ServicioListaTest {
 
   @Test
   void deberiaEliminarUnItemDeLaLista() {
+    Lista lista = new Lista("Mi lista", 1L);
+    ItemLista item = new ItemLista(lista, new Reporte(), 1);
+    item.setId(1L);
+    lista.setItems(new java.util.ArrayList<>(java.util.List.of(item)));
+
+    when(repositorioLista.buscarItemPorId(1L)).thenReturn(item);
+
     servicioLista.eliminarItemDeLista(1L);
 
-    verify(repositorioLista).eliminarItem(1L);
+    verify(repositorioLista).guardar(lista);
+    assertThat(lista.getItems(), is(empty()));
   }
 
   @Test

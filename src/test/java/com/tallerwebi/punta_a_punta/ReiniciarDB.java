@@ -24,11 +24,13 @@ public class ReiniciarDB {
         "DELETE FROM LISTA; " +
         "DELETE FROM reporte_usuarios_dudoso; " +
         "DELETE FROM Reporte; " +
+        "DELETE FROM Producto; " +
         "DELETE FROM Comercio; " +
         "DELETE FROM Usuario; " +
         "ALTER TABLE LISTA AUTO_INCREMENT = 1; " +
         "ALTER TABLE ITEM_LISTA AUTO_INCREMENT = 1; " +
         "ALTER TABLE Reporte AUTO_INCREMENT = 1; " +
+        "ALTER TABLE Producto AUTO_INCREMENT = 1; " +
         "ALTER TABLE Comercio AUTO_INCREMENT = 1; " +
         "ALTER TABLE Usuario AUTO_INCREMENT = 1; " +
         "SET FOREIGN_KEY_CHECKS=1; " +

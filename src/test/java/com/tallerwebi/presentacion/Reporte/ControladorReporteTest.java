@@ -376,4 +376,117 @@ public class ControladorReporteTest {
     assertThat(mav.getViewName(), equalToIgnoringCase("reporte/subir-ticket"));
     assertThat(mav.getModel().containsKey("error"), is(true));
   }
+
+  // --- verFormularioEdicion ---
+
+  @Test
+  public void verFormularioEdicionRedirigeAlLoginSiNoHaySesion() {
+    when(sessionMock.getAttribute("ROL")).thenReturn(null);
+
+    ModelAndView mav = controladorReporte.verFormularioEdicion(1L, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
+
+  @Test
+  public void verFormularioEdicionRedirigeAMisReportesSiNoPuedeEditar() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(servicioReporteMock.puedeEditar(1L, 1L)).thenReturn(false);
+
+    ModelAndView mav = controladorReporte.verFormularioEdicion(1L, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte/mis-reportes"));
+  }
+
+  @Test
+  public void verFormularioEdicionDevuelveLaVistaConElReporte() {
+    Reporte reporte = new Reporte();
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(servicioReporteMock.puedeEditar(1L, 1L)).thenReturn(true);
+    when(servicioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+
+    ModelAndView mav = controladorReporte.verFormularioEdicion(1L, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/editar-reporte"));
+    assertThat(mav.getModel().get("reporte"), is(reporte));
+  }
+
+  // --- editarReporte ---
+
+  @Test
+  public void editarReporteRedirigeAlLoginSiNoHaySesion() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn(null);
+
+    ModelAndView mav = controladorReporte.editarReporte(1L, new Reporte(), null, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
+
+  @Test
+  public void editarReporteExitosoRedirigeAMisReportes() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView mav = controladorReporte.editarReporte(1L, new Reporte(), null, requestMock);
+
+    assertThat(
+      mav.getViewName(),
+      equalToIgnoringCase("redirect:/reporte/mis-reportes?editado=true")
+    );
+    verify(servicioReporteMock, times(1)).editarReporte(eq(1L), any(Reporte.class), eq(1L));
+  }
+
+  @Test
+  public void editarReporteConExcepcionVuelveAlFormularioConError() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    doThrow(new com.tallerwebi.dominio.excepcion.FueraDePlazoDeEdicion("Fuera de plazo"))
+      .when(servicioReporteMock)
+      .editarReporte(eq(1L), any(Reporte.class), eq(1L));
+    when(servicioReporteMock.buscarReporte(1L)).thenReturn(new Reporte());
+
+    ModelAndView mav = controladorReporte.editarReporte(1L, new Reporte(), null, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/editar-reporte"));
+    assertThat(mav.getModel().get("error"), is("Fuera de plazo"));
+  }
+
+  @Test
+  public void editarReporteConFotoValidaGuardaLosBytesEnElReporte() throws Exception {
+    Reporte reporte = new Reporte();
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView mav = controladorReporte.editarReporte(
+      1L,
+      reporte,
+      "data:image/jpeg;base64,AQID",
+      requestMock
+    );
+
+    assertThat(
+      mav.getViewName(),
+      equalToIgnoringCase("redirect:/reporte/mis-reportes?editado=true")
+    );
+    assertThat(reporte.getFoto(), is(new byte[] { 1, 2, 3 }));
+  }
+
+  @Test
+  public void editarReporteConFotoInvalidaVuelveAlFormularioConError() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(servicioReporteMock.buscarReporte(1L)).thenReturn(new Reporte());
+
+    ModelAndView mav = controladorReporte.editarReporte(
+      1L,
+      new Reporte(),
+      "no-es-una-imagen",
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/editar-reporte"));
+    assertThat(mav.getModel().containsKey("error"), is(true));
+  }
 }

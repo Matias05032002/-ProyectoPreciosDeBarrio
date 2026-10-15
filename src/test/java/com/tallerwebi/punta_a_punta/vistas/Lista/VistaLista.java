@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public class VistaLista {
 
-  private final Page page;
+  public final Page page;
   private final BrowserContext context;
 
   public VistaLista(Page page, BrowserContext context) {
@@ -106,20 +106,8 @@ public class VistaLista {
   }
 
   public void eliminarItem(long itemId) {
-    Object finalUrl = page.evaluate(
-      "(async () => {" +
-      "  var url = window.location.href;" +
-      "  var jsession = (url.match(/;jsessionid=[^?#&]*/i) || [''])[0];" +
-      "  var resp = await fetch('/spring/mis-listas/eliminar-item' + jsession, {" +
-      "    method: 'POST'," +
-      "    headers: {'Content-Type': 'application/x-www-form-urlencoded'}," +
-      "    body: 'itemId=1&listaId=1'" +
-      "  });" +
-      "  return resp.url;" +
-      "})()"
-    );
-    page.navigate(finalUrl.toString());
-    page.waitForLoadState();
+    this.page.click("#btn-eliminar-item-" + itemId);
+    this.page.waitForLoadState();
   }
 
   public boolean elItemEstaEnLaLista(String nombreProducto) {

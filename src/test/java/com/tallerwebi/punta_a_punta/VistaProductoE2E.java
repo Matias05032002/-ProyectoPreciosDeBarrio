@@ -10,6 +10,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.tallerwebi.punta_a_punta.vistas.Producto.VistaProducto;
 import com.tallerwebi.punta_a_punta.vistas.Reporte.VistaReporte;
+import com.tallerwebi.punta_a_punta.vistas.VistaLogin;
 import java.net.MalformedURLException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -63,7 +64,6 @@ public class VistaProductoE2E {
   @Test
   void deberiaMostrarProductosCuandoHayDatosEnLaBase() {
     dadoQueExisteUnReporteCargado();
-    vistaProducto = new VistaProducto(context.pages().get(0));
     vistaProducto.escribirNombreDelProductoABuscar("Leche");
     vistaProducto.darClickEnBuscar();
     assertThat(vistaProducto.hayProductosEnLaPagina(), is(true));
@@ -72,26 +72,34 @@ public class VistaProductoE2E {
   @Test
   void deberiaMostrarElBotonMarcarDudosoEnCadaProducto() {
     dadoQueExisteUnReporteCargado();
-    vistaProducto = new VistaProducto(context.pages().get(0));
     vistaProducto.escribirNombreDelProductoABuscar("Leche");
     vistaProducto.darClickEnBuscar();
     assertThat(vistaProducto.hayBotonMarcarDudoso(), is(true));
   }
 
   @Test
-  void deberiaMostrarElModalCuandoSeMarcaComoDudoso() {
+  public void deberiaMostrarElModalCuandoSeMarcaComoDudoso() {
     dadoQueExisteUnReporteCargado();
+
+    // Login primero
+    VistaLogin vistaLogin = new VistaLogin(context.pages().get(0));
+    vistaLogin.escribirEMAIL("test@unlam.edu.ar");
+    vistaLogin.escribirClave("test");
+    vistaLogin.darClickEnIniciarSesion();
+
+    // Ahora ir a producto y buscar
     vistaProducto = new VistaProducto(context.pages().get(0));
     vistaProducto.escribirNombreDelProductoABuscar("Leche");
     vistaProducto.darClickEnBuscar();
+
     vistaProducto.darClickEnMarcarDudoso();
+
     assertThat(vistaProducto.hayModalDudoso(), is(true));
   }
 
   @Test
   void deberiaMostrarPlaceholderCuandoElReporteNoTieneFoto() {
     dadoQueExisteUnReporteCargado();
-    vistaProducto = new VistaProducto(context.pages().get(0));
     vistaProducto.escribirNombreDelProductoABuscar("Leche");
     vistaProducto.darClickEnBuscar();
     assertThat(vistaProducto.hayPlaceholderVisible(), is(true));
@@ -100,7 +108,6 @@ public class VistaProductoE2E {
   @Test
   void deberiaMostrarElModalCuandoSeClickeaElPlaceholder() {
     dadoQueExisteUnReporteCargado();
-    vistaProducto = new VistaProducto(context.pages().get(0));
     vistaProducto.escribirNombreDelProductoABuscar("Leche");
     vistaProducto.darClickEnBuscar();
     vistaProducto.darClickEnPlaceholderDeProducto();
@@ -118,16 +125,6 @@ public class VistaProductoE2E {
   }
 
   private void dadoQueExisteUnReporteCargado() {
-    VistaReporte vistaReporte = new VistaReporte(context.pages().get(0));
-    vistaReporte.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
-    vistaReporte.escribirNombreProducto("Leche");
-    vistaReporte.escribirMarcaProducto("La Serenisima");
-    vistaReporte.escribirCategoriaProducto("Tabaco");
-    vistaReporte.escribirUnidadProducto("1L");
-    vistaReporte.escribirNombreComercio("Almacen De Matias");
-    vistaReporte.escribirDireccionComercio("Av. Mitre 123");
-    vistaReporte.escribirLocalidadComercio("Lomas de Zamora");
-    vistaReporte.escribirPrecio("250");
-    vistaReporte.darClickEnGuardarReporte();
+    ReiniciarDB.sembrarProductoConReporte();
   }
 }

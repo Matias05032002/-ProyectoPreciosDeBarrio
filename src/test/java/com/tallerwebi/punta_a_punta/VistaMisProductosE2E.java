@@ -81,8 +81,7 @@ public class VistaMisProductosE2E {
     vistaPerfil.escribirNombreComercio("Mi Almacen Test");
     vistaPerfil.seleccionarTipo("Almacen");
     vistaPerfil.escribirDireccion("Av. Mitre 123");
-    vistaPerfil.escribirLocalidad("Lomas de Zamora");
-    vistaPerfil.escribirDescripcion("Almacen de barrio");
+    vistaPerfil.seleccionarLocalidad("Lomas de Zamora");
     vistaPerfil.darClickEnGuardar();
     page.navigate("http://localhost:8080/spring/logout");
   }

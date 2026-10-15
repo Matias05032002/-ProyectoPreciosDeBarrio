@@ -8,7 +8,7 @@ import java.net.URL;
 
 public class VistaWeb {
 
-  protected Page page;
+  public Page page;
 
   public VistaWeb(Page page) {
     this.page = page;

@@ -1,6 +1,7 @@
 package com.tallerwebi.punta_a_punta.vistas.Producto;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import com.tallerwebi.punta_a_punta.vistas.VistaWeb;
 
 public class VistaProducto extends VistaWeb {
@@ -19,15 +20,16 @@ public class VistaProducto extends VistaWeb {
   }
 
   public void darClickEnBuscar() {
-    this.darClickEnElElemento("#btn-buscar-producto");
+    page.locator("#btn-buscar-producto").click();
+    page.waitForLoadState();
   }
 
   public boolean hayProductosEnLaPagina() {
-    return page.locator("#card-producto").count() > 0;
+    return page.locator("[id^='card-producto']").count() > 0;
   }
 
   public boolean hayBotonMarcarDudoso() {
-    return page.locator("#btn-marcar-dudoso").count() > 0;
+    return page.locator("[id^='btn-marcar-dudoso']").count() > 0;
   }
 
   public boolean hayModalDudoso() {
@@ -35,7 +37,8 @@ public class VistaProducto extends VistaWeb {
   }
 
   public void darClickEnMarcarDudoso() {
-    page.locator("#btn-marcar-dudoso").first().click();
+    page.locator("[id^='btn-marcar-dudoso']").first().click();
+    page.waitForLoadState();
   }
 
   public void darClickEnFotoDelProducto() {

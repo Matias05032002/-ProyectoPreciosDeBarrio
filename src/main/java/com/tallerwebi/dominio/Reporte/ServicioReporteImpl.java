@@ -5,10 +5,7 @@ import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Usuario;
-import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
-import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
-import com.tallerwebi.dominio.excepcion.ReporteExistente;
-import com.tallerwebi.dominio.excepcion.UnidadInvalida;
+import com.tallerwebi.dominio.excepcion.*;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +22,7 @@ public class ServicioReporteImpl implements ServicioReporte {
   private RepositorioReporte repositorioReporte;
   private ServicioComercio servicioComercio;
   private ServicioProducto servicioProducto;
+  private static final int DIAS_PLAZO_EDICION = 2;
 
   @Autowired
   public ServicioReporteImpl(
@@ -181,6 +179,54 @@ public class ServicioReporteImpl implements ServicioReporte {
   private void validarPrecio(Double precio) throws PrecioIncorrecto {
     if (precio == null || precio <= 0) {
       throw new PrecioIncorrecto("El precio debe ser mayor a cero");
+    }
+  }
+
+  @Override
+  public boolean puedeEditar(Long reporteId, Long usuarioId) {
+    Reporte reporte = repositorioReporte.buscarReporte(reporteId);
+    if (reporte == null || reporte.getUsuario() == null) return false;
+    if (!reporte.getUsuario().getId().equals(usuarioId)) return false;
+    if (reporte.getFechaDeReporte() == null) return false;
+    return reporte.getFechaDeReporte().isAfter(LocalDateTime.now().minusDays(DIAS_PLAZO_EDICION));
+  }
+
+  @Override
+  public void editarReporte(Long id, Reporte datos, Long usuarioId)
+    throws CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto, FueraDePlazoDeEdicion {
+    Reporte reporte = repositorioReporte.buscarReporte(id);
+    validarPermisoEdicion(reporte, usuarioId);
+    validarCamposObligatorios(datos);
+    validarUnidad(datos.getProducto().getUnidad());
+    validarPrecio(datos.getPrecio());
+    reporte.getProducto().setNombre(datos.getProducto().getNombre());
+    reporte.getProducto().setMarca(datos.getProducto().getMarca());
+    reporte.getProducto().setCategoria(datos.getProducto().getCategoria());
+    reporte.getProducto().setUnidad(datos.getProducto().getUnidad());
+    reporte.getComercio().setNombre(datos.getComercio().getNombre());
+    reporte.getComercio().setDireccion(datos.getComercio().getDireccion());
+    reporte.getComercio().setLocalidad(datos.getComercio().getLocalidad());
+    reporte.setPrecio(datos.getPrecio());
+    if (datos.getFoto() != null) {
+      reporte.setFoto(datos.getFoto());
+    }
+    repositorioReporte.guardarReporte(reporte);
+  }
+
+  private void validarPermisoEdicion(Reporte reporte, Long usuarioId) {
+    if (reporte == null || reporte.getUsuario() == null) {
+      throw new FueraDePlazoDeEdicion("El reporte no existe o no tiene usuario asignado");
+    }
+    if (!reporte.getUsuario().getId().equals(usuarioId)) {
+      throw new FueraDePlazoDeEdicion("No tenés permiso para editar este reporte");
+    }
+    if (
+      reporte.getFechaDeReporte() == null ||
+      reporte.getFechaDeReporte().isBefore(LocalDateTime.now().minusDays(DIAS_PLAZO_EDICION))
+    ) {
+      throw new FueraDePlazoDeEdicion(
+        "El reporte ya no puede editarse porque superó el plazo de " + DIAS_PLAZO_EDICION + " días"
+      );
     }
   }
 }

@@ -170,4 +170,26 @@ public class ControladorReporteTest {
     assert modelAndView != null;
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
   }
+
+  @Test
+  public void verificarQueGetEditarReporteSinSesionRedirige() throws Exception {
+    MvcResult result = this.mockMvc.perform(get("/reporte/1/editar")).andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
+
+  @Test
+  public void verificarQueGetEditarReporteConSesionYReporteInexistenteRedirige() throws Exception {
+    MvcResult result =
+      this.mockMvc.perform(
+          get("/reporte/9999/editar").sessionAttr("ROL", "USER").sessionAttr("ID", 1L)
+        )
+        .andReturn();
+
+    ModelAndView modelAndView = result.getModelAndView();
+    assert modelAndView != null;
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/reporte/mis-reportes"));
+  }
 }

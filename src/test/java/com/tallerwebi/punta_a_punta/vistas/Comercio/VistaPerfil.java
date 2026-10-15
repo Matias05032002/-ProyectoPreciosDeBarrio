@@ -24,12 +24,8 @@ public class VistaPerfil extends VistaWeb {
     this.escribirEnElElemento("input[name='direccion']", direccion);
   }
 
-  public void escribirLocalidad(String localidad) {
-    this.escribirEnElElemento("input[name='localidad']", localidad);
-  }
-
-  public void escribirDescripcion(String descripcion) {
-    this.escribirEnElElemento("textarea[name='descripcion']", descripcion);
+  public void seleccionarLocalidad(String localidad) {
+    this.page.selectOption("select[name='localidad']", localidad);
   }
 
   public void darClickEnGuardar() {

@@ -1,10 +1,7 @@
 package com.tallerwebi.dominio.Reporte;
 
 import com.tallerwebi.dominio.Usuario;
-import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
-import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
-import com.tallerwebi.dominio.excepcion.ReporteExistente;
-import com.tallerwebi.dominio.excepcion.UnidadInvalida;
+import com.tallerwebi.dominio.excepcion.*;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -19,4 +16,7 @@ public interface ServicioReporte {
   List<Reporte> buscarPorNombre(String nombreProducto);
   List<Reporte> buscarPorComercio(Long comercioId);
   List<Reporte> buscarPorUsuarioId(Long usuarioId);
+  void editarReporte(Long id, Reporte datos, Long usuarioId)
+    throws CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto, FueraDePlazoDeEdicion;
+  boolean puedeEditar(Long reporteId, Long usuarioId);
 }

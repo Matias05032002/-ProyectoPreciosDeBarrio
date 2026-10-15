@@ -38,10 +38,10 @@ public class ControladorReporte {
   private static final String NOMBRE_REPORTES = "reportes";
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String SESSION_ROL = "ROL";
-  private ServicioOcr servicioOcr;
+  private static final String NOMBRE_ERROR = "error";
 
   @Autowired
-  private ServicioOcr servicioOCR;
+  private ServicioOcr servicioOcr;
 
   @Autowired
   public ControladorReporte(
@@ -177,9 +177,55 @@ public class ControladorReporte {
     return mav;
   }
 
+  @RequestMapping(path = "/{id}/editar", method = RequestMethod.GET)
+  public ModelAndView verFormularioEdicion(
+    @PathVariable("id") Long id,
+    HttpServletRequest request
+  ) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    if (!servicioReporte.puedeEditar(id, usuarioId)) {
+      return new ModelAndView("redirect:/reporte/mis-reportes");
+    }
+    ModelAndView mav = new ModelAndView("reporte/editar-reporte");
+    mav.addObject("reporte", servicioReporte.buscarReporte(id));
+    return mav;
+  }
+
+  @RequestMapping(path = "/{id}/editar", method = RequestMethod.POST)
+  public ModelAndView editarReporte(
+    @PathVariable("id") Long id,
+    @ModelAttribute Reporte reporteEditado,
+    @RequestParam(value = "fotoBase64", required = false) String fotoBase64,
+    HttpServletRequest request
+  ) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    String errorDeFoto = guardarFoto(reporteEditado, fotoBase64);
+    if (errorDeFoto != null) {
+      ModelAndView mav = new ModelAndView("reporte/editar-reporte");
+      mav.addObject("reporte", servicioReporte.buscarReporte(id));
+      mav.addObject(NOMBRE_ERROR, errorDeFoto);
+      return mav;
+    }
+    try {
+      servicioReporte.editarReporte(id, reporteEditado, usuarioId);
+    } catch (Exception e) {
+      ModelAndView mav = new ModelAndView("reporte/editar-reporte");
+      mav.addObject("reporte", servicioReporte.buscarReporte(id));
+      mav.addObject(NOMBRE_ERROR, e.getMessage());
+      return mav;
+    }
+    return new ModelAndView("redirect:/reporte/mis-reportes?editado=true");
+  }
+
   private ModelAndView vistaConError(String mensaje) {
     ModelAndView mav = new ModelAndView(VISTA_REPORTES);
-    mav.addObject("error", mensaje);
+    mav.addObject(NOMBRE_ERROR, mensaje);
     mav.addObject(NOMBRE_REPORTES, servicioReporte.listarTodos());
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
@@ -226,14 +272,14 @@ public class ControladorReporte {
     }
     if (ticketBase64 == null || ticketBase64.isBlank()) {
       ModelAndView mav = new ModelAndView("reporte/subir-ticket");
-      mav.addObject("error", "Debes subir una foto del ticket");
+      mav.addObject(NOMBRE_ERROR, "Debes subir una foto del ticket");
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
       return mav;
     }
     try {
       int inicio = ticketBase64.indexOf(',');
       byte[] bytes = java.util.Base64.getDecoder().decode(ticketBase64.substring(inicio + 1));
-      List<ItemTicket> items = servicioOCR.extraerProductosDeTicket(bytes);
+      List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(bytes);
       ModelAndView mav = new ModelAndView("reporte/confirmar-ticket");
       mav.addObject("items", items);
       mav.addObject("comercioNombre", comercioNombre);
@@ -242,7 +288,7 @@ public class ControladorReporte {
       return mav;
     } catch (Exception e) {
       ModelAndView mav = new ModelAndView("reporte/subir-ticket");
-      mav.addObject("error", "No se pudo procesar el ticket");
+      mav.addObject(NOMBRE_ERROR, "No se pudo procesar el ticket");
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
       return mav;
     }

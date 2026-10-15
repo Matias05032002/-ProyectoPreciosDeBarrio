@@ -23,4 +23,24 @@ public class VistaMisReportes extends VistaWeb {
   public int cantidadDeReportes() {
     return this.page.locator("[id^='card-mi-reporte-']").count();
   }
+
+  public boolean hayBotonEditar() {
+    return this.page.locator("a[href*='/editar']").count() > 0;
+  }
+
+  public void darClickEnPrimerBotonEditar() {
+    this.page.locator("a[href*='/editar']").first().click();
+  }
+
+  public boolean hayMensajeEditado() {
+    try {
+      this.page.waitForSelector(
+          ".alert-success",
+          new Page.WaitForSelectorOptions().setTimeout(3000)
+        );
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
 }
