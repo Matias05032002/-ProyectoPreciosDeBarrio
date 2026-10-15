@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
+import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,7 @@ public class ServicioLoginTest {
     Usuario usuario = new Usuario();
     usuario.setEmail("nuevo@test.com");
     usuario.setPassword("Contrasena1");
+    usuario.setRol("USER");
     when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
 
     // ejecucion
@@ -68,6 +70,7 @@ public class ServicioLoginTest {
     Usuario usuario = new Usuario();
     usuario.setEmail("existe@test.com");
     usuario.setPassword("Contrasena1");
+    usuario.setRol("USER");
     when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(new Usuario());
 
     // ejecucion y validacion
@@ -80,7 +83,7 @@ public class ServicioLoginTest {
     Usuario usuario = new Usuario();
     usuario.setEmail("emailinvalido");
     usuario.setPassword("Contrasena1");
-
+    usuario.setRol("USER");
     assertThrows(EmailInvalido.class, () -> this.servicioLogin.registrar(usuario));
     verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
   }
@@ -90,7 +93,7 @@ public class ServicioLoginTest {
     Usuario usuario = new Usuario();
     usuario.setEmail("test@test.com");
     usuario.setPassword("contrasena1");
-
+    usuario.setRol("USER");
     assertThrows(ContrasenaInvalida.class, () -> this.servicioLogin.registrar(usuario));
     verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
   }
@@ -100,7 +103,7 @@ public class ServicioLoginTest {
     Usuario usuario = new Usuario();
     usuario.setEmail("test@test.com");
     usuario.setPassword("Pass1");
-
+    usuario.setRol("USER");
     assertThrows(ContrasenaInvalida.class, () -> this.servicioLogin.registrar(usuario));
     verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
   }
@@ -124,20 +127,14 @@ public class ServicioLoginTest {
   }
 
   @Test
-  public void registrarUsuarioSinRolDeberiaAsignarRolUserPorDefecto()
-    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    // preparacion
+  public void registrarUsuarioSinRolDeberiaLanzarExcepcion() {
     Usuario usuario = new Usuario();
     usuario.setEmail("vecino@test.com");
     usuario.setPassword("Contrasena1");
     when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
 
-    // ejecucion
-    this.servicioLogin.registrar(usuario);
-
-    // validacion
-    assertThat(usuario.getRol(), equalTo("USER"));
-    verify(this.repositorioUsuarioMock, times(1)).guardar(usuario);
+    assertThrows(RolInvalido.class, () -> this.servicioLogin.registrar(usuario));
+    verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
   }
 
   @Test

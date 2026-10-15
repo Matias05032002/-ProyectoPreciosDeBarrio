@@ -2,6 +2,7 @@ package com.tallerwebi.dominio;
 
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
+import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,9 @@ public class ServicioLoginImpl implements ServicioLogin {
   @Override
   public void registrar(Usuario usuario)
     throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    if (usuario.getRol() == null || usuario.getRol().isBlank()) {
+      throw new RolInvalido();
+    }
     validarContrasena(usuario.getPassword());
     validarEmail(usuario.getEmail());
     Usuario usuarioEncontrado = repositorioUsuario.buscar(usuario.getEmail());

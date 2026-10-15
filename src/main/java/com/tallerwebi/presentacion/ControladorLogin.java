@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
+import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -65,6 +66,9 @@ public class ControladorLogin {
       return new ModelAndView(VISTA_NUEVO_USUARIO, model);
     } catch (EmailInvalido | ContrasenaInvalida e) {
       model.put(ATTR_ERROR, e.getMessage());
+      return new ModelAndView(VISTA_NUEVO_USUARIO, model);
+    } catch (RolInvalido e) {
+      model.put(ATTR_ERROR, "Debe seleccionar un tipo de cuenta");
       return new ModelAndView(VISTA_NUEVO_USUARIO, model);
     } catch (Exception e) {
       model.put(ATTR_ERROR, "Error al registrar el nuevo usuario");
