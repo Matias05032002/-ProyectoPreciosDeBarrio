@@ -48,6 +48,7 @@ public class RepositorioProductoImpl implements RepositorioProducto {
       .getCurrentSession()
       .createQuery("from Producto where nombre = :nombre", Producto.class)
       .setParameter("nombre", nombre)
+      .setMaxResults(1)
       .uniqueResult();
   }
 }

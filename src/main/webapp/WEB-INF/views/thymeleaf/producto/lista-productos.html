@@ -57,7 +57,22 @@
                      th:src="@{/reporte/{id}/foto(id=${producto.reporteId})}"
                      class="card-img-top"
                      alt="Foto del producto"
-                     style="height: 200px; object-fit: contain;">
+                     style="height: 200px; object-fit: contain; cursor: pointer; background-color: #e9ecef;"
+                     data-bs-toggle="modal"
+                     data-bs-target="#modalFoto"
+                     th:attr="data-src=@{/reporte/{id}/foto(id=${producto.reporteId})}"
+                     onclick="abrirFoto(this)"
+                     onerror="this.parentElement.querySelector('.card-img-placeholder').style.display='flex'; this.style.display='none'">
+
+                <div class="card-img-placeholder align-items-center justify-content-center"
+                     style="height: 200px; display: none; background-color: #e9ecef; cursor: pointer;"
+                     data-bs-toggle="modal"
+                     data-bs-target="#modalFoto">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#adb5bd" viewBox="0 0 16 16">
+                        <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                        <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+                    </svg>
+                </div>
 
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-1">
@@ -233,6 +248,23 @@
     function seleccionarReporte(btn) {
         document.getElementById('input-reporte-id').value = btn.getAttribute('data-reporte-id');
     }
+
+    function abrirFoto(img) {
+        document.getElementById('foto-ampliada').src = img.getAttribute('data-src');
+    }
 </script>
+<div class="modal fade" id="modalFoto" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <img id="foto-ampliada" src="" alt="Foto del producto"
+                     style="max-width: 100%; max-height: 80vh; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

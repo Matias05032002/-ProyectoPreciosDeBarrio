@@ -88,6 +88,25 @@ public class VistaProductoE2E {
     assertThat(vistaProducto.hayModalDudoso(), is(true));
   }
 
+  @Test
+  void deberiaMostrarPlaceholderCuandoElReporteNoTieneFoto() {
+    dadoQueExisteUnReporteCargado();
+    vistaProducto = new VistaProducto(context.pages().get(0));
+    vistaProducto.escribirNombreDelProductoABuscar("Leche");
+    vistaProducto.darClickEnBuscar();
+    assertThat(vistaProducto.hayPlaceholderVisible(), is(true));
+  }
+
+  @Test
+  void deberiaMostrarElModalCuandoSeClickeaElPlaceholder() {
+    dadoQueExisteUnReporteCargado();
+    vistaProducto = new VistaProducto(context.pages().get(0));
+    vistaProducto.escribirNombreDelProductoABuscar("Leche");
+    vistaProducto.darClickEnBuscar();
+    vistaProducto.darClickEnPlaceholderDeProducto();
+    assertThat(vistaProducto.hayModalFoto(), is(true));
+  }
+
   private void dadoQueElUsuarioBuscaUnProductoPorNombre(String nombre) {
     vistaProducto.escribirNombreDelProductoABuscar(nombre);
     vistaProducto.darClickEnBuscar();
