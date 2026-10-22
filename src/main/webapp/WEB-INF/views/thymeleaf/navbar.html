@@ -100,13 +100,13 @@
                     <ul class="dropdown-menu dropdown-menu-end"
                         aria-labelledby="menuOpciones">
 
-                        <li>
+                        <li th:if="${session['ROL'] != 'ADMIN'}">
                             <a class="dropdown-item" th:href="@{/sobre-la-app}">
                                 Sobre la app
                             </a>
                         </li>
 
-                        <li>
+                        <li th:if="${session['ROL'] != 'ADMIN'}">
                             <a class="dropdown-item" th:href="@{/feedback}">
                                 Dar feedback
                             </a>

@@ -74,6 +74,24 @@
         </div>
       </div>
     </div>
+    <!-- Vista para ADMIN -->
+    <div class="row mt-4 justify-content-center" th:if="${session['ROL'] == 'ADMIN'}">
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-bar-chart-fill"></i> Estadísticas</h4>
+          <p>Visualizá métricas de uso: usuarios, reportes, productos más buscados y más.</p>
+          <a th:href="@{/admin/estadisticas}" class="btn btn-primary">Ver estadísticas</a>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-chat-left-text"></i> Consultas recibidas</h4>
+          <p>Revisá los mensajes y consultas enviados por los vecinos.</p>
+          <a th:href="@{/admin/consultas}" class="btn btn-primary">Ver consultas</a>
+        </div>
+      </div>
+    </div>
+
 
   </div>
 </main>
