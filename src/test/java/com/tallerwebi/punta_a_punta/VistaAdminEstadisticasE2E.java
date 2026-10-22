@@ -50,20 +50,26 @@ public class VistaAdminEstadisticasE2E {
   void sinSesionDeberiaRedirigirFueraDeLaPaginaDeEstadisticas() {
     vistaAdmin.navegarDirectamente();
     String url = vistaAdmin.obtenerURLActualPath();
+    System.out.println("URL actual: " + url);
     assertThat(url, containsString("home"));
   }
 
   @Test
   void conRolAdminDeberiaMostrarPanelDeEstadisticas() {
-    vistaAdmin.iniciarSesionComoAdmin("admin@unlam.edu.ar", "admin");
+    vistaAdmin.iniciarSesionComoAdmin("test@unlam.edu.ar", "test");
+    System.out.println("URL tras login: " + vistaAdmin.obtenerURLActualPath());
+    System.out.println("totalUsuarios visible: " + vistaAdmin.mostrarTotalUsuarios());
+    System.out.println("totalReportes visible: " + vistaAdmin.mostrarTotalReportes());
     assertThat(vistaAdmin.mostrarTotalUsuarios(), is(true));
     assertThat(vistaAdmin.mostrarTotalReportes(), is(true));
   }
 
   @Test
   void conRolAdminDeberiaMostrarTituloCorrecto() {
-    vistaAdmin.iniciarSesionComoAdmin("admin@unlam.edu.ar", "admin");
+    vistaAdmin.iniciarSesionComoAdmin("test@unlam.edu.ar", "test");
+    System.out.println("URL tras login: " + vistaAdmin.obtenerURLActualPath());
     String titulo = vistaAdmin.obtenerTitulo();
+    System.out.println("Titulo: " + titulo);
     assertThat(titulo, containsString("Estadísticas"));
   }
 }
