@@ -31,7 +31,9 @@
     <div th:if="${param.errorContrasena}" class="alert alert-danger">
         No se pudo cambiar la contraseña. Verificá la contraseña actual y los requisitos de la nueva.
     </div>
-
+    <div th:if="${param.datosActualizados}" class="alert alert-success">
+        Datos personales actualizados correctamente.
+    </div>
     <div class="row g-4">
         <div class="col-lg-4 perfil-sidebar">
             <section class="card shadow-sm border-0 mb-4">
@@ -109,6 +111,38 @@
                     </form>
                 </div>
             </section>
+
+            <section class="card shadow-sm border-0 mt-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-3">Datos personales</h2>
+
+                    <form th:action="@{/perfil/actualizar-datos}" method="post">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" id="nombre" name="nombre"
+                                   class="form-control"
+                                   th:value="${usuario.nombre}"
+                                   maxlength="100">
+                        </div>
+                        <div class="mb-3">
+                            <label for="apellido" class="form-label">Apellido</label>
+                            <input type="text" id="apellido" name="apellido"
+                                   class="form-control"
+                                   th:value="${usuario.apellido}"
+                                   maxlength="100">
+                        </div>
+                        <div class="mb-3">
+                            <label for="fechaNacimiento" class="form-label">Fecha de nacimiento</label>
+                            <input type="date" id="fechaNacimiento" name="fechaNacimiento"
+                                   class="form-control"
+                                   th:value="${usuario.fechaNacimiento}">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            Guardar datos
+                        </button>
+                    </form>
+                </div>
+            </section>
         </div>
 
         <div class="col-lg-8">
@@ -125,13 +159,14 @@
 
                     <div th:unless="${#lists.isEmpty(reportes)}"
                          class="table-responsive">
-                        <table class="table table-hover align-middle">
+                            <table class="table table-hover align-middle">
                             <thead>
                             <tr>
                                 <th>Producto</th>
                                 <th>Comercio</th>
                                 <th>Precio</th>
                                 <th>Fecha</th>
+                                <th></th>
                             </tr>
                             </thead>
                             <tbody>
@@ -143,14 +178,20 @@
                                     Comercio
                                 </td>
                                 <td th:text="${reporte.precio != null
-                                    ? '$ ' + #numbers.formatDecimal(reporte.precio, 1, 2)
-                                    : 'Sin precio'}">
+        ? '$ ' + #numbers.formatDecimal(reporte.precio, 1, 2)
+        : 'Sin precio'}">
                                     $ 0,00
                                 </td>
                                 <td th:text="${reporte.fechaDeReporte != null
-                                    ? #temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')
-                                    : '-'}">
+        ? #temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')
+        : '-'}">
                                     Fecha
+                                </td>
+                                <td>
+                                    <a th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
+                                       class="btn btn-outline-primary btn-sm">
+                                        Editar
+                                    </a>
                                 </td>
                             </tr>
                             </tbody>

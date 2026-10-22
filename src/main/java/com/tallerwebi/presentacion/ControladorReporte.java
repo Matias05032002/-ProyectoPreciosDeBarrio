@@ -39,6 +39,7 @@ public class ControladorReporte {
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String SESSION_ROL = "ROL";
   private static final String NOMBRE_ERROR = "error";
+  private static final String PREFIJO_ITEMS = "items[";
 
   @Autowired
   private ServicioOcr servicioOcr;
@@ -314,18 +315,20 @@ public class ControladorReporte {
     comercio.setLocalidad(comercioLocalidad);
 
     int indice = 0;
-    while (params.containsKey("items[" + indice + "].nombre")) {
+    while (params.containsKey(PREFIJO_ITEMS + indice + "].nombre")) {
       String incluir = params.get("incluir[" + indice + "]");
       if (incluir != null) {
-        String nombre = params.get("items[" + indice + "].nombre");
-        String precioStr = params.get("items[" + indice + "].precio");
+        String nombre = params.get(PREFIJO_ITEMS + indice + "].nombre");
+        String precioStr = params.get(PREFIJO_ITEMS + indice + "].precio");
         try {
           double precio = Double.parseDouble(precioStr);
           Producto producto = new Producto();
           producto.setNombre(nombre);
-          producto.setMarca("Sin marca");
-          producto.setCategoria("Varios");
-          producto.setUnidad("1g");
+          producto.setMarca(params.getOrDefault(PREFIJO_ITEMS + indice + "].marca", "Sin marca"));
+          producto.setCategoria(
+            params.getOrDefault(PREFIJO_ITEMS + indice + "].categoria", "Varios")
+          );
+          producto.setUnidad(params.getOrDefault(PREFIJO_ITEMS + indice + "].unidad", "1u"));
           Reporte reporte = new Reporte();
           reporte.setProducto(producto);
           reporte.setPrecio(precio);
@@ -339,6 +342,31 @@ public class ControladorReporte {
       indice++;
     }
     return new ModelAndView("redirect:/reporte?guardado=true");
+  }
+
+  @RequestMapping(path = "/ticket/reconocer-producto", method = RequestMethod.POST)
+  @ResponseBody
+  public String reconocerProducto(
+    @RequestParam("imagenBase64") String imagenBase64,
+    HttpServletRequest request
+  ) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return "{\"error\":\"no autenticado\"}";
+    }
+    try {
+      int inicio = imagenBase64.indexOf(',');
+      byte[] bytes = java.util.Base64.getDecoder().decode(imagenBase64.substring(inicio + 1));
+      ItemTicket item = servicioOcr.reconocerProducto(bytes);
+      if (item == null) return "{\"error\":\"no detectado\"}";
+      com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+      json.addProperty("nombre", item.getNombre());
+      json.addProperty("marca", item.getMarca());
+      json.addProperty("categoria", item.getCategoria());
+      json.addProperty("unidad", item.getUnidad());
+      return json.toString();
+    } catch (Exception e) {
+      return "{\"error\":\"" + e.getMessage() + "\"}";
+    }
   }
 
   private String guardarFoto(Reporte reporte, String fotoBase64) {

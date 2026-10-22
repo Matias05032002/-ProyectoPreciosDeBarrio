@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import java.time.LocalDate;
 
 @Entity
 public class Usuario {
@@ -16,6 +17,9 @@ public class Usuario {
   private String password;
   private String rol;
   private Boolean activo = false;
+  private String nombre;
+  private String apellido;
+  private LocalDate fechaNacimiento;
 
   public Long getId() {
     return id;
@@ -59,6 +63,30 @@ public class Usuario {
 
   public void activar() {
     activo = true;
+  }
+
+  public String getNombre() {
+    return nombre;
+  }
+
+  public void setNombre(String nombre) {
+    this.nombre = nombre;
+  }
+
+  public String getApellido() {
+    return apellido;
+  }
+
+  public void setApellido(String apellido) {
+    this.apellido = apellido;
+  }
+
+  public LocalDate getFechaNacimiento() {
+    return fechaNacimiento;
+  }
+
+  public void setFechaNacimiento(LocalDate fechaNacimiento) {
+    this.fechaNacimiento = fechaNacimiento;
   }
 
   @Override

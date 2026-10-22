@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Reportes de precios</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -77,10 +78,16 @@
         </div>
         <h6 class="text-muted mt-3">Datos del producto</h6>
         <div class="mb-3">
-            <input type="text" name="producto.nombre" id="producto-nombre" class="form-control" placeholder="Nombre del producto">
+            <input type="text" name="producto.nombre" id="producto-nombre" class="form-control" placeholder="Nombre del producto" list="lista-productos" autocomplete="off">
+            <datalist id="lista-productos">
+                <option th:each="p : ${productos}" th:value="${p.nombre}"></option>
+            </datalist>
         </div>
         <div class="mb-3">
-            <input type="text" name="producto.marca" id="producto-marca" class="form-control" placeholder="Marca">
+            <input type="text" name="producto.marca" id="producto-marca" class="form-control" placeholder="Marca" list="lista-marcas" autocomplete="off">
+            <datalist id="lista-marcas">
+                <option th:each="p : ${productos}" th:value="${p.marca}"></option>
+            </datalist>
         </div>
         <div class="mb-3">
             <select name="producto.categoria" id="producto-categoria" class="form-select">
@@ -113,10 +120,16 @@
         </div>
         <h6 class="text-muted mt-3">Datos del comercio</h6>
         <div class="mb-3">
-            <input type="text" name="comercio.nombre" id="comercio-nombre" class="form-control" placeholder="Nombre del comercio">
+            <input type="text" name="comercio.nombre" id="comercio-nombre" class="form-control" placeholder="Nombre del comercio" list="lista-comercios" autocomplete="off">
+            <datalist id="lista-comercios">
+                <option th:each="c : ${comercios}" th:value="${c.nombre}"></option>
+            </datalist>
         </div>
         <div class="mb-3">
-            <input type="text" name="comercio.direccion" id="comercio-direccion" class="form-control" placeholder="Direccion">
+            <input type="text" name="comercio.direccion" id="comercio-direccion" class="form-control" placeholder="Direccion" list="lista-direcciones" autocomplete="off">
+            <datalist id="lista-direcciones">
+                <option th:each="c : ${comercios}" th:value="${c.direccion}"></option>
+            </datalist>
         </div>
         <div class="mb-3">
             <div class="mb-3">
@@ -238,20 +251,34 @@
     document.getElementById('btn-confirmar-crop').addEventListener('click', function() {
         if (!cropper) return;
 
-        var canvas = cropper.getCroppedCanvas({
-            maxWidth: 1200,
-            maxHeight: 1200,
-            imageSmoothingQuality: 'high'
-        });
-
+        var canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200, imageSmoothingQuality: 'high' });
         fotoBase64Recortada = canvas.toDataURL('image/jpeg', 0.85);
         document.getElementById('foto-base64').value = fotoBase64Recortada;
 
-        // Mostrar preview
         document.getElementById('img-preview').src = fotoBase64Recortada;
         document.getElementById('preview-foto').style.display = 'block';
-
         modalCropper.hide();
+
+        // Reconocer producto con Gemini
+        fetch('/reporte/ticket/reconocer-producto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'imagenBase64=' + encodeURIComponent(fotoBase64Recortada)
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) return;
+                if (data.nombre) document.getElementById('producto-nombre').value = data.nombre;
+                if (data.marca)  document.getElementById('producto-marca').value = data.marca;
+                if (data.unidad) document.getElementById('producto-unidad').value = data.unidad;
+                if (data.categoria) {
+                    var sel = document.getElementById('producto-categoria');
+                    for (var i = 0; i < sel.options.length; i++) {
+                        if (sel.options[i].value === data.categoria) { sel.selectedIndex = i; break; }
+                    }
+                }
+            })
+            .catch(function() {});
     });
 
     // Cancelar recorte — limpia el input
@@ -277,15 +304,39 @@
         e.preventDefault();
         var formulario = this;
 
-        // Normalizar tildes
+        // Trim de todos los text inputs
         var inputs = this.querySelectorAll('input[type="text"]');
         inputs.forEach(function(input) {
-            input.value = input.value
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '');
+            input.value = input.value.trim();
         });
 
-        if (!this.reportValidity()) return;
+        // Validación manual de campos obligatorios
+        var errores = [];
+        if (!document.getElementById('producto-nombre').value) errores.push('Nombre del producto');
+        if (!document.getElementById('producto-marca').value) errores.push('Marca');
+        if (!document.getElementById('producto-categoria').value) errores.push('Categoría');
+        if (!document.getElementById('producto-unidad').value) errores.push('Unidad');
+        if (!document.getElementById('comercio-nombre').value) errores.push('Nombre del comercio');
+        if (!document.getElementById('comercio-direccion').value) errores.push('Dirección');
+        if (!document.getElementById('comercio-localidad').value) errores.push('Localidad');
+        if (!document.getElementById('precio').value || parseFloat(document.getElementById('precio').value) <= 0) errores.push('Precio');
+
+        if (errores.length > 0) {
+            var errorDiv = document.getElementById('error');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.id = 'error';
+                errorDiv.className = 'alert alert-danger mt-3';
+                formulario.parentNode.insertBefore(errorDiv, formulario.nextSibling);
+            }
+            errorDiv.textContent = 'Completá los siguientes campos: ' + errores.join(', ');
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        // Ocultar error si existía
+        var errorDiv = document.getElementById('error');
+        if (errorDiv) errorDiv.style.display = 'none';
 
         // Si ya hay base64 recortado, enviar directamente
         if (fotoBase64Recortada) {
@@ -293,14 +344,12 @@
             return;
         }
 
-        // Si hay archivo sin recortar (no debería pasar, pero por las dudas)
         var foto = document.getElementById('foto');
         if (!foto.files.length) {
             formulario.submit();
             return;
         }
 
-        // Fallback: leer sin recortar
         var lector = new FileReader();
         lector.onload = function(evento) {
             document.getElementById('foto-base64').value = evento.target.result;

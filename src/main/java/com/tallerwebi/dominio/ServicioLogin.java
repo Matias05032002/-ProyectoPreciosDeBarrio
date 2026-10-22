@@ -12,4 +12,10 @@ public interface ServicioLogin {
   boolean actualizarEmail(Long usuarioId, String nuevoEmail);
   boolean cambiarContrasena(Long usuarioId, String contrasenaActual, String contrasenaNueva);
   Usuario buscarPorId(Long id);
+  void actualizarDatosPersonales(
+    Long id,
+    String nombre,
+    String apellido,
+    java.time.LocalDate fechaNacimiento
+  );
 }

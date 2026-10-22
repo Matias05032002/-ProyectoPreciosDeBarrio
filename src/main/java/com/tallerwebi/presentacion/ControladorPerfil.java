@@ -102,4 +102,29 @@ public class ControladorPerfil {
 
     return new ModelAndView("redirect:/perfil?errorContrasena");
   }
+
+  @RequestMapping(path = "/perfil/actualizar-datos", method = RequestMethod.POST)
+  public ModelAndView actualizarDatos(
+    @RequestParam(value = "nombre", required = false) String nombre,
+    @RequestParam(value = "apellido", required = false) String apellido,
+    @RequestParam(value = "fechaNacimiento", required = false) String fechaNacimiento,
+    HttpServletRequest request
+  ) {
+    HttpSession sesion = request.getSession(false);
+
+    if (sesion == null || sesion.getAttribute("ID") == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+
+    Long usuarioId = Long.valueOf(sesion.getAttribute("ID").toString());
+
+    java.time.LocalDate fecha = null;
+    if (fechaNacimiento != null && !fechaNacimiento.isBlank()) {
+      fecha = java.time.LocalDate.parse(fechaNacimiento);
+    }
+
+    servicioLogin.actualizarDatosPersonales(usuarioId, nombre, apellido, fecha);
+
+    return new ModelAndView("redirect:/perfil?datosActualizados");
+  }
 }

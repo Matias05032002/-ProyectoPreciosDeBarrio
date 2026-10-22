@@ -126,4 +126,21 @@ public class ServicioLoginImpl implements ServicioLogin {
       throw new ContrasenaInvalida("La contraseña debe contener al menos una mayúscula");
     }
   }
+
+  @Override
+  public void actualizarDatosPersonales(
+    Long usuarioId,
+    String nombre,
+    String apellido,
+    java.time.LocalDate fechaNacimiento
+  ) {
+    Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
+    if (usuario == null) return;
+
+    if (nombre != null) usuario.setNombre(nombre.trim());
+    if (apellido != null) usuario.setApellido(apellido.trim());
+    usuario.setFechaNacimiento(fechaNacimiento);
+
+    repositorioUsuario.modificar(usuario);
+  }
 }

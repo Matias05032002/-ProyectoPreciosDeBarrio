@@ -39,6 +39,13 @@ public class ServicioReporteImpl implements ServicioReporte {
   public Reporte guardarReporte(Reporte reporte)
     throws ReporteExistente, CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto {
     validarCamposObligatorios(reporte);
+    reporte.getProducto().setNombre(reporte.getProducto().getNombre().trim());
+    reporte.getProducto().setMarca(reporte.getProducto().getMarca().trim());
+    reporte.getProducto().setCategoria(reporte.getProducto().getCategoria().trim());
+    reporte.getProducto().setUnidad(reporte.getProducto().getUnidad().trim());
+    reporte.getComercio().setNombre(reporte.getComercio().getNombre().trim());
+    reporte.getComercio().setDireccion(reporte.getComercio().getDireccion().trim());
+    reporte.getComercio().setLocalidad(reporte.getComercio().getLocalidad().trim());
     validarUnidad(reporte.getProducto().getUnidad());
     validarPrecio(reporte.getPrecio());
     Producto productoExistente = servicioProducto.buscarProductoPorNombreExacto(
