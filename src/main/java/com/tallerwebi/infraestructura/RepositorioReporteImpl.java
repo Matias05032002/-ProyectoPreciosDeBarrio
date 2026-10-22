@@ -127,4 +127,55 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       .setParameter("usuarioId", usuarioId)
       .getResultList();
   }
+
+  @Override
+  public Long contarTodos() {
+    return (Long) sessionFactory
+      .getCurrentSession()
+      .createQuery("SELECT COUNT(r) FROM Reporte r")
+      .uniqueResult();
+  }
+
+  @Override
+  public List<Object[]> productosMasReportados(int limite) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT r.producto.nombre, COUNT(r) FROM Reporte r GROUP BY r.producto.nombre ORDER BY COUNT(r) DESC"
+      )
+      .setMaxResults(limite)
+      .list();
+  }
+
+  @Override
+  public List<Object[]> comerciosMasReportados(int limite) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT r.comercio.nombre, COUNT(r) FROM Reporte r GROUP BY r.comercio.nombre ORDER BY COUNT(r) DESC"
+      )
+      .setMaxResults(limite)
+      .list();
+  }
+
+  @Override
+  public List<Object[]> reportesPorMes() {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT MONTH(r.fechaDeReporte), YEAR(r.fechaDeReporte), COUNT(r) FROM Reporte r GROUP BY YEAR(r.fechaDeReporte), MONTH(r.fechaDeReporte) ORDER BY YEAR(r.fechaDeReporte), MONTH(r.fechaDeReporte)"
+      )
+      .list();
+  }
+
+  @Override
+  public List<Object[]> productosMasDudosos(int limite) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT r.producto.nombre, SIZE(r.usuariosQueMarcaron) FROM Reporte r WHERE SIZE(r.usuariosQueMarcaron) > 0 ORDER BY SIZE(r.usuariosQueMarcaron) DESC"
+      )
+      .setMaxResults(limite)
+      .list();
+  }
 }

@@ -1,6 +1,6 @@
-package com.tallerwebi.dominio.Reporte;
+package com.tallerwebi.dominio.Gemini;
 
 @FunctionalInterface
-public interface GeminiClient {
+public interface ServicioGemini {
   String llamar(String requestBody) throws Exception;
 }

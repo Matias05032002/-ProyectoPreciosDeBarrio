@@ -14,4 +14,9 @@ public interface RepositorioReporte {
   Reporte buscarReporteDuplicado(Long usuarioId, Long productoId, Long comercioId, LocalDate fecha);
   List<Reporte> buscarPorComercio(Long comercioId);
   List<Reporte> buscarPorUsuarioId(Long usuarioId);
+  Long contarTodos();
+  List<Object[]> productosMasReportados(int limite);
+  List<Object[]> comerciosMasReportados(int limite);
+  List<Object[]> reportesPorMes();
+  List<Object[]> productosMasDudosos(int limite);
 }

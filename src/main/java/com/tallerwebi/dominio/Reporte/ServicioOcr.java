@@ -1,6 +1,7 @@
 package com.tallerwebi.dominio.Reporte;
 
 import com.google.gson.*;
+import com.tallerwebi.dominio.Gemini.ServicioGemini;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -17,9 +18,9 @@ public class ServicioOcr {
   private static final String DEFAULT_CATEGORIA = "Varios";
   private static final String DEFAULT_UNIDAD = "1u";
 
-  private final GeminiClient geminiClient;
+  private final ServicioGemini geminiClient;
 
-  public ServicioOcr(GeminiClient geminiClient) {
+  public ServicioOcr(ServicioGemini geminiClient) {
     this.geminiClient = geminiClient;
   }
 

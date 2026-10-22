@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Gemini.ServicioGemini;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,11 +13,11 @@ import org.junit.jupiter.api.Test;
 public class ServicioOcrTest {
 
   private ServicioOcr servicioOcr;
-  private GeminiClient geminiClientMock;
+  private ServicioGemini geminiClientMock;
 
   @BeforeEach
   public void init() {
-    geminiClientMock = mock(GeminiClient.class);
+    geminiClientMock = mock(ServicioGemini.class);
     servicioOcr = new ServicioOcr(geminiClientMock);
   }
 

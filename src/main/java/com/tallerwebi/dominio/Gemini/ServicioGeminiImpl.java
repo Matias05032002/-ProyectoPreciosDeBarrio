@@ -1,4 +1,4 @@
-package com.tallerwebi.dominio.Reporte;
+package com.tallerwebi.dominio.Gemini;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -6,7 +6,7 @@ import java.net.URL;
 import org.springframework.stereotype.Component;
 
 @Component
-public class GeminiClientHttp implements GeminiClient {
+public class ServicioGeminiImpl implements ServicioGemini {
 
   private static final String GEMINI_API_KEY = System.getenv("GEMINI_API_KEY");
   private static final String GEMINI_URL =

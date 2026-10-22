@@ -27,7 +27,7 @@
             <div class="navbar-nav ms-auto align-items-lg-center">
 
                 <!-- Navegación general -->
-                <th:block th:if="${session['ROL'] != 'COMERCIO'}">
+                <th:block th:if="${session['ROL'] != 'COMERCIO' and session['ROL'] != 'ADMIN'}">
 
                     <a class="nav-link" th:href="@{/producto}">
                         Productos
@@ -115,6 +115,12 @@
                         <li th:if="${session['ROL'] == 'ADMIN'}">
                             <a class="dropdown-item" th:href="@{/admin/consultas}">
                                 Consultas recibidas
+                            </a>
+                        </li>
+
+                        <li th:if="${session['ROL'] == 'ADMIN'}">
+                            <a class="dropdown-item" th:href="@{/admin/estadisticas}">
+                                <i class="bi bi-bar-chart-fill me-1"></i>Estadísticas
                             </a>
                         </li>
 

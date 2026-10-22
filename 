@@ -1,0 +1,45 @@
+warning: in the working copy of 'src/main/java/com/tallerwebi/config/HibernateConfig.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Admin/ServicioAdmin.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Admin/ServicioAdminImpl.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Gemini/ServicioGemini.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Gemini/ServicioGeminiImpl.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Reporte/ItemTicket.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Reporte/RepositorioReporte.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Reporte/ServicioOcr.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Reporte/ServicioReporteImpl.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/RepositorioUsuario.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/ServicioLogin.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/ServicioLoginImpl.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/dominio/Usuario.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/infraestructura/RepositorioReporteImpl.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/infraestructura/RepositorioUsuarioImpl.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/presentacion/ControladorAdmin.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/presentacion/ControladorPerfil.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/tallerwebi/presentacion/ControladorReporte.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/tallerwebi/dominio/Admin/ServicioAdminTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/tallerwebi/dominio/Lista/ListaTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/tallerwebi/dominio/Reporte/ServicioOcrTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/tallerwebi/infraestructura/Admin/RepositorioAdminTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/tallerwebi/integracion/Admin/ControladorAdminTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/tallerwebi/presentacion/Admin/ControladorAdminTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/tallerwebi/punta_a_punta/VistaAdminEstadisticasE2E.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/java/com/tallerwebi/punta_a_punta/vistas/Admin/VistaAdminEstadisticas.java', LF will be replaced by CRLF the next time Git touches it
+src/main/java/com/tallerwebi/dominio/Admin/ServicioAdmin.java
+src/main/java/com/tallerwebi/dominio/Admin/ServicioAdminImpl.java
+src/main/java/com/tallerwebi/dominio/Gemini/ServicioGemini.java
+src/main/java/com/tallerwebi/dominio/Gemini/ServicioGeminiImpl.java
+src/main/java/com/tallerwebi/dominio/Reporte/RepositorioReporte.java
+src/main/java/com/tallerwebi/dominio/Reporte/ServicioOcr.java
+src/main/java/com/tallerwebi/dominio/RepositorioUsuario.java
+src/main/java/com/tallerwebi/infraestructura/RepositorioReporteImpl.java
+src/main/java/com/tallerwebi/infraestructura/RepositorioUsuarioImpl.java
+src/main/java/com/tallerwebi/presentacion/ControladorAdmin.java
+src/main/webapp/WEB-INF/views/thymeleaf/admin/estadisticas.html
+src/main/webapp/WEB-INF/views/thymeleaf/navbar.html
+src/test/java/com/tallerwebi/dominio/Admin/ServicioAdminTest.java
+src/test/java/com/tallerwebi/dominio/Reporte/ServicioOcrTest.java
+src/test/java/com/tallerwebi/infraestructura/Admin/RepositorioAdminTest.java
+src/test/java/com/tallerwebi/integracion/Admin/ControladorAdminTest.java
+src/test/java/com/tallerwebi/presentacion/Admin/ControladorAdminTest.java
+src/test/java/com/tallerwebi/punta_a_punta/VistaAdminEstadisticasE2E.java
+src/test/java/com/tallerwebi/punta_a_punta/vistas/Admin/VistaAdminEstadisticas.java
