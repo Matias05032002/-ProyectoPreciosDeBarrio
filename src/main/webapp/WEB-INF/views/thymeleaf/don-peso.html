@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="don-peso" id="don-peso-widget">
+
+    <button id="don-peso-btn" title="Preguntale a Don Peso" onclick="toggleDonPeso()">
+        <i class="bi bi-coin" style="font-size: 1.8rem;"></i>
+    </button>
+
+    <div id="don-peso-panel" style="display:none;">
+        <div id="don-peso-header">
+            <span><i class="bi bi-coin"></i> Don Peso</span>
+            <button onclick="toggleDonPeso()" aria-label="Cerrar">&times;</button>
+        </div>
+        <div id="don-peso-mensajes">
+            <div class="dp-msg dp-bot">¡Hola! Soy Don Peso. Decime qué producto buscás y te digo dónde está más barato cerca tuyo.</div>
+        </div>
+        <div id="don-peso-footer">
+            <input type="text" id="don-peso-input" placeholder="Ej: leche, aceite, pan..." onkeydown="if(event.key==='Enter') enviarConsulta()" />
+            <button onclick="enviarConsulta()">&#9654;</button>
+        </div>
+    </div>
+
+    <script>
+        let donPesoAbierto = false;
+        let donPesoLat = null;
+        let donPesoLon = null;
+
+        function toggleDonPeso() {
+            donPesoAbierto = !donPesoAbierto;
+            document.getElementById('don-peso-panel').style.display = donPesoAbierto ? 'flex' : 'none';
+            if (donPesoAbierto) {
+                if (navigator.geolocation && donPesoLat === null) {
+                    navigator.geolocation.getCurrentPosition(
+                        pos => { donPesoLat = pos.coords.latitude; donPesoLon = pos.coords.longitude; },
+                        () => {}
+                    );
+                }
+                document.getElementById('don-peso-input').focus();
+            }
+        }
+
+        function agregarMensaje(texto, tipo) {
+            const cont = document.getElementById('don-peso-mensajes');
+            const div = document.createElement('div');
+            div.className = 'dp-msg ' + tipo;
+            div.innerHTML = texto
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+            cont.appendChild(div);
+            cont.scrollTop = cont.scrollHeight;
+            return div;
+        }
+
+        function enviarConsulta() {
+            const input = document.getElementById('don-peso-input');
+            const pregunta = input.value.trim();
+            if (!pregunta) return;
+
+            agregarMensaje(pregunta, 'dp-user');
+            input.value = '';
+
+            const loading = agregarMensaje('Don Peso está buscando...', 'dp-loading');
+
+            fetch('/spring/asistente/consultar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pregunta, latitud: donPesoLat, longitud: donPesoLon })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    loading.remove();
+                    agregarMensaje(data.respuesta || 'No pude encontrar una respuesta.', 'dp-bot');
+                })
+                .catch(() => {
+                    loading.remove();
+                    agregarMensaje('Hubo un error al consultar. Intentá de nuevo.', 'dp-bot');
+                });
+        }
+    </script>
+
+</div>
+</body>
+</html>

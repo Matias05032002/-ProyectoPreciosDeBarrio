@@ -4,6 +4,8 @@ import com.tallerwebi.config.DatabaseInitializationConfig;
 import com.tallerwebi.config.HibernateConfig;
 import com.tallerwebi.config.SpringWebConfig;
 import jakarta.servlet.Filter;
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletRegistration;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
@@ -36,5 +38,12 @@ public class MyServletInitializer extends AbstractAnnotationConfigDispatcherServ
     encodingFilter.setEncoding("UTF-8");
     encodingFilter.setForceEncoding(true);
     return new Filter[] { encodingFilter };
+  }
+
+  @Override
+  protected void customizeRegistration(ServletRegistration.Dynamic registration) {
+    registration.setMultipartConfig(
+      new MultipartConfigElement("", 20 * 1024 * 1024, 20 * 1024 * 1024, 0)
+    );
   }
 }
