@@ -2,12 +2,15 @@ package com.tallerwebi.dominio.Producto;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
+import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -138,5 +141,130 @@ public class ServicioProductoTest {
     );
 
     assertThat(resultado, equalTo(Collections.emptyList()));
+  }
+
+  @Test
+  public void buscarProductosConPrecioOrdenaPorPrecioAscendente() {
+    com.tallerwebi.dominio.Reporte.Reporte reporte1 = crearReporteMock("Leche", 200.0, null);
+    com.tallerwebi.dominio.Reporte.Reporte reporte2 = crearReporteMock("Leche", 100.0, null);
+    when(this.repositorioReporteMock.buscarPorNombre("Leche"))
+      .thenReturn(Arrays.asList(reporte1, reporte2));
+
+    List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
+      "Leche",
+      null,
+      OrdenProducto.PRECIO,
+      null,
+      null
+    );
+
+    assertThat(resultado.get(0).getPrecioMinimo(), equalTo(100.0));
+    assertThat(resultado.get(1).getPrecioMinimo(), equalTo(200.0));
+  }
+
+  @Test
+  public void buscarProductosConPrecioOrdenaPorReciente() {
+    java.time.LocalDateTime antigua = java.time.LocalDateTime.now().minusDays(5);
+    java.time.LocalDateTime reciente = java.time.LocalDateTime.now();
+    com.tallerwebi.dominio.Reporte.Reporte r1 = crearReporteMock("Aceite", 50.0, antigua);
+    com.tallerwebi.dominio.Reporte.Reporte r2 = crearReporteMock("Aceite", 60.0, reciente);
+    when(this.repositorioReporteMock.buscarPorNombre("Aceite")).thenReturn(Arrays.asList(r1, r2));
+
+    List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
+      "Aceite",
+      null,
+      OrdenProducto.RECIENTE,
+      null,
+      null
+    );
+
+    assertThat(resultado.get(0).getFechaDeReporte(), equalTo(reciente));
+  }
+
+  @Test
+  public void buscarProductosConPrecioConReporteSinProductoLoIgnora() {
+    com.tallerwebi.dominio.Reporte.Reporte reporteSinProducto = mock(
+      com.tallerwebi.dominio.Reporte.Reporte.class
+    );
+    when(reporteSinProducto.getProducto()).thenReturn(null);
+    when(this.repositorioReporteMock.buscarPorNombre("X"))
+      .thenReturn(Arrays.asList(reporteSinProducto));
+
+    List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
+      "X",
+      null,
+      OrdenProducto.PRECIO,
+      null,
+      null
+    );
+
+    assertThat(resultado.size(), equalTo(0));
+  }
+
+  @Test
+  public void buscarProductosConPrecioConReportesNullRetornaVacio() {
+    when(this.repositorioReporteMock.buscarPorNombre("Y")).thenReturn(null);
+
+    List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
+      "Y",
+      null,
+      OrdenProducto.PRECIO,
+      null,
+      null
+    );
+
+    assertThat(resultado.size(), equalTo(0));
+  }
+
+  @Test
+  public void buscarProductosConPrecioCalculaDistanciaConCoordenadas() {
+    Producto producto = new Producto();
+    producto.setNombre("Pan");
+    com.tallerwebi.dominio.Comercio.Comercio comercio = mock(
+      com.tallerwebi.dominio.Comercio.Comercio.class
+    );
+    when(comercio.getLatitud()).thenReturn(-34.6037);
+    when(comercio.getLongitud()).thenReturn(-58.3816);
+    when(comercio.getNombre()).thenReturn("Almacen");
+    com.tallerwebi.dominio.Reporte.Reporte reporte = mock(
+      com.tallerwebi.dominio.Reporte.Reporte.class
+    );
+    when(reporte.getProducto()).thenReturn(producto);
+    when(reporte.getComercio()).thenReturn(comercio);
+    when(reporte.getPrecio()).thenReturn(50.0);
+    when(reporte.getPuntuacion()).thenReturn(0);
+    when(reporte.getFechaDeReporte()).thenReturn(null); // <-- agregar esto
+    when(reporte.getUsuariosQueMarcaron()).thenReturn(Collections.emptyList());
+    when(this.repositorioReporteMock.buscarPorNombre("Pan")).thenReturn(Arrays.asList(reporte));
+
+    List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
+      "Pan",
+      null,
+      OrdenProducto.PRECIO,
+      -34.6100,
+      -58.3800
+    );
+
+    assertThat(resultado.size(), equalTo(1));
+    assertThat(resultado.get(0).getDistanciaKm(), notNullValue());
+  }
+
+  private com.tallerwebi.dominio.Reporte.Reporte crearReporteMock(
+    String nombreProducto,
+    Double precio,
+    java.time.LocalDateTime fecha
+  ) {
+    Producto producto = new Producto();
+    producto.setNombre(nombreProducto);
+    com.tallerwebi.dominio.Reporte.Reporte reporte = mock(
+      com.tallerwebi.dominio.Reporte.Reporte.class
+    );
+    when(reporte.getProducto()).thenReturn(producto);
+    when(reporte.getPrecio()).thenReturn(precio);
+    when(reporte.getFechaDeReporte()).thenReturn(fecha);
+    when(reporte.getComercio()).thenReturn(null);
+    when(reporte.getPuntuacion()).thenReturn(0);
+    when(reporte.getUsuariosQueMarcaron()).thenReturn(Collections.emptyList());
+    return reporte;
   }
 }

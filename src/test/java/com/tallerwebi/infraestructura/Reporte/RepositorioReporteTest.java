@@ -95,6 +95,120 @@ public class RepositorioReporteTest {
     assertThat(resultado.size(), is(greaterThanOrEqualTo(2)));
   }
 
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaBuscarReportesPorProductoId() {
+    Reporte reporte = dadoQueTengoUnReporte("Fideos", "Almacen", 150.0);
+    dadoQueExisteElReporte(reporte);
+
+    List<Reporte> resultado = repositorioReporte.buscarPorProducto(reporte.getProducto().getId());
+
+    assertThat(resultado, not(empty()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaBuscarReportesPorComercioId() {
+    Reporte reporte = dadoQueTengoUnReporte("Arroz", "Kiosco", 200.0);
+    dadoQueExisteElReporte(reporte);
+
+    List<Reporte> resultado = repositorioReporte.buscarPorComercio(reporte.getComercio().getId());
+
+    assertThat(resultado, not(empty()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaContarTodosLosReportes() {
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Leche", "Almacen", 100.0));
+
+    Long total = repositorioReporte.contarTodos();
+
+    assertThat(total, is(greaterThanOrEqualTo(1L)));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaObtenerProductosMasReportados() {
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Leche", "Almacen", 100.0));
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Leche", "Kiosco", 120.0));
+
+    List<Object[]> resultado = repositorioReporte.productosMasReportados(5);
+
+    assertThat(resultado, not(empty()));
+    assertThat(resultado.get(0)[0].toString(), equalTo("Leche"));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaObtenerComerciosMasReportados() {
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Leche", "Almacen", 100.0));
+
+    List<Object[]> resultado = repositorioReporte.comerciosMasReportados(5);
+
+    assertThat(resultado, not(empty()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaObtenerReportesPorMes() {
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Leche", "Almacen", 100.0));
+
+    List<Object[]> resultado = repositorioReporte.reportesPorMes();
+
+    assertThat(resultado, not(empty()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaBuscarReportesPorUsuarioId() {
+    com.tallerwebi.dominio.Usuario usuario = new com.tallerwebi.dominio.Usuario();
+    usuario.setEmail("test@test.com");
+    sessionFactory.getCurrentSession().persist(usuario);
+
+    Reporte reporte = dadoQueTengoUnReporte("Pan", "Almacen", 50.0);
+    reporte.setUsuario(usuario);
+    dadoQueExisteElReporte(reporte);
+
+    List<Reporte> resultado = repositorioReporte.buscarPorUsuarioId(usuario.getId());
+
+    assertThat(resultado, not(empty()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaContarReportesDudososPorComercio() {
+    Reporte reporte = dadoQueTengoUnReporte("Leche", "Almacen", 100.0);
+    dadoQueExisteElReporte(reporte);
+
+    Long resultado = repositorioReporte.contarReportesDudososPorComercio(
+      reporte.getComercio().getId()
+    );
+
+    assertThat(resultado, is(greaterThanOrEqualTo(0L)));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void marcarDudosoDeberiaRetornarNullCuandoSuperaPuntuacionMaxima() {
+    Reporte reporte = dadoQueTengoUnReporte("Leche", "Almacen", 100.0);
+    reporte.setPuntuacion(Reporte.PUNTUACION_MAXIMA);
+    dadoQueExisteElReporte(reporte);
+
+    Reporte resultado = repositorioReporte.marcarDudoso(reporte.getId(), null);
+
+    assertThat(resultado, is(nullValue()));
+  }
+
   private Reporte dadoQueTengoUnReporte(
     String nombreProducto,
     String nombreComercio,
