@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Lista.ServicioLista;
+import com.tallerwebi.dominio.Paginador.ServicioPaginador;
 import com.tallerwebi.dominio.Producto.OrdenProducto;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
@@ -33,14 +34,21 @@ public class ControladorProductoTest {
   private HttpServletRequest requestMock;
   private HttpSession sessionMock;
   private ServicioLista servicioListaMock;
+  private ServicioPaginador servicioPaginadorMock;
 
   @BeforeEach
   public void init() {
     this.servicioProductoMock = mock(ServicioProducto.class);
     this.servicioLoginMock = mock(ServicioLogin.class);
     this.servicioListaMock = mock(ServicioLista.class);
+    this.servicioPaginadorMock = mock(ServicioPaginador.class);
     this.controladorProducto =
-      new ControladorProducto(servicioProductoMock, servicioLoginMock, servicioListaMock);
+      new ControladorProducto(
+        servicioProductoMock,
+        servicioLoginMock,
+        servicioListaMock,
+        servicioPaginadorMock
+      );
     this.requestMock = mock(HttpServletRequest.class);
     this.sessionMock = mock(HttpSession.class);
     when(requestMock.getSession()).thenReturn(sessionMock);
@@ -96,13 +104,16 @@ public class ControladorProductoTest {
         )
     )
       .thenReturn(Arrays.asList(dto));
-
+    when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(1);
+    when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
+      .thenReturn(Arrays.asList(dto));
     ModelAndView modelAndView = controladorProducto.buscarProducto(
       "Leche",
       "precio",
       null,
       null, // lat
       null, // lng
+      0,
       requestMock
     );
 
@@ -122,7 +133,9 @@ public class ControladorProductoTest {
         )
     )
       .thenReturn(Collections.emptyList());
-
+    when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(0);
+    when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
+      .thenReturn(Collections.emptyList());
     ModelAndView modelAndView =
       this.controladorProducto.buscarProducto(
           "Producto Inexistente",
@@ -130,6 +143,7 @@ public class ControladorProductoTest {
           null,
           null,
           null,
+          0,
           requestMock
         );
 

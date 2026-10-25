@@ -102,6 +102,24 @@
             </div>
         </div>
     </div>
+    <!-- Paginación -->
+    <div th:if="${totalPaginas != null and totalPaginas > 1}"
+         class="d-flex justify-content-center align-items-center gap-3 mt-4 mb-2">
+        <a th:if="${pagina > 0}"
+           th:href="@{/reporte/mis-productos(pagina=${pagina - 1})}"
+           class="btn btn-outline-primary">
+            &larr; Anterior
+        </a>
+        <span class="text-muted">
+        Página <span th:text="${pagina + 1}"></span>
+        de <span th:text="${totalPaginas}"></span>
+    </span>
+        <a th:if="${pagina + 1 < totalPaginas}"
+           th:href="@{/reporte/mis-productos(pagina=${pagina + 1})}"
+           class="btn btn-outline-primary">
+            Siguiente &rarr;
+        </a>
+    </div>
 </div>
 
 <!-- Modal foto ampliada -->

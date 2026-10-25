@@ -1,6 +1,7 @@
 package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Lista.ServicioLista;
+import com.tallerwebi.dominio.Paginador.ServicioPaginador;
 import com.tallerwebi.dominio.Producto.OrdenProducto;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
@@ -24,6 +25,7 @@ public class ControladorProducto {
   private ServicioProducto servicioProducto;
   private ServicioLogin servicioLogin;
   private ServicioLista servicioLista;
+  private ServicioPaginador servicioPaginador;
 
   private static final String VISTA_PRODUCTOS = "producto/lista-productos";
   private static final String HISTORIAL_BUSQUEDAS = "HISTORIAL_BUSQUEDAS";
@@ -33,11 +35,13 @@ public class ControladorProducto {
   public ControladorProducto(
     ServicioProducto servicioProducto,
     ServicioLogin servicioLogin,
-    ServicioLista servicioLista
+    ServicioLista servicioLista,
+    ServicioPaginador servicioPaginador
   ) {
     this.servicioProducto = servicioProducto;
     this.servicioLogin = servicioLogin;
     this.servicioLista = servicioLista;
+    this.servicioPaginador = servicioPaginador;
   }
 
   @RequestMapping(method = RequestMethod.POST)
@@ -74,6 +78,7 @@ public class ControladorProducto {
     @RequestParam(value = "dudosoMarcado", required = false) Boolean dudosoMarcado,
     @RequestParam(value = "lat", required = false) Double lat,
     @RequestParam(value = "lng", required = false) Double lng,
+    @RequestParam(value = "pagina", required = false, defaultValue = "0") int pagina,
     HttpServletRequest request
   ) {
     String email = (String) request.getSession().getAttribute("EMAIL");
@@ -88,29 +93,27 @@ public class ControladorProducto {
 
     @SuppressWarnings("unchecked")
     List<String> historial = (List<String>) session.getAttribute(HISTORIAL_BUSQUEDAS);
-
-    if (historial == null) {
-      historial = new ArrayList<>();
-    }
+    if (historial == null) historial = new ArrayList<>();
 
     if (!busquedaLimpia.isEmpty()) {
       historial.removeIf(b -> b.equalsIgnoreCase(busquedaLimpia));
       historial.add(0, busquedaLimpia);
-
-      if (historial.size() > MAX_HISTORIAL_BUSQUEDAS) {
-        historial.remove(historial.size() - 1);
-      }
-
+      if (historial.size() > MAX_HISTORIAL_BUSQUEDAS) historial.remove(historial.size() - 1);
       session.setAttribute(HISTORIAL_BUSQUEDAS, historial);
     }
 
-    List<ProductoConPrecio> productos = servicioProducto.buscarProductosConPrecio(
+    List<ProductoConPrecio> todos = servicioProducto.buscarProductosConPrecio(
       busquedaLimpia,
       usuario,
       ordenEnum,
       lat,
       lng
     );
+
+    // Paginación
+    int tamano = 9;
+    int totalPaginas = servicioPaginador.calcularTotalPaginas(todos.size(), tamano);
+    List<ProductoConPrecio> productos = servicioPaginador.paginar(todos, pagina, tamano);
 
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
     mav.addObject("productos", productos);
@@ -120,6 +123,8 @@ public class ControladorProducto {
     mav.addObject("lat", lat);
     mav.addObject("lng", lng);
     mav.addObject("historialBusquedas", historial);
+    mav.addObject("pagina", pagina);
+    mav.addObject("totalPaginas", totalPaginas);
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId != null) {
       mav.addObject("listas", servicioLista.obtenerListasDeUsuario(usuarioId));

@@ -2,6 +2,7 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Paginador.ServicioPaginador;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.ItemTicket;
@@ -32,6 +33,7 @@ public class ControladorReporte {
   private ServicioProducto servicioProducto;
   private ServicioComercio servicioComercio;
   private ServicioLogin servicioLogin;
+  private ServicioPaginador servicioPaginador;
   private static final String VISTA_REPORTES = "reporte/lista-reportes";
   private static final String NOMBRE_PRODUCTOS = "productos";
   private static final String NOMBRE_COMERCIOS = "comercios";
@@ -41,6 +43,7 @@ public class ControladorReporte {
   private static final String NOMBRE_ERROR = "error";
   private static final String PREFIJO_ITEMS = "items[";
   private static final String ROL_COMERCIO = "COMERCIO";
+  private static final String PARAM_PAGINA = "pagina";
 
   @Autowired
   private ServicioOcr servicioOcr;
@@ -51,13 +54,15 @@ public class ControladorReporte {
     ServicioProducto servicioProducto,
     ServicioComercio servicioComercio,
     ServicioLogin servicioLogin,
-    ServicioOcr servicioOcr
+    ServicioOcr servicioOcr,
+    ServicioPaginador servicioPaginador
   ) {
     this.servicioReporte = servicioReporte;
     this.servicioProducto = servicioProducto;
     this.servicioComercio = servicioComercio;
     this.servicioLogin = servicioLogin;
     this.servicioOcr = servicioOcr;
+    this.servicioPaginador = servicioPaginador;
   }
 
   public ModelAndView guardarReporte(@ModelAttribute Reporte reporte, HttpServletRequest request) {
@@ -174,14 +179,24 @@ public class ControladorReporte {
   }
 
   @RequestMapping(path = "/mis-reportes", method = RequestMethod.GET)
-  public ModelAndView misReportes(HttpServletRequest request) {
+  public ModelAndView misReportes(
+    HttpServletRequest request,
+    @RequestParam(value = PARAM_PAGINA, required = false, defaultValue = "0") int pagina
+  ) {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
-    List<Reporte> reportes = servicioReporte.buscarPorUsuarioId(usuarioId);
+    List<Reporte> todos = servicioReporte.buscarPorUsuarioId(usuarioId);
+
+    int tamano = 9;
+    int totalPaginas = servicioPaginador.calcularTotalPaginas(todos.size(), tamano);
+    List<Reporte> reportesPagina = servicioPaginador.paginar(todos, pagina, tamano);
+
     ModelAndView mav = new ModelAndView("reporte/mis-reportes-comercio");
-    mav.addObject(NOMBRE_REPORTES, reportes);
+    mav.addObject("reportes", reportesPagina);
+    mav.addObject(PARAM_PAGINA, pagina);
+    mav.addObject("totalPaginas", totalPaginas);
     return mav;
   }
 
@@ -247,20 +262,32 @@ public class ControladorReporte {
   }
 
   @RequestMapping(path = "/mis-productos", method = RequestMethod.GET)
-  public ModelAndView misProductos(HttpServletRequest request) {
+  public ModelAndView misProductos(
+    HttpServletRequest request,
+    @RequestParam(value = PARAM_PAGINA, required = false, defaultValue = "0") int pagina
+  ) {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
     Comercio comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
     ModelAndView mav = new ModelAndView("reporte/mis-productos-comercio");
+
+    List<Reporte> todos;
     if (comercio == null) {
-      mav.addObject("reportes", java.util.Collections.emptyList());
+      todos = java.util.Collections.emptyList();
     } else {
-      List<Reporte> reportes = servicioReporte.buscarPorComercio(comercio.getId());
-      mav.addObject("reportes", reportes);
+      todos = servicioReporte.buscarPorComercio(comercio.getId());
       mav.addObject("comercio", comercio);
     }
+
+    int tamano = 9;
+    int totalPaginas = servicioPaginador.calcularTotalPaginas(todos.size(), tamano);
+    List<Reporte> reportesPagina = servicioPaginador.paginar(todos, pagina, tamano);
+
+    mav.addObject("reportes", reportesPagina);
+    mav.addObject(PARAM_PAGINA, pagina);
+    mav.addObject("totalPaginas", totalPaginas);
     return mav;
   }
 

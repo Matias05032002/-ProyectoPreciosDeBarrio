@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Paginador.ServicioPaginador;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.Reporte;
@@ -39,6 +40,7 @@ public class ControladorReporteTest {
   private HttpSession sessionMock;
   private Usuario usuarioMock;
   private ServicioOcr servicioOcrMock;
+  private ServicioPaginador servicioPaginadorMock;
 
   @BeforeEach
   public void init() {
@@ -48,13 +50,15 @@ public class ControladorReporteTest {
     this.servicioReporteMock = mock(ServicioReporte.class);
     this.servicioOcrMock = mock(ServicioOcr.class);
     this.usuarioMock = mock(Usuario.class);
+    this.servicioPaginadorMock = mock(ServicioPaginador.class);
     this.controladorReporte =
       new ControladorReporte(
         servicioReporteMock,
         servicioProductoMock,
         servicioComercioMock,
         servicioLoginMock,
-        servicioOcrMock
+        servicioOcrMock,
+        servicioPaginadorMock
       );
     requestMock = mock(HttpServletRequest.class);
     sessionMock = mock(HttpSession.class);
@@ -201,8 +205,10 @@ public class ControladorReporteTest {
     when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
     when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(null);
-
-    ModelAndView mav = controladorReporte.misProductos(requestMock);
+    when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(0);
+    when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
+      .thenReturn(Collections.emptyList());
+    ModelAndView mav = controladorReporte.misProductos(requestMock, 0);
 
     assertThat(mav.getViewName(), equalToIgnoringCase("reporte/mis-productos-comercio"));
     assertThat(mav.getModel().get("reportes"), is(Collections.emptyList()));
@@ -219,8 +225,9 @@ public class ControladorReporteTest {
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
     when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
     when(servicioReporteMock.buscarPorComercio(5L)).thenReturn(reportes);
-
-    ModelAndView mav = controladorReporte.misProductos(requestMock);
+    when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(1);
+    doReturn(reportes).when(servicioPaginadorMock).paginar(anyList(), anyInt(), anyInt());
+    ModelAndView mav = controladorReporte.misProductos(requestMock, 0);
 
     assertThat(mav.getViewName(), equalToIgnoringCase("reporte/mis-productos-comercio"));
     assertThat(mav.getModel().get("reportes"), is(reportes));
