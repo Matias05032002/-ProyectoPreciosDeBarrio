@@ -19,4 +19,7 @@ public interface ServicioReporte {
   void editarReporte(Long id, Reporte datos, Long usuarioId)
     throws CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto, FueraDePlazoDeEdicion;
   boolean puedeEditar(Long reporteId, Long usuarioId);
+  List<Object[]> contarUsuariosDistintosPorComercio(Long comercioId);
+  Long contarReportesDudososPorComercio(Long comercioId);
+  List<Object[]> rangoEtariosVisitantes(Long comercioId);
 }

@@ -13,7 +13,9 @@
 <nav th:replace="~{navbar :: navbar}"></nav>
 <div class="container mt-4">
     <h2>Reporta el precio del producto para ayudar a tus vecinos</h2>
-    <div class="d-flex gap-2 mt-3 mb-4">
+
+    <!-- Botones cargar solo para no-COMERCIO -->
+    <div th:if="${comercioDelUsuario == null}" class="d-flex gap-2 mt-3 mb-4">
         <a th:href="@{/reporte}" class="btn btn-primary">
             <i class="bi bi-pencil-square"></i> Cargar manualmente
         </a>
@@ -21,6 +23,7 @@
             <i class="bi bi-receipt"></i> Cargar por ticket
         </a>
     </div>
+
     <h4 class="mt-5">Cargar precio</h4>
     <form th:action="@{/reporte}" method="post" class="mt-3">
         <h6 class="text-muted mt-3">Foto del producto</h6>
@@ -75,6 +78,7 @@
                 <i class="bi bi-pencil"></i> Cambiar foto
             </button>
         </div>
+
         <h6 class="text-muted mt-3">Datos del producto</h6>
         <div class="mb-3">
             <input type="text" name="producto.nombre" id="producto-nombre" class="form-control" placeholder="Nombre del producto" list="lista-productos" autocomplete="off">
@@ -117,20 +121,48 @@
         <div class="mb-3">
             <input type="text" name="producto.unidad" id="producto-unidad" class="form-control" placeholder="Unidad (ej: 1kg, 900ml)">
         </div>
+
         <h6 class="text-muted mt-3">Datos del comercio</h6>
-        <div class="mb-3">
-            <input type="text" name="comercio.nombre" id="comercio-nombre" class="form-control" placeholder="Nombre del comercio" list="lista-comercios" autocomplete="off">
-            <datalist id="lista-comercios">
-                <option th:each="c : ${comercios}" th:value="${c.nombre}"></option>
-            </datalist>
+
+        <!-- COMERCIO: campos fijos (solo lectura) + hidden fields -->
+        <div th:if="${comercioDelUsuario != null}">
+            <div class="mb-3">
+                <input type="text"
+                       class="form-control"
+                       th:value="${comercioDelUsuario.nombre}"
+                       readonly>
+                <input type="hidden" name="comercio.nombre" th:value="${comercioDelUsuario.nombre}">
+            </div>
+            <div class="mb-3">
+                <input type="text"
+                       class="form-control"
+                       th:value="${comercioDelUsuario.direccion}"
+                       readonly>
+                <input type="hidden" name="comercio.direccion" th:value="${comercioDelUsuario.direccion}">
+            </div>
+            <div class="mb-3">
+                <input type="text"
+                       class="form-control"
+                       th:value="${comercioDelUsuario.localidad}"
+                       readonly>
+                <input type="hidden" name="comercio.localidad" th:value="${comercioDelUsuario.localidad}">
+            </div>
         </div>
-        <div class="mb-3">
-            <input type="text" name="comercio.direccion" id="comercio-direccion" class="form-control" placeholder="Direccion" list="lista-direcciones" autocomplete="off">
-            <datalist id="lista-direcciones">
-                <option th:each="c : ${comercios}" th:value="${c.direccion}"></option>
-            </datalist>
-        </div>
-        <div class="mb-3">
+
+        <!-- Otros roles: campos editables -->
+        <div th:if="${comercioDelUsuario == null}">
+            <div class="mb-3">
+                <input type="text" name="comercio.nombre" id="comercio-nombre" class="form-control" placeholder="Nombre del comercio" list="lista-comercios" autocomplete="off">
+                <datalist id="lista-comercios">
+                    <option th:each="c : ${comercios}" th:value="${c.nombre}"></option>
+                </datalist>
+            </div>
+            <div class="mb-3">
+                <input type="text" name="comercio.direccion" id="comercio-direccion" class="form-control" placeholder="Direccion" list="lista-direcciones" autocomplete="off">
+                <datalist id="lista-direcciones">
+                    <option th:each="c : ${comercios}" th:value="${c.direccion}"></option>
+                </datalist>
+            </div>
             <div class="mb-3">
                 <select name="comercio.localidad" id="comercio-localidad" class="form-select">
                     <option value="">Seleccionar partido/localidad</option>
@@ -186,6 +218,7 @@
                 </select>
             </div>
         </div>
+
         <h6 class="text-muted mt-3">Precio</h6>
         <div class="mb-3">
             <input type="number" step="0.01" name="precio" id="precio" class="form-control" placeholder="Precio">
@@ -204,41 +237,29 @@
     var modalCropper = new bootstrap.Modal(document.getElementById('modalCropper'));
     var fotoBase64Recortada = null;
 
-    // Al elegir un archivo, abre el modal con Cropper
     document.getElementById('foto').addEventListener('change', function() {
         if (!this.files.length) return;
-
         var file = this.files[0];
         var reader = new FileReader();
         reader.onload = function(e) {
             var imgEl = document.getElementById('imagen-a-recortar');
             imgEl.src = e.target.result;
-
-            // Destruir cropper anterior si existe
-            if (cropper) {
-                cropper.destroy();
-                cropper = null;
-            }
-
+            if (cropper) { cropper.destroy(); cropper = null; }
             modalCropper.show();
-
-            // Inicializar Cropper cuando el modal termina de abrirse
             document.getElementById('modalCropper').addEventListener('shown.bs.modal', function init() {
                 cropper = new Cropper(imgEl, {
-                    aspectRatio: NaN,   // libre
+                    aspectRatio: NaN,
                     viewMode: 1,
                     autoCropArea: 0.8,
                     responsive: true,
                     restore: false
                 });
-                // Remover listener para no duplicar
                 document.getElementById('modalCropper').removeEventListener('shown.bs.modal', init);
             });
         };
         reader.readAsDataURL(file);
     });
 
-    // Botones rotar
     document.getElementById('btn-rotar-izq').addEventListener('click', function() {
         if (cropper) cropper.rotate(-90);
     });
@@ -246,19 +267,14 @@
         if (cropper) cropper.rotate(90);
     });
 
-    // Confirmar recorte
     document.getElementById('btn-confirmar-crop').addEventListener('click', function() {
         if (!cropper) return;
-
         var canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200, imageSmoothingQuality: 'high' });
         fotoBase64Recortada = canvas.toDataURL('image/jpeg', 0.85);
         document.getElementById('foto-base64').value = fotoBase64Recortada;
-
         document.getElementById('img-preview').src = fotoBase64Recortada;
         document.getElementById('preview-foto').style.display = 'block';
         modalCropper.hide();
-
-        // Reconocer producto con Gemini
         fetch('/reporte/ticket/reconocer-producto', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -280,7 +296,6 @@
             .catch(function() {});
     });
 
-    // Cancelar recorte — limpia el input
     document.getElementById('btn-cancelar-crop').addEventListener('click', function() {
         document.getElementById('foto').value = '';
         fotoBase64Recortada = null;
@@ -289,7 +304,6 @@
         modalCropper.hide();
     });
 
-    // Cambiar foto
     document.getElementById('btn-cambiar-foto').addEventListener('click', function() {
         document.getElementById('foto').value = '';
         fotoBase64Recortada = null;
@@ -298,26 +312,27 @@
         document.getElementById('foto').click();
     });
 
-    // Submit del form
     document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
         var formulario = this;
 
-        // Trim de todos los text inputs
         var inputs = this.querySelectorAll('input[type="text"]');
-        inputs.forEach(function(input) {
-            input.value = input.value.trim();
-        });
+        inputs.forEach(function(input) { input.value = input.value.trim(); });
 
-        // Validación manual de campos obligatorios
         var errores = [];
         if (!document.getElementById('producto-nombre').value) errores.push('Nombre del producto');
         if (!document.getElementById('producto-marca').value) errores.push('Marca');
         if (!document.getElementById('producto-categoria').value) errores.push('Categoría');
         if (!document.getElementById('producto-unidad').value) errores.push('Unidad');
-        if (!document.getElementById('comercio-nombre').value) errores.push('Nombre del comercio');
-        if (!document.getElementById('comercio-direccion').value) errores.push('Dirección');
-        if (!document.getElementById('comercio-localidad').value) errores.push('Localidad');
+
+        // Validar comercio solo si los campos existen (no COMERCIO role)
+        var campoComercioNombre = document.getElementById('comercio-nombre');
+        var campoComercioDir = document.getElementById('comercio-direccion');
+        var campoComercioLoc = document.getElementById('comercio-localidad');
+        if (campoComercioNombre && !campoComercioNombre.value) errores.push('Nombre del comercio');
+        if (campoComercioDir && !campoComercioDir.value) errores.push('Dirección');
+        if (campoComercioLoc && !campoComercioLoc.value) errores.push('Localidad');
+
         if (!document.getElementById('precio').value || parseFloat(document.getElementById('precio').value) <= 0) errores.push('Precio');
 
         if (errores.length > 0) {
@@ -333,21 +348,13 @@
             return;
         }
 
-        // Ocultar error si existía
         var errorDiv = document.getElementById('error');
         if (errorDiv) errorDiv.style.display = 'none';
 
-        // Si ya hay base64 recortado, enviar directamente
-        if (fotoBase64Recortada) {
-            formulario.submit();
-            return;
-        }
+        if (fotoBase64Recortada) { formulario.submit(); return; }
 
         var foto = document.getElementById('foto');
-        if (!foto.files.length) {
-            formulario.submit();
-            return;
-        }
+        if (!foto.files.length) { formulario.submit(); return; }
 
         var lector = new FileReader();
         lector.onload = function(evento) {

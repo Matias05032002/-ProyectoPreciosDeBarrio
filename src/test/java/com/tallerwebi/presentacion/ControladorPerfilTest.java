@@ -162,4 +162,58 @@ public class ControladorPerfilTest {
 
     assertThat(resultado.getViewName(), equalTo("redirect:/perfil?errorContrasena"));
   }
+
+  @Test
+  public void actualizarDatosSinSesionDeberiaRedirigirAlLogin() {
+    when(requestMock.getSession(false)).thenReturn(null);
+
+    ModelAndView resultado = controladorPerfil.actualizarDatos(
+      "Matias",
+      "Llanos",
+      null,
+      requestMock
+    );
+
+    assertThat(resultado.getViewName(), equalTo("redirect:/login"));
+    verifyNoInteractions(servicioLoginMock);
+  }
+
+  @Test
+  public void actualizarDatosConSesionValidaDeberiaLlamarAlServicioYRedirigir() {
+    when(requestMock.getSession(false)).thenReturn(sesionMock);
+    when(sesionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView resultado = controladorPerfil.actualizarDatos(
+      "Matias",
+      "Llanos",
+      "2002-03-05",
+      requestMock
+    );
+
+    assertThat(resultado.getViewName(), equalTo("redirect:/perfil?datosActualizados"));
+    verify(servicioLoginMock)
+      .actualizarDatosPersonales(
+        eq(1L),
+        eq("Matias"),
+        eq("Llanos"),
+        any(java.time.LocalDate.class)
+      );
+  }
+
+  @Test
+  public void actualizarDatosSinFechaDeberiaLlamarAlServicioConFechaNull() {
+    when(requestMock.getSession(false)).thenReturn(sesionMock);
+    when(sesionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView resultado = controladorPerfil.actualizarDatos(
+      "Matias",
+      "Llanos",
+      null,
+      requestMock
+    );
+
+    assertThat(resultado.getViewName(), equalTo("redirect:/perfil?datosActualizados"));
+    verify(servicioLoginMock)
+      .actualizarDatosPersonales(eq(1L), eq("Matias"), eq("Llanos"), eq(null));
+  }
 }

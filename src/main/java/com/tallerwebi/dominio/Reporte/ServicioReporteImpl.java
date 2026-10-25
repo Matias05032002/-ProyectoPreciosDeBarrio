@@ -236,4 +236,19 @@ public class ServicioReporteImpl implements ServicioReporte {
       );
     }
   }
+
+  @Override
+  public List<Object[]> contarUsuariosDistintosPorComercio(Long comercioId) {
+    return repositorioReporte.contarUsuariosDistintosPorComercio(comercioId);
+  }
+
+  @Override
+  public Long contarReportesDudososPorComercio(Long comercioId) {
+    return repositorioReporte.contarReportesDudososPorComercio(comercioId);
+  }
+
+  @Override
+  public List<Object[]> rangoEtariosVisitantes(Long comercioId) {
+    return repositorioReporte.rangoEtariosVisitantes(comercioId);
+  }
 }

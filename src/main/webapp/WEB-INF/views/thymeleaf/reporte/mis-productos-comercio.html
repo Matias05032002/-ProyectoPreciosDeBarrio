@@ -1,47 +1,130 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mis Productos</title>
+    <title>Mis productos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
-<div class="container mt-4">
-    <h2>Mis productos</h2>
-    <p class="text-muted">Los productos que publicaste en tu comercio.</p>
-    <hr>
 
-    <div th:if="${#lists.isEmpty(reportes)}" class="alert alert-info mt-3">
-        Todavía no publicaste ningún producto.
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0"><i class="bi bi-box-seam me-2"></i>Mis productos</h2>
+            <p class="text-muted mb-0" th:if="${comercio != null}" th:text="'Productos cargados en ' + ${comercio.nombre}"></p>
+        </div>
+        <a th:href="@{/reporte}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Agregar producto
+        </a>
     </div>
 
-    <div th:if="${not #lists.isEmpty(reportes)}" class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+    <div th:if="${reportes == null or #lists.isEmpty(reportes)}"
+         class="text-center mt-5 py-5">
+        <i class="bi bi-inbox display-4 text-muted"></i>
+        <p class="text-muted mt-3">Todavía no cargaste productos en tu comercio.</p>
+        <a th:href="@{/reporte}" class="btn btn-primary mt-2">
+            <i class="bi bi-plus-lg me-1"></i> Cargar primer producto
+        </a>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4" th:if="${reportes != null and !#lists.isEmpty(reportes)}">
         <div class="col" th:each="reporte : ${reportes}">
-            <div class="card h-100 shadow-sm" th:id="'card-mi-producto-' + ${reporte.id}">
+            <div class="card h-100 shadow-sm">
+
+                <!-- Foto del producto -->
+                <img th:if="${reporte.foto != null}"
+                     th:src="@{/reporte/{id}/foto(id=${reporte.id})}"
+                     class="card-img-top"
+                     alt="Foto del producto"
+                     style="height: 200px; object-fit: contain; background-color: #e9ecef; cursor: pointer;"
+                     data-bs-toggle="modal"
+                     data-bs-target="#modalFoto"
+                     th:attr="data-src=@{/reporte/{id}/foto(id=${reporte.id})}"
+                     onclick="abrirFoto(this)"
+                     onerror="this.parentElement.querySelector('.card-img-placeholder').style.display='flex'; this.style.display='none'">
+
+                <div class="card-img-placeholder align-items-center justify-content-center"
+                     style="height: 200px; display: none; background-color: #e9ecef;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#adb5bd" viewBox="0 0 16 16">
+                        <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                        <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+                    </svg>
+                </div>
+
                 <div class="card-body">
-                    <h5 class="card-title" th:text="${reporte.producto.nombre}"></h5>
-                    <p class="card-text text-muted mb-1">
-                        <span th:text="${reporte.producto.marca}"></span> ·
-                        <span th:text="${reporte.producto.unidad}"></span>
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h5 class="card-title mb-0"
+                            th:text="${reporte.producto != null ? reporte.producto.nombre : '-'}"></h5>
+                        <span th:with="dias=${T(java.time.temporal.ChronoUnit).DAYS.between(reporte.fechaDeReporte, T(java.time.LocalDateTime).now())}"
+                              th:text="${dias <= 3 ? 'Fresco' : (dias <= 14 ? 'Reciente' : 'Desactualizado')}"
+                              th:class="${dias <= 3 ? 'badge bg-success' : (dias <= 14 ? 'badge bg-warning text-dark' : 'badge bg-danger')}">
+                        </span>
+                    </div>
+
+                    <p class="card-text text-muted mb-1" th:if="${reporte.producto != null}">
+                        <span th:text="${reporte.producto.marca}"></span>
+                        <span th:if="${reporte.producto.unidad != null}">
+                            · <span th:text="${reporte.producto.unidad}"></span>
+                        </span>
                     </p>
-                    <p class="card-text fw-bold text-success">
-                        $<span th:text="${reporte.precio}"></span>
+
+                    <p class="card-text small text-muted" th:if="${reporte.producto != null}">
+                        <span th:text="${reporte.producto.categoria}"></span>
                     </p>
-                    <p class="card-text text-muted small"
-                       th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy')}">
+
+                    <p class="card-text fw-bold text-success fs-5 mb-1">
+                        <span th:text="${'$' + #numbers.formatDecimal(reporte.precio, 1, 'COMMA', 2, 'POINT')}"></span>
                     </p>
-                    <a th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
-                       class="btn btn-outline-primary btn-sm mt-2">
-                        Editar
-                    </a>
+
+                    <p class="card-text text-muted small mb-1" th:if="${reporte.usuario != null}">
+                        <i class="bi bi-person me-1"></i>
+                        <span th:text="${reporte.usuario.nombre + ' ' + reporte.usuario.apellido}"></span>
+                    </p>
+
+                    <p class="card-text text-muted small" th:if="${reporte.fechaDeReporte != null}">
+                        <i class="bi bi-calendar me-1"></i>
+                        <span th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy')}"></span>
+                    </p>
+
+                    <div th:if="${reporte.puntuacion != null and reporte.puntuacion > 0}"
+                         class="mt-1">
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-flag me-1"></i>
+                            <span th:text="${reporte.puntuacion}"></span> dudoso(s)
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal foto ampliada -->
+<div class="modal fade" id="modalFoto" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <img id="foto-ampliada" src="" alt="Foto del producto"
+                     style="max-width: 100%; max-height: 80vh; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function abrirFoto(img) {
+        document.getElementById('foto-ampliada').src = img.getAttribute('data-src');
+    }
+</script>
+<div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>

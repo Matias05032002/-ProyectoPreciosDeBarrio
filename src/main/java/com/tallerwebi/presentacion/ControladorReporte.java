@@ -40,6 +40,7 @@ public class ControladorReporte {
   private static final String SESSION_ROL = "ROL";
   private static final String NOMBRE_ERROR = "error";
   private static final String PREFIJO_ITEMS = "items[";
+  private static final String ROL_COMERCIO = "COMERCIO";
 
   @Autowired
   private ServicioOcr servicioOcr;
@@ -77,14 +78,14 @@ public class ControladorReporte {
       Usuario usuario = servicioLogin.buscarPorEmail(email);
       String errorDeFoto = guardarFoto(reporte, fotoBase64);
       if (errorDeFoto != null) {
-        return vistaConError(errorDeFoto);
+        return vistaConError(errorDeFoto, request);
       }
       reporte.setUsuario(usuario);
       servicioReporte.guardarReporte(reporte);
     } catch (ReporteExistente e) {
-      return vistaConError("Ya reportaste este precio hoy");
+      return vistaConError("Ya reportaste este precio hoy", request);
     } catch (CamposObligatoriosVacios | UnidadInvalida | PrecioIncorrecto e) {
-      return vistaConError(e.getMessage());
+      return vistaConError(e.getMessage(), request);
     }
     return new ModelAndView("redirect:/reporte?guardado=true");
   }
@@ -104,11 +105,9 @@ public class ControladorReporte {
   @ResponseBody
   public byte[] obtenerFoto(@PathVariable("id") Long id) {
     Reporte reporte = servicioReporte.buscarReporte(id);
-
     if (reporte == null || reporte.getFoto() == null) {
       return new byte[0];
     }
-
     return reporte.getFoto();
   }
 
@@ -126,6 +125,14 @@ public class ControladorReporte {
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
     mav.addObject("guardado", guardado != null && guardado);
+
+    // Para rol COMERCIO: pasar su propio comercio para pre-seleccionar en el form
+    String rol = (String) request.getSession().getAttribute(SESSION_ROL);
+    if (ROL_COMERCIO.equals(rol)) {
+      Long usuarioId = (Long) request.getSession().getAttribute("ID");
+      Comercio comercioDelUsuario = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
+      mav.addObject("comercioDelUsuario", comercioDelUsuario);
+    }
     return mav;
   }
 
@@ -224,12 +231,18 @@ public class ControladorReporte {
     return new ModelAndView("redirect:/reporte/mis-reportes?editado=true");
   }
 
-  private ModelAndView vistaConError(String mensaje) {
+  private ModelAndView vistaConError(String mensaje, HttpServletRequest request) {
     ModelAndView mav = new ModelAndView(VISTA_REPORTES);
     mav.addObject(NOMBRE_ERROR, mensaje);
     mav.addObject(NOMBRE_REPORTES, servicioReporte.listarTodos());
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+    String rol = (String) request.getSession().getAttribute(SESSION_ROL);
+    if (ROL_COMERCIO.equals(rol)) {
+      Long usuarioId = (Long) request.getSession().getAttribute("ID");
+      Comercio comercioDelUsuario = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
+      mav.addObject("comercioDelUsuario", comercioDelUsuario);
+    }
     return mav;
   }
 
@@ -246,6 +259,7 @@ public class ControladorReporte {
     } else {
       List<Reporte> reportes = servicioReporte.buscarPorComercio(comercio.getId());
       mav.addObject("reportes", reportes);
+      mav.addObject("comercio", comercio);
     }
     return mav;
   }

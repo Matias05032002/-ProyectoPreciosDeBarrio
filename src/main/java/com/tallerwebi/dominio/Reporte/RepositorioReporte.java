@@ -19,4 +19,7 @@ public interface RepositorioReporte {
   List<Object[]> comerciosMasReportados(int limite);
   List<Object[]> reportesPorMes();
   List<Object[]> productosMasDudosos(int limite);
+  List<Object[]> contarUsuariosDistintosPorComercio(Long comercioId);
+  Long contarReportesDudososPorComercio(Long comercioId);
+  List<Object[]> rangoEtariosVisitantes(Long comercioId);
 }

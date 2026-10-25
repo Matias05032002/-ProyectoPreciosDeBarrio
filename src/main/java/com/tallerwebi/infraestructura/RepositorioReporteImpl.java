@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 public class RepositorioReporteImpl implements RepositorioReporte {
 
   private SessionFactory sessionFactory;
+  private static final String PARAM_COMERCIO_ID = "comercioId";
 
   @Autowired
   public RepositorioReporteImpl(SessionFactory sessionFactory) {
@@ -99,7 +100,7 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       )
       .setParameter("usuarioId", usuarioId)
       .setParameter("productoId", productoId)
-      .setParameter("comercioId", comercioId)
+      .setParameter(PARAM_COMERCIO_ID, comercioId)
       .setParameter("fecha", fecha)
       .uniqueResult();
   }
@@ -112,7 +113,7 @@ public class RepositorioReporteImpl implements RepositorioReporte {
         "from Reporte where comercio.id = :comercioId order by precio asc",
         Reporte.class
       )
-      .setParameter("comercioId", comercioId)
+      .setParameter(PARAM_COMERCIO_ID, comercioId)
       .list();
   }
 
@@ -176,6 +177,64 @@ public class RepositorioReporteImpl implements RepositorioReporte {
         "SELECT r.producto.nombre, SIZE(r.usuariosQueMarcaron) FROM Reporte r WHERE SIZE(r.usuariosQueMarcaron) > 0 ORDER BY SIZE(r.usuariosQueMarcaron) DESC"
       )
       .setMaxResults(limite)
+      .list();
+  }
+
+  @Override
+  public List<Object[]> contarUsuariosDistintosPorComercio(Long comercioId) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT r.usuario.id, r.usuario.nombre, r.usuario.apellido, COUNT(r) " +
+        "FROM Reporte r WHERE r.comercio.id = :comercioId AND r.usuario IS NOT NULL " +
+        "GROUP BY r.usuario.id, r.usuario.nombre, r.usuario.apellido " +
+        "ORDER BY COUNT(r) DESC",
+        Object[].class
+      )
+      .setParameter(PARAM_COMERCIO_ID, comercioId)
+      .list();
+  }
+
+  @Override
+  public Long contarReportesDudososPorComercio(Long comercioId) {
+    return (Long) sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT COUNT(r) FROM Reporte r " +
+        "WHERE r.comercio.id = :comercioId AND SIZE(r.usuariosQueMarcaron) > 0"
+      )
+      .setParameter(PARAM_COMERCIO_ID, comercioId)
+      .uniqueResult();
+  }
+
+  @Override
+  public List<Object[]> rangoEtariosVisitantes(Long comercioId) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT " +
+        "CASE " +
+        "  WHEN (YEAR(CURRENT_DATE) - YEAR(r.usuario.fechaNacimiento)) < 18 THEN 'Menos de 18' " +
+        "  WHEN (YEAR(CURRENT_DATE) - YEAR(r.usuario.fechaNacimiento)) BETWEEN 18 AND 25 THEN '18-25' " +
+        "  WHEN (YEAR(CURRENT_DATE) - YEAR(r.usuario.fechaNacimiento)) BETWEEN 26 AND 35 THEN '26-35' " +
+        "  WHEN (YEAR(CURRENT_DATE) - YEAR(r.usuario.fechaNacimiento)) BETWEEN 36 AND 50 THEN '36-50' " +
+        "  ELSE 'Más de 50' " +
+        "END, " +
+        "COUNT(r) " +
+        "FROM Reporte r " +
+        "WHERE r.comercio.id = :comercioId " +
+        "AND r.usuario IS NOT NULL AND r.usuario.fechaNacimiento IS NOT NULL " +
+        "GROUP BY " +
+        "CASE " +
+        "  WHEN (YEAR(CURRENT_DATE) - YEAR(r.usuario.fechaNacimiento)) < 18 THEN 'Menos de 18' " +
+        "  WHEN (YEAR(CURRENT_DATE) - YEAR(r.usuario.fechaNacimiento)) BETWEEN 18 AND 25 THEN '18-25' " +
+        "  WHEN (YEAR(CURRENT_DATE) - YEAR(r.usuario.fechaNacimiento)) BETWEEN 26 AND 35 THEN '26-35' " +
+        "  WHEN (YEAR(CURRENT_DATE) - YEAR(r.usuario.fechaNacimiento)) BETWEEN 36 AND 50 THEN '36-50' " +
+        "  ELSE 'Más de 50' " +
+        "END",
+        Object[].class
+      )
+      .setParameter(PARAM_COMERCIO_ID, comercioId)
       .list();
   }
 }

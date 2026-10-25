@@ -153,4 +153,14 @@ public class ControladorLoginTest {
     // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
   }
+
+  @Test
+  public void logoutDeberiaInvalidarSesionYRedirigirAlLogin() {
+    when(requestMock.getSession()).thenReturn(sessionMock);
+
+    ModelAndView modelAndView = controladorLogin.logout(requestMock);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
+    verify(sessionMock, times(1)).invalidate();
+  }
 }

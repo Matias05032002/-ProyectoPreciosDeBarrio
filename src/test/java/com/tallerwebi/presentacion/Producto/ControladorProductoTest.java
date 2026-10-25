@@ -273,4 +273,29 @@ public class ControladorProductoTest {
     );
     assertThat(dto.isEsDudoso(), equalTo(true));
   }
+
+  @Test
+  public void buscarPorIdConProductoExistenteDeberiaRetornarVistaConProducto() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    when(this.servicioProductoMock.buscarProductoPorId(1L)).thenReturn(producto);
+
+    ModelAndView modelAndView = this.controladorProducto.buscarPorId(1L);
+
+    assertThat(modelAndView.getViewName(), equalTo("producto/lista-productos"));
+    @SuppressWarnings("unchecked")
+    java.util.List<?> productos = (java.util.List<?>) modelAndView.getModel().get("productos");
+    assertThat(productos.size(), equalTo(1));
+    verify(this.servicioProductoMock, times(1)).buscarProductoPorId(1L);
+  }
+
+  @Test
+  public void buscarPorIdConProductoInexistenteDeberiaRedirigirALista() {
+    when(this.servicioProductoMock.buscarProductoPorId(99L)).thenReturn(null);
+
+    ModelAndView modelAndView = this.controladorProducto.buscarPorId(99L);
+
+    assertThat(modelAndView.getViewName(), equalTo("redirect:/producto/lista"));
+    verify(this.servicioProductoMock, times(1)).buscarProductoPorId(99L);
+  }
 }
