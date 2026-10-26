@@ -88,6 +88,67 @@ public class VistaLoginE2E {
     entoncesDeberiaVerElHomeDeComercios();
   }
 
+  @Test
+  void deberiaVolverAlFormularioConErrorSiEmailYaExisteAlRegistrarVecino() {
+    dadoQueElUsuarioNavegaALaVistaDeRegistro();
+    dadoQueElUsuarioSeRegistraCon("duplicado@unlam.edu.ar", "Password1");
+    // segundo intento con mismo email
+    dadoQueElUsuarioNavegaALaVistaDeRegistro();
+    dadoQueElUsuarioSeRegistraCon("duplicado@unlam.edu.ar", "Password1");
+
+    VistaNuevoUsuario vista = new VistaNuevoUsuario(context.pages().get(0));
+    String error = vista.obtenerMensajeDeError();
+    assertThat(error, org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()));
+  }
+
+  @Test
+  void deberiaVolverAlFormComercioConErrorSiDireccionYLocalidadYaExisten()
+    throws MalformedURLException {
+    dadoQueElUsuarioNavegaALaVistaDeRegistro();
+    dadoQueElUsuarioSeRegistraComoComercioCompleto(
+      "comercio1@unlam.edu.ar",
+      "Password1",
+      "Almacen Pepito",
+      "Almacen",
+      "Rivadavia 1234",
+      "La Matanza"
+    );
+    // segundo comercio con misma dirección+localidad
+    dadoQueElUsuarioNavegaALaVistaDeRegistro();
+    dadoQueElUsuarioSeRegistraComoComercioCompleto(
+      "comercio2@unlam.edu.ar",
+      "Password1",
+      "Almacen Juan",
+      "Almacen",
+      "Rivadavia 1234",
+      "La Matanza"
+    );
+
+    VistaNuevoUsuario vista = new VistaNuevoUsuario(context.pages().get(0));
+    String error = vista.obtenerMensajeDeErrorComercio();
+    assertThat(error, org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()));
+  }
+
+  private void dadoQueElUsuarioSeRegistraComoComercioCompleto(
+    String email,
+    String clave,
+    String nombre,
+    String tipo,
+    String direccion,
+    String localidad
+  ) {
+    VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
+    vistaNuevoUsuario.seleccionarRol("Comercio");
+    vistaNuevoUsuario.escribirEMAIL(email);
+    vistaNuevoUsuario.escribirClave(clave);
+    // nombre va al campo nombre-comercio, reutilizamos el id correcto:
+    vistaNuevoUsuario.page.fill("#nombre-comercio", nombre);
+    vistaNuevoUsuario.seleccionarTipoComercio(tipo);
+    vistaNuevoUsuario.escribirDireccion(direccion);
+    vistaNuevoUsuario.seleccionarLocalidadComercio(localidad);
+    vistaNuevoUsuario.darClickEnRegistrarme();
+  }
+
   private void entoncesDeberiaVerUNLAMEnElNavbar() {
     String texto = vistaLogin.obtenerTextoDeLaBarraDeNavegacion();
     assertThat("UNLAM", equalToIgnoringCase(texto));

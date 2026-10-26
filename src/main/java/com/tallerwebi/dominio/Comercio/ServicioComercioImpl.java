@@ -107,4 +107,9 @@ public class ServicioComercioImpl implements ServicioComercio {
   public void actualizarComercio(Comercio comercio) {
     repositorioComercio.actualizarComercio(comercio);
   }
+
+  @Override
+  public Comercio buscarPorDireccionYLocalidad(String direccion, String localidad) {
+    return repositorioComercio.buscarComercioPorDireccionYLocalidad(direccion, localidad);
+  }
 }

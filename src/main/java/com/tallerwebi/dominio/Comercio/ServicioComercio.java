@@ -10,4 +10,5 @@ public interface ServicioComercio {
   Comercio buscarComercioPorUsuarioId(Long usuarioId);
   Comercio vincularComercioAUsuario(Comercio comercio, Long usuarioId);
   void actualizarComercio(Comercio comercio);
+  Comercio buscarPorDireccionYLocalidad(String direccion, String localidad);
 }

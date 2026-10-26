@@ -5,6 +5,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
@@ -15,6 +17,8 @@ import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 public class ControladorLoginTest {
 
@@ -24,6 +28,8 @@ public class ControladorLoginTest {
   private HttpServletRequest requestMock;
   private HttpSession sessionMock;
   private ServicioLogin servicioLoginMock;
+  private ServicioComercio servicioComercioMock;
+  private RedirectAttributes redirectAttrs;
 
   @BeforeEach
   public void init() {
@@ -33,18 +39,17 @@ public class ControladorLoginTest {
     requestMock = mock(HttpServletRequest.class);
     sessionMock = mock(HttpSession.class);
     servicioLoginMock = mock(ServicioLogin.class);
-    controladorLogin = new ControladorLogin(servicioLoginMock);
+    servicioComercioMock = mock(ServicioComercio.class);
+    controladorLogin = new ControladorLogin(servicioLoginMock, servicioComercioMock);
+    redirectAttrs = new RedirectAttributesModelMap();
   }
 
   @Test
   public void loginConUsuarioYPasswordIncorrectosDeberiaLlevarALoginNuevamente() {
-    // preparacion
     when(servicioLoginMock.consultarUsuario(anyString(), anyString())).thenReturn(null);
 
-    // ejecucion
     ModelAndView modelAndView = controladorLogin.validarLogin(datosLoginMock, requestMock);
 
-    // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("login"));
     assertThat(
       modelAndView.getModel().get("error").toString(),
@@ -55,18 +60,14 @@ public class ControladorLoginTest {
 
   @Test
   public void loginConUsuarioYPasswordCorrectosDeberiaLLevarAHome() {
-    // preparacion
     Usuario usuarioEncontradoMock = mock(Usuario.class);
     when(usuarioEncontradoMock.getRol()).thenReturn("ADMIN");
-
     when(requestMock.getSession()).thenReturn(sessionMock);
     when(servicioLoginMock.consultarUsuario(anyString(), anyString()))
       .thenReturn(usuarioEncontradoMock);
 
-    // ejecucion
     ModelAndView modelAndView = controladorLogin.validarLogin(datosLoginMock, requestMock);
 
-    // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/home"));
     verify(sessionMock, times(1)).setAttribute("ROL", usuarioEncontradoMock.getRol());
   }
@@ -74,95 +75,156 @@ public class ControladorLoginTest {
   @Test
   public void registrameSiUsuarioNoExisteDeberiaCrearUsuarioYVolverAlLogin()
     throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    // ejecucion
     ModelAndView modelAndView = controladorLogin.registrarme(
       "dami@unlam.com",
       "Password1",
       "Dami",
       "Lopez",
-      "USER",
-      requestMock
+      "La Matanza",
+      requestMock,
+      redirectAttrs
     );
 
-    // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
   }
 
   @Test
   public void registrarmeSiUsuarioExisteDeberiaVolverAFormularioYMostrarError()
     throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    // preparacion
     doThrow(new UsuarioExistente()).when(servicioLoginMock).registrar(any(Usuario.class));
 
-    // ejecucion
     ModelAndView modelAndView = controladorLogin.registrarme(
       "dami@unlam.com",
       "Password1",
       "Dami",
       "Lopez",
-      "USER",
-      requestMock
+      "La Matanza",
+      requestMock,
+      redirectAttrs
     );
 
-    // validacion
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("registro"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
   }
 
   @Test
   public void errorEnRegistrarmeDeberiaVolverAFormularioYMostrarError()
     throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    // preparacion
     doThrow(new RuntimeException("error")).when(servicioLoginMock).registrar(any(Usuario.class));
 
-    // ejecucion
     ModelAndView modelAndView = controladorLogin.registrarme(
       "dami@unlam.com",
       "Password1",
       "Dami",
       "Lopez",
-      "USER",
-      requestMock
+      "La Matanza",
+      requestMock,
+      redirectAttrs
     );
 
-    // validacion
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("registro"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
+  }
+
+  // --- Tests para registrarmeComercio ---
+
+  @Test
+  public void registrarmeComercioSiDatosNuevosDeberiaCrearUsuarioYComercioYVolverAlLogin()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    when(servicioComercioMock.buscarPorDireccionYLocalidad(anyString(), anyString()))
+      .thenReturn(null);
+    Usuario usuarioCreado = mock(Usuario.class);
+    when(usuarioCreado.getId()).thenReturn(1L);
+    when(servicioLoginMock.buscarPorEmail(anyString())).thenReturn(usuarioCreado);
+
+    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
+      "comercio@unlam.com",
+      "Password1",
+      "Almacén Don José",
+      "Almacen",
+      "Rivadavia 1234",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
+    verify(servicioLoginMock, times(1)).registrar(any(Usuario.class));
+    verify(servicioComercioMock, times(1)).guardarComercio(any(Comercio.class));
   }
 
   @Test
+  public void registrarmeComercioCuandoDireccionYLocalidadYaExistenDeberiaVolverAlFormularioConError()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    Comercio comercioExistente = mock(Comercio.class);
+    when(servicioComercioMock.buscarPorDireccionYLocalidad("Rivadavia 1234", "La Matanza"))
+      .thenReturn(comercioExistente);
+
+    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
+      "comercio@unlam.com",
+      "Password1",
+      "Almacén Don José",
+      "Almacen",
+      "Rivadavia 1234",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
+    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
+    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
+  }
+
+  @Test
+  public void registrarmeComercioCuandoEmailYaExisteDeberiaVolverAlFormularioConError()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    when(servicioComercioMock.buscarPorDireccionYLocalidad(anyString(), anyString()))
+      .thenReturn(null);
+    doThrow(new UsuarioExistente()).when(servicioLoginMock).registrar(any(Usuario.class));
+
+    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
+      "yaexiste@unlam.com",
+      "Password1",
+      "Almacén Don José",
+      "Almacen",
+      "Rivadavia 1234",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
+    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
+  }
+
+  // --- Otros tests ---
+
+  @Test
   public void irALoginDeberiaRetornarVistaLoginConDatosLogin() {
-    // ejecucion
     ModelAndView modelAndView = controladorLogin.irALogin();
 
-    // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("login"));
     assertThat(modelAndView.getModel().get("datosLogin"), instanceOf(DatosLogin.class));
   }
 
   @Test
   public void nuevoUsuarioDeberiaRetornarVistaNuevoUsuarioConUsuarioVacio() {
-    // ejecucion
-    ModelAndView modelAndView = controladorLogin.nuevoUsuario();
+    ModelAndView modelAndView = controladorLogin.nuevoUsuario(); // sin parámetros
 
-    // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("nuevo-usuario"));
     assertThat(modelAndView.getModel().get("usuario"), instanceOf(Usuario.class));
   }
 
   @Test
   public void irAHomeDeberiaRetornarVistaHome() {
-    // ejecucion
     ModelAndView modelAndView = controladorLogin.irAHome();
 
-    // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("home"));
   }
 
   @Test
   public void inicioDeberiaRedirigirALogin() {
-    // ejecucion
     ModelAndView modelAndView = controladorLogin.inicio();
 
-    // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
   }
 

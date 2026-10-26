@@ -27,4 +27,20 @@ public class VistaNuevoUsuario extends VistaWeb {
   public String obtenerMensajeDeError() {
     return this.obtenerTextoDelElemento("p.alert.alert-danger");
   }
+
+  public void escribirDireccion(String direccion) {
+    this.escribirEnElElemento("#direccion-c", direccion);
+  }
+
+  public void seleccionarTipoComercio(String tipo) {
+    this.page.selectOption("#tipo-comercio", tipo);
+  }
+
+  public void seleccionarLocalidadComercio(String localidad) {
+    this.page.selectOption("#localidad-c", localidad);
+  }
+
+  public String obtenerMensajeDeErrorComercio() {
+    return this.obtenerTextoDelElemento("#form-comercio p.error-msg");
+  }
 }

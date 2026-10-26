@@ -1,12 +1,11 @@
 package com.tallerwebi.presentacion;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
-import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
-import com.tallerwebi.dominio.excepcion.EmailInvalido;
-import com.tallerwebi.dominio.excepcion.RolInvalido;
-import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,17 +15,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ControladorLogin {
 
   private ServicioLogin servicioLogin;
+  private ServicioComercio servicioComercio;
   private static final String VISTA_NUEVO_USUARIO = "nuevo-usuario";
   private static final String ATTR_ERROR = "error";
+  private static final String REDIRECT_LOGIN = "redirect:/login";
+  private static final String ATTR_USUARIO = "usuario";
 
   @Autowired
-  public ControladorLogin(ServicioLogin servicioLogin) {
+  public ControladorLogin(ServicioLogin servicioLogin, ServicioComercio servicioComercio) {
     this.servicioLogin = servicioLogin;
+    this.servicioComercio = servicioComercio;
   }
 
   @RequestMapping("/login")
@@ -59,40 +63,83 @@ public class ControladorLogin {
 
   @RequestMapping(path = "/registrarme", method = RequestMethod.POST)
   public ModelAndView registrarme(
-    @RequestParam String email,
-    @RequestParam String password,
-    @RequestParam String nombre,
-    @RequestParam String apellido,
-    @RequestParam String rol,
-    HttpServletRequest request
+    @RequestParam("email") String email,
+    @RequestParam("password") String password,
+    @RequestParam("nombre") String nombre,
+    @RequestParam("apellido") String apellido,
+    @RequestParam("localidad") String localidad,
+    HttpServletRequest request,
+    RedirectAttributes redirectAttrs
   ) {
     Usuario usuario = new Usuario();
     usuario.setEmail(email);
     usuario.setPassword(password);
     usuario.setNombre(nombre);
     usuario.setApellido(apellido);
-    // Solo roles permitidos
-    if ("USER".equals(rol) || "COMERCIO".equals(rol)) {
-      usuario.setRol(rol);
-    } else {
-      usuario.setRol("USER");
-    }
+    usuario.setRol("USER");
 
-    ModelAndView mav = new ModelAndView();
     try {
       servicioLogin.registrar(usuario);
-      mav.setViewName("redirect:/login");
+      return new ModelAndView(REDIRECT_LOGIN);
     } catch (Exception e) {
-      mav.setViewName("registro");
-      mav.addObject("error", e.getMessage());
+      redirectAttrs.addFlashAttribute("error", e.getMessage());
+      return new ModelAndView("redirect:/nuevo-usuario");
     }
-    return mav;
+  }
+
+  @RequestMapping(path = "/registrarme-comercio", method = RequestMethod.POST)
+  public ModelAndView registrarmeComercio(
+    @RequestParam("email") String email,
+    @RequestParam("password") String password,
+    @RequestParam("nombre") String nombre,
+    @RequestParam("tipo") String tipo,
+    @RequestParam("direccion") String direccion,
+    @RequestParam("localidad") String localidad,
+    HttpServletRequest request,
+    RedirectAttributes redirectAttrs
+  ) {
+    Comercio existente = servicioComercio.buscarPorDireccionYLocalidad(direccion, localidad);
+    if (existente != null) {
+      redirectAttrs.addFlashAttribute(
+        "errorComercio",
+        "Ya existe un comercio registrado en esa dirección y localidad"
+      );
+      return new ModelAndView("redirect:/nuevo-usuario");
+    }
+
+    Usuario usuario = new Usuario();
+    usuario.setEmail(email);
+    usuario.setPassword(password);
+    usuario.setNombre(nombre);
+    usuario.setRol("COMERCIO");
+
+    try {
+      servicioLogin.registrar(usuario);
+    } catch (Exception e) {
+      redirectAttrs.addFlashAttribute("errorComercio", e.getMessage());
+      return new ModelAndView("redirect:/nuevo-usuario");
+    }
+
+    Usuario usuarioCreado = servicioLogin.buscarPorEmail(email);
+    Comercio comercio = new Comercio();
+    comercio.setNombre(nombre);
+    comercio.setTipo(tipo);
+    comercio.setDireccion(direccion);
+    comercio.setLocalidad(localidad);
+    comercio.setActivo(true);
+    comercio.setFechaRegistro(LocalDateTime.now());
+    if (usuarioCreado != null) {
+      comercio.setUsuarioId(usuarioCreado.getId());
+    }
+
+    servicioComercio.guardarComercio(comercio);
+    return new ModelAndView(REDIRECT_LOGIN);
   }
 
   @RequestMapping(path = "/nuevo-usuario", method = RequestMethod.GET)
   public ModelAndView nuevoUsuario() {
     Map<String, Object> model = new ModelMap();
-    model.put("usuario", new Usuario());
+    model.put(ATTR_USUARIO, new Usuario());
     return new ModelAndView(VISTA_NUEVO_USUARIO, model);
   }
 
@@ -103,12 +150,12 @@ public class ControladorLogin {
 
   @RequestMapping(path = "/", method = RequestMethod.GET)
   public ModelAndView inicio() {
-    return new ModelAndView("redirect:/login");
+    return new ModelAndView(REDIRECT_LOGIN);
   }
 
   @RequestMapping(path = "/logout", method = RequestMethod.GET)
   public ModelAndView logout(HttpServletRequest request) {
     request.getSession().invalidate();
-    return new ModelAndView("redirect:/login");
+    return new ModelAndView(REDIRECT_LOGIN);
   }
 }

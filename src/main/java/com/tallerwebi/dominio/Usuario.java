@@ -30,6 +30,8 @@ public class Usuario {
 
   private LocalDate fechaNacimiento;
 
+  private String localidad;
+
   public Long getId() {
     return id;
   }
@@ -96,6 +98,14 @@ public class Usuario {
 
   public void setFechaNacimiento(LocalDate fechaNacimiento) {
     this.fechaNacimiento = fechaNacimiento;
+  }
+
+  public String getLocalidad() {
+    return localidad;
+  }
+
+  public void setLocalidad(String localidad) {
+    this.localidad = localidad;
   }
 
   @Override
