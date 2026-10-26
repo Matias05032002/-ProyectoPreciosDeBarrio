@@ -77,6 +77,8 @@ public class RepositorioAdminTest {
     usuario.setEmail(email);
     usuario.setPassword("1234");
     usuario.setRol("USER");
+    usuario.setNombre("Test");
+    usuario.setActivo(true);
     sessionFactory.getCurrentSession().persist(usuario);
 
     Producto producto = new Producto();

@@ -129,15 +129,22 @@ public class ServicioReporteImpl implements ServicioReporte {
       return null;
     }
     // No puede marcar su propio reporte
-    if (reporte.getUsuario() != null && usuario != null &&
-            reporte.getUsuario().getId().equals(usuario.getId())) {
+    if (
+      reporte.getUsuario() != null &&
+      usuario != null &&
+      reporte.getUsuario().getId().equals(usuario.getId())
+    ) {
       return reporte;
     }
     // No puede marcar dos veces el mismo reporte
-    boolean yaMarco = reporte.getUsuariosQueMarcaron().stream()
-            .anyMatch(u -> u.getId().equals(usuario.getId()));
-    if (yaMarco) {
-      return reporte;
+    if (usuario != null) {
+      boolean yaMarco = reporte
+        .getUsuariosQueMarcaron()
+        .stream()
+        .anyMatch(u -> u.getId() != null && u.getId().equals(usuario.getId()));
+      if (yaMarco) {
+        return reporte;
+      }
     }
     return repositorioReporte.marcarDudoso(id, usuario);
   }
@@ -202,7 +209,7 @@ public class ServicioReporteImpl implements ServicioReporte {
     if (precio == null || precio <= 0) {
       throw new PrecioIncorrecto("El precio debe ser mayor a cero");
     }
-    if (Math.round(precio * 100) != (long)(precio * 100)) {
+    if (Math.round(precio * 100) != (long) (precio * 100)) {
       throw new PrecioIncorrecto("El precio no puede tener más de 2 decimales");
     }
   }

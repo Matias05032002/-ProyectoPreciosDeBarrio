@@ -4,9 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Producto", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"nombre", "marca", "unidad"})
-})
+@Table(
+  name = "Producto",
+  uniqueConstraints = { @UniqueConstraint(columnNames = { "nombre", "marca", "unidad" }) }
+)
 public class Producto {
 
   @Id
@@ -15,6 +16,7 @@ public class Producto {
 
   @Column(length = 150, nullable = false)
   private String nombre;
+
   @Column(length = 100)
   private String categoria;
 
@@ -22,8 +24,10 @@ public class Producto {
   private String unidad;
 
   private Double precio;
+
   @Column(length = 500)
   private String descripcion;
+
   private String marca;
   private LocalDateTime fechaDeSubida;
   private Boolean disponible;

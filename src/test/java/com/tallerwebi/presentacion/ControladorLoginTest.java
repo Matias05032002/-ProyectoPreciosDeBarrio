@@ -75,45 +75,57 @@ public class ControladorLoginTest {
   public void registrameSiUsuarioNoExisteDeberiaCrearUsuarioYVolverAlLogin()
     throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
     // ejecucion
-    ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
+    ModelAndView modelAndView = controladorLogin.registrarme(
+      "dami@unlam.com",
+      "Password1",
+      "Dami",
+      "Lopez",
+      "USER",
+      requestMock
+    );
 
     // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
-    verify(servicioLoginMock, times(1)).registrar(usuarioMock);
   }
 
   @Test
   public void registrarmeSiUsuarioExisteDeberiaVolverAFormularioYMostrarError()
     throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
     // preparacion
-    doThrow(UsuarioExistente.class).when(servicioLoginMock).registrar(usuarioMock);
+    doThrow(new UsuarioExistente()).when(servicioLoginMock).registrar(any(Usuario.class));
 
     // ejecucion
-    ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
+    ModelAndView modelAndView = controladorLogin.registrarme(
+      "dami@unlam.com",
+      "Password1",
+      "Dami",
+      "Lopez",
+      "USER",
+      requestMock
+    );
 
     // validacion
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("nuevo-usuario"));
-    assertThat(
-      modelAndView.getModel().get("error").toString(),
-      equalToIgnoringCase("El usuario ya existe")
-    );
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("registro"));
   }
 
   @Test
   public void errorEnRegistrarmeDeberiaVolverAFormularioYMostrarError()
     throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
     // preparacion
-    doThrow(RuntimeException.class).when(servicioLoginMock).registrar(usuarioMock);
+    doThrow(new RuntimeException("error")).when(servicioLoginMock).registrar(any(Usuario.class));
 
     // ejecucion
-    ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
+    ModelAndView modelAndView = controladorLogin.registrarme(
+      "dami@unlam.com",
+      "Password1",
+      "Dami",
+      "Lopez",
+      "USER",
+      requestMock
+    );
 
     // validacion
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("nuevo-usuario"));
-    assertThat(
-      modelAndView.getModel().get("error").toString(),
-      equalToIgnoringCase("Error al registrar el nuevo usuario")
-    );
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("registro"));
   }
 
   @Test

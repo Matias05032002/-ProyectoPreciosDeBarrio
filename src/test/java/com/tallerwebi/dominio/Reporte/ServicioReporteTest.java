@@ -189,6 +189,7 @@ public class ServicioReporteTest {
   @Test
   public void marcarUnReporteDudoso() {
     Reporte reporte = new Reporte();
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte); // ← agregar
     when(repositorioReporteMock.marcarDudoso(1L, null)).thenReturn(reporte);
 
     assertThat(servicioReporte.marcarDudoso(1L, null), equalTo(reporte));

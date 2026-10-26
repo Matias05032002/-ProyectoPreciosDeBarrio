@@ -5,12 +5,12 @@ import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.transaction.Transactional;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service("servicioLogin")
 @Transactional
@@ -23,8 +23,8 @@ public class ServicioLoginImpl implements ServicioLogin {
   private BCryptPasswordEncoder passwordEncoder;
   private static final int MAX_INTENTOS = 5;
   private static final long BLOQUEO_SEGUNDOS = 300; // 5 minutos
-  private final ConcurrentHashMap<String, Integer> intentosFallidos = new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<String, Instant> bloqueadoHasta = new ConcurrentHashMap<>();
+  private final Map<String, Integer> intentosFallidos = new ConcurrentHashMap<>();
+  private final Map<String, Instant> bloqueadoHasta = new ConcurrentHashMap<>();
 
   @Autowired
   public ServicioLoginImpl(RepositorioUsuario repositorioUsuario) {
@@ -34,14 +34,14 @@ public class ServicioLoginImpl implements ServicioLogin {
 
   @Override
   public Usuario consultarUsuario(String email, String password) {
-    String emailNorm = (email == null) ? null : email.trim().toLowerCase();
+    String emailNorm = (email == null) ? null : email.trim().toLowerCase(java.util.Locale.ROOT);
     // Verificar bloqueo por IP/email
     Instant bloqueo = bloqueadoHasta.get(emailNorm);
     if (bloqueo != null && Instant.now().isBefore(bloqueo)) {
       return null; // bloqueado temporalmente
     }
     Usuario usuario = repositorioUsuario.buscar(emailNorm);
-    if (usuario == null || !usuario.getActivo()) {
+    if (usuario == null || !Boolean.TRUE.equals(usuario.getActivo())) {
       registrarIntentoFallido(emailNorm);
       return null;
     }
@@ -70,7 +70,9 @@ public class ServicioLoginImpl implements ServicioLogin {
       throw new RolInvalido();
     }
     validarContrasena(usuario.getPassword());
-    String emailNormalizado = usuario.getEmail() == null ? null : usuario.getEmail().trim().toLowerCase();
+    String emailNormalizado = usuario.getEmail() == null
+      ? null
+      : usuario.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
     usuario.setEmail(emailNormalizado);
     validarEmail(emailNormalizado);
     Usuario usuarioEncontrado = repositorioUsuario.buscar(usuario.getEmail());
@@ -108,7 +110,7 @@ public class ServicioLoginImpl implements ServicioLogin {
       return false;
     }
 
-    String emailNorm = nuevoEmail.trim().toLowerCase();
+    String emailNorm = nuevoEmail.trim().toLowerCase(java.util.Locale.ROOT);
     Usuario existente = repositorioUsuario.buscar(emailNorm);
     if (existente != null && !existente.getId().equals(usuarioId)) {
       return false;

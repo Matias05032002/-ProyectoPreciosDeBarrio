@@ -4,9 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Comercio", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"direccion", "localidad"})
-})
+@Table(
+  name = "Comercio",
+  uniqueConstraints = { @UniqueConstraint(columnNames = { "direccion", "localidad" }) }
+)
 @SuppressWarnings("PMD.TooManyFields")
 public class Comercio {
 
@@ -22,10 +23,13 @@ public class Comercio {
 
   @Column(length = 200, nullable = false)
   private String direccion;
+
   @Column(length = 500)
   private String descripcion;
+
   @Column(length = 50)
   private String tipo;
+
   private Boolean activo;
   private LocalDateTime fechaRegistro;
   private Double latitud;

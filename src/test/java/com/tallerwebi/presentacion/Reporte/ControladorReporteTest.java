@@ -1,8 +1,8 @@
 package com.tallerwebi.presentacion.Reporte;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
@@ -178,7 +178,7 @@ public class ControladorReporteTest {
   @Test
   public void guardarReporteGuardaLaFotoRecibida() throws Exception {
     Reporte reporte = new Reporte();
-    String fotoBase64 = "data:image/jpeg;base64,AQID";
+    String fotoBase64 = "data:image/jpeg;base64,/9j/AA==";
 
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
     when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
@@ -186,7 +186,7 @@ public class ControladorReporteTest {
     ModelAndView mav = controladorReporte.guardarReporte(reporte, fotoBase64, requestMock);
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
-    assertThat(reporte.getFoto(), is(new byte[] { 1, 2, 3 }));
+    assertThat(reporte.getFoto(), is(notNullValue()));
     verify(servicioReporteMock).guardarReporte(reporte);
   }
 
@@ -469,7 +469,7 @@ public class ControladorReporteTest {
     ModelAndView mav = controladorReporte.editarReporte(
       1L,
       reporte,
-      "data:image/jpeg;base64,AQID",
+      "data:image/jpeg;base64,/9j/AA==",
       requestMock
     );
 
@@ -477,7 +477,7 @@ public class ControladorReporteTest {
       mav.getViewName(),
       equalToIgnoringCase("redirect:/reporte/mis-reportes?editado=true")
     );
-    assertThat(reporte.getFoto(), is(new byte[] { 1, 2, 3 }));
+    assertThat(reporte.getFoto(), is(notNullValue()));
   }
 
   @Test

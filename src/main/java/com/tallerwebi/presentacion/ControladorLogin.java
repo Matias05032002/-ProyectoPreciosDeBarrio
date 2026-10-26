@@ -59,13 +59,13 @@ public class ControladorLogin {
 
   @RequestMapping(path = "/registrarme", method = RequestMethod.POST)
   public ModelAndView registrarme(
-          @RequestParam String email,
-          @RequestParam String password,
-          @RequestParam String nombre,
-          @RequestParam String apellido,
-          @RequestParam String rol,
-          HttpServletRequest request) {
-
+    @RequestParam String email,
+    @RequestParam String password,
+    @RequestParam String nombre,
+    @RequestParam String apellido,
+    @RequestParam String rol,
+    HttpServletRequest request
+  ) {
     Usuario usuario = new Usuario();
     usuario.setEmail(email);
     usuario.setPassword(password);

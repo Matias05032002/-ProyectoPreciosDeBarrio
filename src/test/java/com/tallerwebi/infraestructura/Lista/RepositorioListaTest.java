@@ -112,6 +112,8 @@ public class RepositorioListaTest {
 
     Comercio comercio = new Comercio();
     comercio.setNombre("Almacen");
+    comercio.setDireccion("Av. Test 123");
+    comercio.setLocalidad("Localidad Test");
     sessionFactory.getCurrentSession().persist(comercio);
 
     Reporte reporte = new Reporte();

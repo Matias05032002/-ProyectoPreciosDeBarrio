@@ -1,7 +1,6 @@
 package com.tallerwebi.dominio;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 
 @Entity
@@ -16,14 +15,19 @@ public class Usuario {
 
   @Column(name = "password", nullable = false, length = 255)
   private String password;
+
   @Column(name = "rol", nullable = false)
   private String rol;
+
   @Column(name = "activo", nullable = false)
   private Boolean activo;
+
   @Column(name = "nombre", nullable = false, length = 100)
   private String nombre;
+
   @Column(name = "apellido", length = 100)
   private String apellido;
+
   private LocalDate fechaNacimiento;
 
   public Long getId() {

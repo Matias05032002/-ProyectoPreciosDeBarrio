@@ -78,8 +78,8 @@ public class RepositorioComercioTest {
   @Transactional
   @Rollback
   public void deberiaListarTodosLosComercios() {
-    dadoQueExisteElComercio(dadoQueTengoUnComercio("Almacen A"));
-    dadoQueExisteElComercio(dadoQueTengoUnComercio("Almacen B"));
+    dadoQueExisteElComercio(dadoQueTengoUnComercio("Almacen A", "Av. Test 1"));
+    dadoQueExisteElComercio(dadoQueTengoUnComercio("Almacen B", "Av. Test 2"));
 
     List<Comercio> resultado = repositorioComercio.listarTodos();
 
@@ -87,8 +87,14 @@ public class RepositorioComercioTest {
   }
 
   private Comercio dadoQueTengoUnComercio(String nombre) {
+    return dadoQueTengoUnComercio(nombre, "Av. Test 123");
+  }
+
+  private Comercio dadoQueTengoUnComercio(String nombre, String direccion) {
     Comercio comercio = new Comercio();
     comercio.setNombre(nombre);
+    comercio.setDireccion(direccion);
+    comercio.setLocalidad("Localidad Test");
     return comercio;
   }
 

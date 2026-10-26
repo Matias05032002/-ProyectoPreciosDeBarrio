@@ -171,6 +171,10 @@ public class RepositorioReporteTest {
   public void deberiaBuscarReportesPorUsuarioId() {
     com.tallerwebi.dominio.Usuario usuario = new com.tallerwebi.dominio.Usuario();
     usuario.setEmail("test@test.com");
+    usuario.setNombre("Test");
+    usuario.setRol("USER");
+    usuario.setActivo(true);
+    usuario.setPassword("1234");
     sessionFactory.getCurrentSession().persist(usuario);
 
     Reporte reporte = dadoQueTengoUnReporte("Pan", "Almacen", 50.0);
@@ -220,6 +224,8 @@ public class RepositorioReporteTest {
 
     Comercio comercio = new Comercio();
     comercio.setNombre(nombreComercio);
+    comercio.setDireccion("Av. Test " + nombreComercio);
+    comercio.setLocalidad("Localidad Test");
     sessionFactory.getCurrentSession().persist(comercio);
 
     Reporte reporte = new Reporte();
