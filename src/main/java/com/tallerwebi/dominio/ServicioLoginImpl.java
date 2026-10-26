@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Service("servicioLogin")
 @Transactional
 public class ServicioLoginImpl implements ServicioLogin {
@@ -18,6 +21,10 @@ public class ServicioLoginImpl implements ServicioLogin {
 
   private RepositorioUsuario repositorioUsuario;
   private BCryptPasswordEncoder passwordEncoder;
+  private static final int MAX_INTENTOS = 5;
+  private static final long BLOQUEO_SEGUNDOS = 300; // 5 minutos
+  private final ConcurrentHashMap<String, Integer> intentosFallidos = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, Instant> bloqueadoHasta = new ConcurrentHashMap<>();
 
   @Autowired
   public ServicioLoginImpl(RepositorioUsuario repositorioUsuario) {
@@ -27,10 +34,33 @@ public class ServicioLoginImpl implements ServicioLogin {
 
   @Override
   public Usuario consultarUsuario(String email, String password) {
-    Usuario usuario = repositorioUsuario.buscar(email);
-    if (usuario == null || !usuario.getActivo()) return null;
-    if (!passwordEncoder.matches(password, usuario.getPassword())) return null;
+    String emailNorm = (email == null) ? null : email.trim().toLowerCase();
+    // Verificar bloqueo por IP/email
+    Instant bloqueo = bloqueadoHasta.get(emailNorm);
+    if (bloqueo != null && Instant.now().isBefore(bloqueo)) {
+      return null; // bloqueado temporalmente
+    }
+    Usuario usuario = repositorioUsuario.buscar(emailNorm);
+    if (usuario == null || !usuario.getActivo()) {
+      registrarIntentoFallido(emailNorm);
+      return null;
+    }
+    if (!passwordEncoder.matches(password, usuario.getPassword())) {
+      registrarIntentoFallido(emailNorm);
+      return null;
+    }
+    // Login exitoso: limpiar contadores
+    intentosFallidos.remove(emailNorm);
+    bloqueadoHasta.remove(emailNorm);
     return usuario;
+  }
+
+  private void registrarIntentoFallido(String emailNorm) {
+    int intentos = intentosFallidos.merge(emailNorm, 1, Integer::sum);
+    if (intentos >= MAX_INTENTOS) {
+      bloqueadoHasta.put(emailNorm, Instant.now().plusSeconds(BLOQUEO_SEGUNDOS));
+      intentosFallidos.remove(emailNorm);
+    }
   }
 
   @Override
@@ -40,7 +70,9 @@ public class ServicioLoginImpl implements ServicioLogin {
       throw new RolInvalido();
     }
     validarContrasena(usuario.getPassword());
-    validarEmail(usuario.getEmail());
+    String emailNormalizado = usuario.getEmail() == null ? null : usuario.getEmail().trim().toLowerCase();
+    usuario.setEmail(emailNormalizado);
+    validarEmail(emailNormalizado);
     Usuario usuarioEncontrado = repositorioUsuario.buscar(usuario.getEmail());
     if (usuarioEncontrado != null) {
       throw new UsuarioExistente();
@@ -76,12 +108,12 @@ public class ServicioLoginImpl implements ServicioLogin {
       return false;
     }
 
-    Usuario existente = repositorioUsuario.buscar(nuevoEmail.trim());
+    String emailNorm = nuevoEmail.trim().toLowerCase();
+    Usuario existente = repositorioUsuario.buscar(emailNorm);
     if (existente != null && !existente.getId().equals(usuarioId)) {
       return false;
     }
-
-    usuario.setEmail(nuevoEmail.trim());
+    usuario.setEmail(emailNorm);
     repositorioUsuario.modificar(usuario);
     return true;
   }

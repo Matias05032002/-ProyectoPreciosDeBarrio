@@ -426,6 +426,13 @@ public class ControladorReporte {
       if (foto.length > 10 * 1024 * 1024) {
         return "La foto no puede superar los 10 MB";
       }
+      // Validar magic bytes: JPEG (FF D8) o PNG (89 50 4E 47)
+      boolean esJpeg = foto.length >= 2 && (foto[0] & 0xFF) == 0xFF && (foto[1] & 0xFF) == 0xD8;
+      boolean esPng  = foto.length >= 4 && (foto[0] & 0xFF) == 0x89 && (foto[1] & 0xFF) == 0x50
+              && (foto[2] & 0xFF) == 0x4E && (foto[3] & 0xFF) == 0x47;
+      if (!esJpeg && !esPng) {
+        return "El archivo debe ser una imagen JPEG o PNG válida";
+      }
       reporte.setFoto(foto);
       return null;
     } catch (IllegalArgumentException e) {

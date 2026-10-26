@@ -14,6 +14,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 @Controller
@@ -57,24 +58,35 @@ public class ControladorLogin {
   }
 
   @RequestMapping(path = "/registrarme", method = RequestMethod.POST)
-  public ModelAndView registrarme(@ModelAttribute("usuario") Usuario usuario) {
-    Map<String, Object> model = new ModelMap();
+  public ModelAndView registrarme(
+          @RequestParam String email,
+          @RequestParam String password,
+          @RequestParam String nombre,
+          @RequestParam String apellido,
+          @RequestParam String rol,
+          HttpServletRequest request) {
+
+    Usuario usuario = new Usuario();
+    usuario.setEmail(email);
+    usuario.setPassword(password);
+    usuario.setNombre(nombre);
+    usuario.setApellido(apellido);
+    // Solo roles permitidos
+    if ("USER".equals(rol) || "COMERCIO".equals(rol)) {
+      usuario.setRol(rol);
+    } else {
+      usuario.setRol("USER");
+    }
+
+    ModelAndView mav = new ModelAndView();
     try {
       servicioLogin.registrar(usuario);
-    } catch (UsuarioExistente e) {
-      model.put(ATTR_ERROR, "El usuario ya existe");
-      return new ModelAndView(VISTA_NUEVO_USUARIO, model);
-    } catch (EmailInvalido | ContrasenaInvalida e) {
-      model.put(ATTR_ERROR, e.getMessage());
-      return new ModelAndView(VISTA_NUEVO_USUARIO, model);
-    } catch (RolInvalido e) {
-      model.put(ATTR_ERROR, "Debe seleccionar un tipo de cuenta");
-      return new ModelAndView(VISTA_NUEVO_USUARIO, model);
+      mav.setViewName("redirect:/login");
     } catch (Exception e) {
-      model.put(ATTR_ERROR, "Error al registrar el nuevo usuario");
-      return new ModelAndView(VISTA_NUEVO_USUARIO, model);
+      mav.setViewName("registro");
+      mav.addObject("error", e.getMessage());
     }
-    return new ModelAndView("redirect:/login");
+    return mav;
   }
 
   @RequestMapping(path = "/nuevo-usuario", method = RequestMethod.GET)

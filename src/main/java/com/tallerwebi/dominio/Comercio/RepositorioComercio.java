@@ -14,4 +14,5 @@ public interface RepositorioComercio {
     String localidad
   );
   void actualizarComercio(Comercio comercio);
+  Comercio buscarComercioPorDireccionYLocalidad(String direccion, String localidad);
 }

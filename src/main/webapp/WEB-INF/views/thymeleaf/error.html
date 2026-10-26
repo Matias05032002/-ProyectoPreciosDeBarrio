@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Error — Mapa de Precios</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<div th:replace="~{navbar :: navbar}"></div>
+
+<div style="text-align:center; padding: 60px 20px;">
+  <h1>Algo salió mal</h1>
+  <p>Ocurrió un error inesperado. Por favor intentá de nuevo más tarde.</p>
+  <a th:href="@{/home}">Volver al inicio</a>
+</div>
+</body>
+</html>

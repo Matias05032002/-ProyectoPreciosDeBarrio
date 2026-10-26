@@ -1,9 +1,7 @@
 package com.tallerwebi.dominio;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+
 import java.time.LocalDate;
 
 @Entity
@@ -13,11 +11,18 @@ public class Usuario {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Column(name = "email", unique = true, nullable = false, length = 150)
   private String email;
+
+  @Column(name = "password", nullable = false, length = 255)
   private String password;
+  @Column(name = "rol", nullable = false)
   private String rol;
-  private Boolean activo = false;
+  @Column(name = "activo", nullable = false)
+  private Boolean activo;
+  @Column(name = "nombre", nullable = false, length = 100)
   private String nombre;
+  @Column(name = "apellido", length = 100)
   private String apellido;
   private LocalDate fechaNacimiento;
 

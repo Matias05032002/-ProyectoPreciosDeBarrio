@@ -21,6 +21,13 @@ public class ServicioComercioImpl implements ServicioComercio {
 
   @Override
   public Comercio guardarComercio(Comercio comercio) {
+    Comercio existente = repositorioComercio.buscarComercioPorDireccionYLocalidad(
+      comercio.getDireccion(),
+      comercio.getLocalidad()
+    );
+    if (existente != null) {
+      return existente;
+    }
     try {
       String direccionCompleta =
         comercio.getDireccion() + ", " + comercio.getLocalidad() + ", Buenos Aires, Argentina";

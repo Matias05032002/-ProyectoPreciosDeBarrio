@@ -77,4 +77,19 @@ public class RepositorioComercioImpl implements RepositorioComercio {
   public void actualizarComercio(Comercio comercio) {
     sessionFactory.getCurrentSession().merge(comercio);
   }
+
+  @Override
+  public Comercio buscarComercioPorDireccionYLocalidad(String direccion, String localidad) {
+    List<Comercio> comercios = sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "from Comercio where lower(direccion) = lower(:direccion) " +
+        "and lower(localidad) = lower(:localidad)",
+        Comercio.class
+      )
+      .setParameter("direccion", direccion.trim())
+      .setParameter("localidad", localidad.trim())
+      .list();
+    return comercios.isEmpty() ? null : comercios.get(0);
+  }
 }
