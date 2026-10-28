@@ -36,24 +36,24 @@
 
     <div class="tabs">
         <a class="tab active" th:href="@{/login}">Ingresar</a>
-        <a class="tab"       th:href="@{/nuevo-usuario}">Registrarme</a>
+        <a class="tab" id="btn-register" th:href="@{/nuevo-usuario}">Registrarme</a>
     </div>
 
-    <div th:if="${error != null}" class="error-msg" th:text="${error}"></div>
+    <p th:if="${error != null}" class="alert alert-danger" th:text="${error}"></p>
 
     <form th:action="@{/validar-login}" th:object="${datosLogin}" method="post">
         <div class="field">
             <label>Email</label>
-            <input type="email" th:field="*{email}" placeholder="vos@barrio.com">
+            <input type="email" th:field="*{email}" id="email" placeholder="vos@barrio.com">
         </div>
         <div class="field">
             <label>Contraseña</label>
-            <input type="password" th:field="*{password}" placeholder="••••••••">
+            <input type="password" th:field="*{password}" id="password" placeholder="••••••••">
         </div>
 
         <div class="forgot"><a href="#">¿Olvidaste tu contraseña?</a></div>
 
-        <button type="submit" class="btn-primary">Entrar al barrio →</button>
+        <button type="submit" id="btn-login" class="btn-primary">Entrar al barrio →</button>
     </form>
 
     <div class="bottom-link">

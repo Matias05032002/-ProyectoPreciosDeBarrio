@@ -16,7 +16,7 @@ public class ReiniciarDB {
 
       // BCrypt hash de "test"
       String hashTest = "$2a$10$PBL5JMWUB3K.CaSCXa.VQ.hqBGTDm0DhQcj6h5YcpOxD.ntfvyUkm";
-      String hashComercio = "$2a$10$EPoQNoGYxgyTzPKHeDWXKO3iMozi8M.FDJjphwWXGmQ40E0NLXpkW";
+      String hashComercio = "$2a$10$PBL5JMWUB3K.CaSCXa.VQ.hqBGTDm0DhQcj6h5YcpOxD.ntfvyUkm";
 
       String sqlCommands =
         "SET FOREIGN_KEY_CHECKS=0; " +

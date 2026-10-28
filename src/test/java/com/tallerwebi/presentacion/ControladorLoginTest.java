@@ -169,7 +169,10 @@ public class ControladorLoginTest {
       redirectAttrs
     );
 
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
+    assertThat(
+      modelAndView.getViewName(),
+      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario")
+    );
     verify(servicioLoginMock, never()).registrar(any(Usuario.class));
     verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
   }
@@ -192,7 +195,10 @@ public class ControladorLoginTest {
       redirectAttrs
     );
 
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
+    assertThat(
+      modelAndView.getViewName(),
+      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario")
+    );
     verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
   }
 
@@ -208,7 +214,8 @@ public class ControladorLoginTest {
 
   @Test
   public void nuevoUsuarioDeberiaRetornarVistaNuevoUsuarioConUsuarioVacio() {
-    ModelAndView modelAndView = controladorLogin.nuevoUsuario(); // sin parámetros
+    org.springframework.ui.ExtendedModelMap model = new org.springframework.ui.ExtendedModelMap();
+    ModelAndView modelAndView = controladorLogin.nuevoUsuario(null, null);
 
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("nuevo-usuario"));
     assertThat(modelAndView.getModel().get("usuario"), instanceOf(Usuario.class));

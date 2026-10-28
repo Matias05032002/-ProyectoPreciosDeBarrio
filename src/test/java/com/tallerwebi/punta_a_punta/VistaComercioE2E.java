@@ -11,6 +11,7 @@ import com.microsoft.playwright.Playwright;
 import com.tallerwebi.punta_a_punta.vistas.Comercio.VistaComercio;
 import com.tallerwebi.punta_a_punta.vistas.Comercio.VistaPerfil;
 import com.tallerwebi.punta_a_punta.vistas.Reporte.VistaReporte;
+import com.tallerwebi.punta_a_punta.vistas.VistaLogin;
 import com.tallerwebi.punta_a_punta.vistas.VistaNuevoUsuario;
 import java.net.MalformedURLException;
 import org.junit.jupiter.api.AfterAll;
@@ -42,6 +43,10 @@ public class VistaComercioE2E {
     ReiniciarDB.limpiarBaseDeDatos();
     context = browser.newContext();
     Page page = context.newPage();
+    VistaLogin vistaLogin = new VistaLogin(page);
+    vistaLogin.escribirEMAIL("test@unlam.edu.ar");
+    vistaLogin.escribirClave("test");
+    vistaLogin.darClickEnIniciarSesion();
     vistaComercio = new VistaComercio(page);
   }
 
@@ -141,10 +146,14 @@ public class VistaComercioE2E {
     VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
 
     vistaLogin.darClickEnRegistrarse();
-    vistaNuevoUsuario.escribirEMAIL("comercio-test@unlam.edu.ar");
-    vistaNuevoUsuario.escribirClave("Contrasena1");
     vistaNuevoUsuario.seleccionarRol("Comercio");
-    vistaNuevoUsuario.darClickEnRegistrarme();
+    vistaNuevoUsuario.page.fill("#nombre-comercio", "Comercio Test");
+    vistaNuevoUsuario.seleccionarTipoComercio("Almacen");
+    vistaNuevoUsuario.escribirDireccion("Rivadavia 999");
+    vistaNuevoUsuario.seleccionarLocalidadComercio("La Matanza");
+    vistaNuevoUsuario.escribirEmailComercio("comercio-test@unlam.edu.ar");
+    vistaNuevoUsuario.escribirClaveComercio("Contrasena1");
+    vistaNuevoUsuario.darClickEnRegistrarmeComercio();
 
     vistaLogin.escribirEMAIL("comercio-test@unlam.edu.ar");
     vistaLogin.escribirClave("Contrasena1");

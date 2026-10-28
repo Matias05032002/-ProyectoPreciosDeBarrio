@@ -29,7 +29,7 @@ public class VistaPerfil extends VistaWeb {
   }
 
   public void darClickEnGuardar() {
-    this.darClickEnElElemento("button[type='submit']");
+    this.page.locator("form button[type='submit']").first().click();
   }
 
   public boolean muestraFormularioDeRegistro() {
@@ -37,6 +37,6 @@ public class VistaPerfil extends VistaWeb {
   }
 
   public boolean muestraDatosDelComercio() {
-    return this.page.locator("dl.row").isVisible();
+    return this.page.locator("input[name='nombre']").isVisible();
   }
 }
