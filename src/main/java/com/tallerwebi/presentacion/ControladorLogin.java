@@ -99,7 +99,7 @@ public class ControladorLogin {
     RedirectAttributes redirectAttrs
   ) {
     Comercio existente = servicioComercio.buscarPorDireccionYLocalidad(direccion, localidad);
-    if (existente != null) {
+    if (existente != null && existente.getUsuarioId() != null) {
       return new ModelAndView(
         "redirect:/nuevo-usuario?errorComercio=Ya+existe+un+comercio+en+esa+direcci%C3%B3n+y+localidad"
       );
@@ -124,18 +124,26 @@ public class ControladorLogin {
     }
 
     Usuario usuarioCreado = servicioLogin.buscarPorEmail(email);
-    Comercio comercio = new Comercio();
-    comercio.setNombre(nombre);
-    comercio.setTipo(tipo);
-    comercio.setDireccion(direccion);
-    comercio.setLocalidad(localidad);
-    comercio.setActivo(true);
-    comercio.setFechaRegistro(LocalDateTime.now());
     if (usuarioCreado != null) {
-      comercio.setUsuarioId(usuarioCreado.getId());
+      Comercio comercioExistente = servicioComercio.buscarPorDireccionYLocalidad(
+        direccion,
+        localidad
+      );
+      if (comercioExistente != null) {
+        comercioExistente.setUsuarioId(usuarioCreado.getId());
+        servicioComercio.actualizarComercio(comercioExistente);
+      } else {
+        Comercio comercio = new Comercio();
+        comercio.setNombre(nombre);
+        comercio.setTipo(tipo);
+        comercio.setDireccion(direccion);
+        comercio.setLocalidad(localidad);
+        comercio.setActivo(true);
+        comercio.setFechaRegistro(LocalDateTime.now());
+        comercio.setUsuarioId(usuarioCreado.getId());
+        servicioComercio.guardarComercio(comercio);
+      }
     }
-
-    servicioComercio.guardarComercio(comercio);
     return new ModelAndView(REDIRECT_LOGIN);
   }
 

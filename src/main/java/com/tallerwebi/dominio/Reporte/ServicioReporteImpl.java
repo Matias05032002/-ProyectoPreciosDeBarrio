@@ -276,4 +276,9 @@ public class ServicioReporteImpl implements ServicioReporte {
   public List<Object[]> rangoEtariosVisitantes(Long comercioId) {
     return repositorioReporte.rangoEtariosVisitantes(comercioId);
   }
+
+  @Override
+  public List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite) {
+    return repositorioReporte.productosMasBuscadosPorLocalidad(localidad, limite);
+  }
 }

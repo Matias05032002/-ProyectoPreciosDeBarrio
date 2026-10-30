@@ -213,6 +213,78 @@ public class RepositorioReporteTest {
     assertThat(resultado, is(nullValue()));
   }
 
+  @Test
+  @Transactional
+  @Rollback
+  public void productosMasBuscadosPorLocalidadDeberiaRetornarProductosOrdenados() {
+    // 2 reportes de Leche y 1 de Arroz en la misma localidad
+    Reporte r1 = dadoQueTengoUnReporteConLocalidad("Leche", "Almacen", 100.0, "Matanza");
+    Reporte r2 = dadoQueTengoUnReporteConLocalidad("Leche", "Kiosco", 110.0, "Matanza");
+    Reporte r3 = dadoQueTengoUnReporteConLocalidad("Arroz", "Almacen", 90.0, "Matanza");
+    dadoQueExisteElReporte(r1);
+    dadoQueExisteElReporte(r2);
+    dadoQueExisteElReporte(r3);
+
+    List<Object[]> resultado = repositorioReporte.productosMasBuscadosPorLocalidad("Matanza", 5);
+
+    assertThat(resultado, not(empty()));
+    // el primero debe ser Leche (más reportes)
+    assertThat(resultado.get(0)[0].toString(), equalTo("Leche"));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void productosMasBuscadosPorLocalidadNoDeberiaIncluirOtraLocalidad() {
+    Reporte r1 = dadoQueTengoUnReporteConLocalidad("Leche", "Almacen", 100.0, "Matanza");
+    Reporte r2 = dadoQueTengoUnReporteConLocalidad("Leche", "Kiosco", 110.0, "Lomas");
+    dadoQueExisteElReporte(r1);
+    dadoQueExisteElReporte(r2);
+
+    List<Object[]> resultado = repositorioReporte.productosMasBuscadosPorLocalidad("Matanza", 5);
+
+    // solo debe aparecer el de Matanza
+    assertThat(resultado.size(), is(1));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void productosMasBuscadosPorLocalidadDeberiaRespetarElLimite() {
+    dadoQueExisteElReporte(dadoQueTengoUnReporteConLocalidad("Leche", "Almacen", 100.0, "Matanza"));
+    dadoQueExisteElReporte(dadoQueTengoUnReporteConLocalidad("Arroz", "Kiosco", 50.0, "Matanza"));
+    dadoQueExisteElReporte(dadoQueTengoUnReporteConLocalidad("Fideos", "Super", 80.0, "Matanza"));
+
+    List<Object[]> resultado = repositorioReporte.productosMasBuscadosPorLocalidad("Matanza", 2);
+
+    assertThat(resultado.size(), is(lessThanOrEqualTo(2)));
+  }
+
+  // Helper adicional — misma firma que dadoQueTengoUnReporte pero acepta localidad
+  private Reporte dadoQueTengoUnReporteConLocalidad(
+    String nombreProducto,
+    String nombreComercio,
+    Double precio,
+    String localidad
+  ) {
+    Producto producto = new Producto();
+    producto.setNombre(nombreProducto);
+    sessionFactory.getCurrentSession().persist(producto);
+
+    Comercio comercio = new Comercio();
+    comercio.setNombre(nombreComercio);
+    comercio.setDireccion("Av. Test " + nombreComercio + "-" + localidad + "-" + System.nanoTime());
+    comercio.setLocalidad(localidad);
+    sessionFactory.getCurrentSession().persist(comercio);
+
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(precio);
+    reporte.setFechaDeReporte(java.time.LocalDateTime.now());
+    return reporte;
+  }
+
   private Reporte dadoQueTengoUnReporte(
     String nombreProducto,
     String nombreComercio,

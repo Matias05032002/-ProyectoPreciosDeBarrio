@@ -14,11 +14,14 @@ public class ServicioComercioTest {
 
   private ServicioComercio servicioComercio;
   private RepositorioComercio repositorioComercioMock;
+  private RepositorioHorario repositorioHorarioMock;
 
   @BeforeEach
   public void init() {
     this.repositorioComercioMock = mock(RepositorioComercio.class);
-    this.servicioComercio = new ServicioComercioImpl(this.repositorioComercioMock);
+    this.repositorioHorarioMock = mock(RepositorioHorario.class);
+    this.servicioComercio =
+      new ServicioComercioImpl(this.repositorioComercioMock, this.repositorioHorarioMock);
   }
 
   @Test
@@ -180,5 +183,79 @@ public class ServicioComercioTest {
     assertThat(resultado.getUsuarioId(), equalTo(8L));
 
     verify(repositorioComercioMock).guardarComercio(nuevo);
+  }
+
+  @Test
+  public void guardarHorariosDeberiaEliminarYReemplazarLosExistentes() {
+    Long comercioId = 1L;
+    List<HorarioComercio> horarios = Arrays.asList(new HorarioComercio(), new HorarioComercio());
+
+    servicioComercio.guardarHorarios(comercioId, horarios);
+
+    verify(repositorioHorarioMock, times(1)).eliminarPorComercioId(comercioId);
+    verify(repositorioHorarioMock, times(1)).guardarHorarios(horarios);
+    horarios.forEach(h -> assertThat(h.getComercioId(), equalTo(comercioId)));
+  }
+
+  @Test
+  public void obtenerHorariosDeberiaRetornarLosDelComercio() {
+    Long comercioId = 2L;
+    List<HorarioComercio> esperados = Arrays.asList(new HorarioComercio());
+    when(repositorioHorarioMock.buscarPorComercioId(comercioId)).thenReturn(esperados);
+
+    List<HorarioComercio> resultado = servicioComercio.obtenerHorarios(comercioId);
+
+    assertThat(resultado, equalTo(esperados));
+    verify(repositorioHorarioMock, times(1)).buscarPorComercioId(comercioId);
+  }
+
+  @Test
+  public void estaAbiertoDeberiaRetornarFalseSiNoHayHorariosCargados() {
+    Long comercioId = 3L;
+    when(repositorioHorarioMock.buscarPorComercioId(comercioId))
+      .thenReturn(Collections.emptyList());
+
+    boolean resultado = servicioComercio.estaAbierto(comercioId);
+
+    assertThat(resultado, equalTo(false));
+  }
+
+  @Test
+  public void estaAbiertoDeberiaRetornarFalseSiElDiaEstaMarcarComoNoAbierto() {
+    Long comercioId = 4L;
+    HorarioComercio horario = new HorarioComercio();
+    // Ponemos todos los días como cerrados
+    for (int dia = 1; dia <= 7; dia++) {
+      horario.setDiaSemana(dia);
+      horario.setAbierto(false);
+    }
+    when(repositorioHorarioMock.buscarPorComercioId(comercioId)).thenReturn(Arrays.asList(horario));
+
+    boolean resultado = servicioComercio.estaAbierto(comercioId);
+
+    assertThat(resultado, equalTo(false));
+  }
+
+  @Test
+  public void guardarFotoDeberiaActualizarElComercioConLosDatos() {
+    Comercio comercio = new Comercio();
+    comercio.setId(1L);
+    when(repositorioComercioMock.buscarComercio(1L)).thenReturn(comercio);
+
+    byte[] bytes = new byte[] { 1, 2, 3 };
+    servicioComercio.guardarFoto(1L, bytes, "image/jpeg");
+
+    assertThat(comercio.getFoto(), equalTo(bytes));
+    assertThat(comercio.getFotoTipo(), equalTo("image/jpeg"));
+    verify(repositorioComercioMock, times(1)).actualizarComercio(comercio);
+  }
+
+  @Test
+  public void guardarFotoCuandoElComercioNoExisteNoDeberiaHacerNada() {
+    when(repositorioComercioMock.buscarComercio(99L)).thenReturn(null);
+
+    servicioComercio.guardarFoto(99L, new byte[] { 1, 2, 3 }, "image/jpeg");
+
+    verify(repositorioComercioMock, never()).actualizarComercio(any());
   }
 }

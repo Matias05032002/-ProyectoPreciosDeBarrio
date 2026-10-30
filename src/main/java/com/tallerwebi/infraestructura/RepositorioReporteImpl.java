@@ -237,4 +237,22 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       .setParameter(PARAM_COMERCIO_ID, comercioId)
       .list();
   }
+
+  @Override
+  public List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite) {
+    String hql =
+      "SELECT p.nombre, p.categoria, COUNT(r) as cantidad " +
+      "FROM Reporte r JOIN r.producto p JOIN r.comercio c " +
+      "WHERE c.localidad = :localidad " +
+      "AND r.fechaDeReporte >= :fechaLimite " +
+      "GROUP BY p.id, p.nombre, p.categoria " +
+      "ORDER BY cantidad DESC";
+    return (List<Object[]>) sessionFactory
+      .getCurrentSession()
+      .createQuery(hql)
+      .setParameter("localidad", localidad)
+      .setParameter("fechaLimite", java.time.LocalDateTime.now().minusMonths(1))
+      .setMaxResults(limite)
+      .list();
+  }
 }

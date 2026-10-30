@@ -13,6 +13,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -346,6 +347,33 @@ public class ServicioReporteTest {
       () -> servicioReporte.editarReporte(99L, datosEdicion("Leche", "1000ml", 100.0), 1L)
     );
     verify(repositorioReporteMock, never()).guardarReporte(any(Reporte.class));
+  }
+
+  @Test
+  public void productosMasBuscadosPorLocalidadDeberiaDelegar() {
+    List<Object[]> esperado = new ArrayList<>();
+    esperado.add(new Object[] { "Leche", "Lácteos", 3L });
+    when(repositorioReporteMock.productosMasBuscadosPorLocalidad("Matanza", 5))
+      .thenReturn(esperado);
+
+    List<Object[]> resultado = servicioReporte.productosMasBuscadosPorLocalidad("Matanza", 5);
+
+    assertThat(resultado, equalTo(esperado));
+    verify(repositorioReporteMock, times(1)).productosMasBuscadosPorLocalidad("Matanza", 5);
+  }
+
+  @Test
+  public void productosMasBuscadosPorLocalidadSinReportesDeberiaRetornarListaVacia() {
+    when(repositorioReporteMock.productosMasBuscadosPorLocalidad("Zona Sin Datos", 5))
+      .thenReturn(Collections.emptyList());
+
+    List<Object[]> resultado = servicioReporte.productosMasBuscadosPorLocalidad(
+      "Zona Sin Datos",
+      5
+    );
+
+    assertThat(resultado, equalTo(Collections.emptyList()));
+    verify(repositorioReporteMock, times(1)).productosMasBuscadosPorLocalidad("Zona Sin Datos", 5);
   }
 
   // --- helpers ---

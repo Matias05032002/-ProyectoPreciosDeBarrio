@@ -3,6 +3,8 @@ package com.tallerwebi.dominio.Comercio;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,11 +14,16 @@ import org.springframework.stereotype.Service;
 public class ServicioComercioImpl implements ServicioComercio {
 
   private RepositorioComercio repositorioComercio;
+  private final RepositorioHorario repositorioHorario;
   private ObjectMapper objectMapper = new ObjectMapper();
 
   @Autowired
-  public ServicioComercioImpl(RepositorioComercio repositorioComercio) {
+  public ServicioComercioImpl(
+    RepositorioComercio repositorioComercio,
+    RepositorioHorario repositorioHorario
+  ) {
     this.repositorioComercio = repositorioComercio;
+    this.repositorioHorario = repositorioHorario;
   }
 
   @Override
@@ -25,7 +32,7 @@ public class ServicioComercioImpl implements ServicioComercio {
       comercio.getDireccion(),
       comercio.getLocalidad()
     );
-    if (existente != null) {
+    if (existente != null && existente.getUsuarioId() != null) {
       return existente;
     }
     try {
@@ -74,6 +81,9 @@ public class ServicioComercioImpl implements ServicioComercio {
     );
 
     if (existente != null) {
+      if (existente.getUsuarioId() != null) {
+        return existente;
+      }
       existente.setUsuarioId(usuarioId);
       repositorioComercio.actualizarComercio(existente);
       return existente;
@@ -111,5 +121,59 @@ public class ServicioComercioImpl implements ServicioComercio {
   @Override
   public Comercio buscarPorDireccionYLocalidad(String direccion, String localidad) {
     return repositorioComercio.buscarComercioPorDireccionYLocalidad(direccion, localidad);
+  }
+
+  @Override
+  public void guardarHorarios(Long comercioId, List<HorarioComercio> horarios) {
+    repositorioHorario.eliminarPorComercioId(comercioId);
+    for (HorarioComercio horario : horarios) {
+      horario.setComercioId(comercioId);
+    }
+    repositorioHorario.guardarHorarios(horarios);
+  }
+
+  @Override
+  public List<HorarioComercio> obtenerHorarios(Long comercioId) {
+    return repositorioHorario.buscarPorComercioId(comercioId);
+  }
+
+  @Override
+  public Boolean estaAbierto(Long comercioId) {
+    List<HorarioComercio> horarios = repositorioHorario.buscarPorComercioId(comercioId);
+
+    if (horarios.isEmpty()) {
+      return false;
+    }
+
+    int diaHoy = java.time.LocalDate.now().getDayOfWeek().getValue();
+    java.time.LocalTime ahora = java.time.LocalTime.now();
+
+    for (HorarioComercio horario : horarios) {
+      if (
+        horario.getDiaSemana().equals(diaHoy) &&
+        Boolean.TRUE.equals(horario.getAbierto()) &&
+        horario.getHoraApertura() != null &&
+        horario.getHoraCierre() != null
+      ) {
+        if (horario.getHoraCierre().isBefore(horario.getHoraApertura())) {
+          return (
+            !ahora.isBefore(horario.getHoraApertura()) || !ahora.isAfter(horario.getHoraCierre())
+          );
+        }
+        return (
+          !ahora.isBefore(horario.getHoraApertura()) && !ahora.isAfter(horario.getHoraCierre())
+        );
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public void guardarFoto(Long comercioId, byte[] foto, String fotoTipo) {
+    Comercio comercio = repositorioComercio.buscarComercio(comercioId);
+    if (comercio == null) return;
+    comercio.setFoto(foto);
+    comercio.setFotoTipo(fotoTipo);
+    repositorioComercio.actualizarComercio(comercio);
   }
 }

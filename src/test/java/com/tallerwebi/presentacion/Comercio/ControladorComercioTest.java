@@ -260,15 +260,6 @@ public class ControladorComercioTest {
   // ── verDashboard ──────────────────────────────────────────────────────────
 
   @Test
-  public void verDashboardSinSesionRedireccionaALogin() {
-    when(sessionMock.getAttribute("ID")).thenReturn(null);
-
-    ModelAndView mav = controladorComercio.verDashboard(requestMock);
-
-    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
-  }
-
-  @Test
   public void verDashboardConRolIncorrectoRedireccionaAHome() {
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
@@ -330,5 +321,123 @@ public class ControladorComercioTest {
     ModelAndView mav = controladorComercio.verDashboard(requestMock);
 
     assertThat((Double) mav.getModel().get("precioPromedio"), is(150.0));
+  }
+
+  // --- verDashboard (Task 4) ---
+
+  @Test
+  public void verDashboardSinSesionRedireccionaALogin() {
+    when(sessionMock.getAttribute("ID")).thenReturn(null);
+    when(requestMock.getSession()).thenReturn(sessionMock);
+
+    ModelAndView mav = controladorComercio.verDashboard(requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
+
+  @Test
+  public void verDashboardConRolInvalidoRedireccionaAHome() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(requestMock.getSession()).thenReturn(sessionMock);
+
+    ModelAndView mav = controladorComercio.verDashboard(requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/home"));
+  }
+
+  @Test
+  public void verDashboardDeberiaAgregarProductosMasBuscadosAlModelo() {
+    Comercio comercio = new Comercio();
+    comercio.setId(1L);
+    comercio.setLocalidad("Matanza");
+
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
+    when(requestMock.getSession()).thenReturn(sessionMock);
+    when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
+    when(servicioReporteMock.buscarPorComercio(1L)).thenReturn(Collections.emptyList());
+    when(servicioReporteMock.contarUsuariosDistintosPorComercio(1L))
+      .thenReturn(Collections.emptyList());
+    when(servicioReporteMock.contarReportesDudososPorComercio(1L)).thenReturn(0L);
+    when(servicioReporteMock.rangoEtariosVisitantes(1L)).thenReturn(Collections.emptyList());
+
+    List<Object[]> productosMasBuscados = new java.util.ArrayList<>();
+    productosMasBuscados.add(new Object[] { "Leche", "Lácteos", 3L });
+    when(servicioReporteMock.productosMasBuscadosPorLocalidad("Matanza", 5))
+      .thenReturn(productosMasBuscados);
+
+    ModelAndView mav = controladorComercio.verDashboard(requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("comercio/dashboard-comercio"));
+    assertThat(mav.getModel().get("productosMasBuscados"), equalTo(productosMasBuscados));
+    verify(servicioReporteMock, times(1)).productosMasBuscadosPorLocalidad("Matanza", 5);
+  }
+
+  // --- subirFoto (Task 2) ---
+
+  @Test
+  public void subirFotoConTipoInvalidoRedireccionaConError() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    Comercio comercio = new Comercio();
+    comercio.setId(1L);
+    when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
+
+    org.springframework.mock.web.MockMultipartFile archivo =
+      new org.springframework.mock.web.MockMultipartFile(
+        "foto",
+        "foto.gif",
+        "image/gif",
+        new byte[100]
+      );
+
+    ModelAndView mav = controladorComercio.subirFoto(archivo, sessionMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/comercio/perfil?errorFoto=true"));
+    verify(servicioComercioMock, never()).guardarFoto(any(), any(), any());
+  }
+
+  @Test
+  public void subirFotoConArchivoDemsiadoGrandeRedireccionaConError() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    Comercio comercio = new Comercio();
+    comercio.setId(1L);
+    when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
+
+    // 6 MB > 5 MB límite
+    byte[] bytes = new byte[6 * 1024 * 1024];
+    org.springframework.mock.web.MockMultipartFile archivo =
+      new org.springframework.mock.web.MockMultipartFile("foto", "foto.jpg", "image/jpeg", bytes);
+
+    ModelAndView mav = controladorComercio.subirFoto(archivo, sessionMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/comercio/perfil?errorFoto=true"));
+    verify(servicioComercioMock, never()).guardarFoto(any(), any(), any());
+  }
+
+  @Test
+  public void subirFotoValidaDeberiaGuardarYRedireccionarConExito() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    Comercio comercio = new Comercio();
+    comercio.setId(1L);
+    when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
+
+    byte[] bytes = new byte[100];
+    org.springframework.mock.web.MockMultipartFile archivo =
+      new org.springframework.mock.web.MockMultipartFile("foto", "foto.jpg", "image/jpeg", bytes);
+
+    ModelAndView mav = controladorComercio.subirFoto(archivo, sessionMock);
+
+    assertThat(
+      mav.getViewName(),
+      equalToIgnoringCase("redirect:/comercio/perfil?fotoActualizada=true")
+    );
+    verify(servicioComercioMock, times(1)).guardarFoto(1L, bytes, "image/jpeg");
   }
 }
