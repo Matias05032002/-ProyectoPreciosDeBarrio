@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Asistente.ServicioAsistente;
 import com.tallerwebi.presentacion.ControladorAsistente;
+import jakarta.servlet.http.HttpSession;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,10 +25,13 @@ public class ControladorAsistenteTest {
 
   @Test
   public void consultarDevuelveRespuestaExitosa() throws Exception {
-    when(servicioAsistenteMock.consultar("leche", null, null)).thenReturn("La leche está a $100.");
+    HttpSession sessionMock = mock(HttpSession.class);
+    when(sessionMock.getAttribute("donPesoHistorial")).thenReturn(null);
+    when(servicioAsistenteMock.consultar(eq("leche"), isNull(), isNull(), anyList()))
+      .thenReturn("La leche está a $100.");
 
     Map<String, Object> body = Map.of("pregunta", "leche");
-    ResponseEntity<?> response = controladorAsistente.consultar(body);
+    ResponseEntity<?> response = controladorAsistente.consultar(body, sessionMock);
 
     assertThat(response.getStatusCode().value(), equalTo(200));
     Map<?, ?> responseBody = (Map<?, ?>) response.getBody();
@@ -36,7 +40,9 @@ public class ControladorAsistenteTest {
 
   @Test
   public void consultarConCoordenadasLasPasaAlServicio() throws Exception {
-    when(servicioAsistenteMock.consultar("leche", -34.6037, -58.3816))
+    HttpSession sessionMock = mock(HttpSession.class);
+    when(sessionMock.getAttribute("donPesoHistorial")).thenReturn(null);
+    when(servicioAsistenteMock.consultar(eq("leche"), eq(-34.6037), eq(-58.3816), anyList()))
       .thenReturn("Respuesta con ubicación.");
 
     Map<String, Object> body = Map.of(
@@ -47,19 +53,21 @@ public class ControladorAsistenteTest {
       "longitud",
       -58.3816
     );
-    ResponseEntity<?> response = controladorAsistente.consultar(body);
+    ResponseEntity<?> response = controladorAsistente.consultar(body, sessionMock);
 
     assertThat(response.getStatusCode().value(), equalTo(200));
-    verify(servicioAsistenteMock).consultar("leche", -34.6037, -58.3816);
+    verify(servicioAsistenteMock).consultar(eq("leche"), eq(-34.6037), eq(-58.3816), anyList());
   }
 
   @Test
   public void consultarCuandoServicioFallaDevuelve500() throws Exception {
-    when(servicioAsistenteMock.consultar(anyString(), any(), any()))
+    HttpSession sessionMock = mock(HttpSession.class);
+    when(sessionMock.getAttribute("donPesoHistorial")).thenReturn(null);
+    when(servicioAsistenteMock.consultar(anyString(), any(), any(), anyList()))
       .thenThrow(new Exception("Error de Groq"));
 
     Map<String, Object> body = Map.of("pregunta", "leche");
-    ResponseEntity<?> response = controladorAsistente.consultar(body);
+    ResponseEntity<?> response = controladorAsistente.consultar(body, sessionMock);
 
     assertThat(response.getStatusCode().value(), equalTo(500));
     Map<?, ?> responseBody = (Map<?, ?>) response.getBody();
@@ -68,12 +76,14 @@ public class ControladorAsistenteTest {
 
   @Test
   public void consultarSinLatitudLaPasaComoNull() throws Exception {
-    when(servicioAsistenteMock.consultar("aceite", null, null))
+    HttpSession sessionMock = mock(HttpSession.class);
+    when(sessionMock.getAttribute("donPesoHistorial")).thenReturn(null);
+    when(servicioAsistenteMock.consultar(eq("aceite"), isNull(), isNull(), anyList()))
       .thenReturn("Respuesta sin ubicación.");
 
     Map<String, Object> body = Map.of("pregunta", "aceite");
-    controladorAsistente.consultar(body);
+    controladorAsistente.consultar(body, sessionMock);
 
-    verify(servicioAsistenteMock).consultar("aceite", null, null);
+    verify(servicioAsistenteMock).consultar(eq("aceite"), isNull(), isNull(), anyList());
   }
 }

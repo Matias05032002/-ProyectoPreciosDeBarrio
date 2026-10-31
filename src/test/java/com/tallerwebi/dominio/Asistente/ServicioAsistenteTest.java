@@ -29,12 +29,12 @@ public class ServicioAsistenteTest {
 
   @Test
   public void consultarSinReportesDevuelveRespuestaDeGemini() throws Exception {
-    when(repositorioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
+    when(repositorioReporteMock.listarRecientes(7)).thenReturn(Collections.emptyList());
     String respuestaJson =
       "{\"choices\":[{\"message\":{\"content\":\"No hay productos disponibles.\"}}]}";
     when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
 
-    String resultado = servicioAsistente.consultar("leche", null, null);
+    String resultado = servicioAsistente.consultar("leche", null, null, Collections.emptyList());
 
     assertThat(resultado, equalTo("No hay productos disponibles."));
   }
@@ -53,7 +53,7 @@ public class ServicioAsistenteTest {
     String respuestaJson = "{\"choices\":[{\"message\":{\"content\":\"La leche está a $100.\"}}]}";
     when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
 
-    String resultado = servicioAsistente.consultar("leche", null, null);
+    String resultado = servicioAsistente.consultar("leche", null, null, Collections.emptyList());
 
     assertThat(resultado, equalTo("La leche está a $100."));
     verify(servicioGeminiMock, times(1)).llamar(anyString(), contains("Leche"));
@@ -67,11 +67,15 @@ public class ServicioAsistenteTest {
     String respuestaJson = "{\"choices\":[{\"message\":{\"content\":\"Encontré leche lejos.\"}}]}";
     when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
 
-    // Coordenadas en Buenos Aires, comercio en (0,0)
-    String resultado = servicioAsistente.consultar("leche", -34.6037, -58.3816);
+    String resultado = servicioAsistente.consultar(
+      "leche",
+      -34.6037,
+      -58.3816,
+      Collections.emptyList()
+    );
 
     assertThat(resultado, equalTo("Encontré leche lejos."));
-    // El fallback incluye el reporte igual
+
     verify(servicioGeminiMock, times(1)).llamar(anyString(), contains("Almacen Lejano"));
   }
 
@@ -84,7 +88,7 @@ public class ServicioAsistenteTest {
     String respuestaJson = "{\"choices\":[{\"message\":{\"content\":\"Sin datos.\"}}]}";
     when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
 
-    String resultado = servicioAsistente.consultar("leche", null, null);
+    String resultado = servicioAsistente.consultar("leche", null, null, Collections.emptyList());
 
     assertThat(resultado, equalTo("Sin datos."));
     verify(servicioGeminiMock, times(1))
@@ -99,8 +103,39 @@ public class ServicioAsistenteTest {
 
     org.junit.jupiter.api.Assertions.assertThrows(
       Exception.class,
-      () -> servicioAsistente.consultar("leche", null, null)
+      () -> servicioAsistente.consultar("leche", null, null, Collections.emptyList())
     );
+  }
+
+  @Test
+  public void filtrarPorKeywordDeberiaEnviarSoloReportesDelProductoPreguntado() throws Exception {
+    Reporte reporteLeche = reporteValido("Leche", 100.0, "Almacen", "Av. Test 1", null, null);
+    Reporte reporteArroz = reporteValido("Arroz", 80.0, "Kiosco", "Av. Test 2", null, null);
+    when(repositorioReporteMock.listarRecientes(7))
+      .thenReturn(Arrays.asList(reporteLeche, reporteArroz));
+    String respuestaJson = "{\"choices\":[{\"message\":{\"content\":\"La leche está a $100.\"}}]}";
+    when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
+
+    servicioAsistente.consultar("leche", null, null, Collections.emptyList());
+
+    verify(servicioGeminiMock, times(1)).llamar(anyString(), contains("Leche"));
+    verify(servicioGeminiMock, times(1)).llamar(anyString(), argThat(s -> !s.contains("Arroz")));
+  }
+
+  @Test
+  public void filtrarPorKeywordSinMatchDeberiaEnviarTodosLosReportes() throws Exception {
+    Reporte reporteLeche = reporteValido("Leche", 100.0, "Almacen", "Av. Test 1", null, null);
+    Reporte reporteArroz = reporteValido("Arroz", 80.0, "Kiosco", "Av. Test 2", null, null);
+    when(repositorioReporteMock.listarRecientes(7))
+      .thenReturn(Arrays.asList(reporteLeche, reporteArroz));
+    String respuestaJson =
+      "{\"choices\":[{\"message\":{\"content\":\"Tenemos varios productos.\"}}]}";
+    when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
+
+    servicioAsistente.consultar("qué hay disponible", null, null, Collections.emptyList());
+
+    verify(servicioGeminiMock, times(1)).llamar(anyString(), contains("Leche"));
+    verify(servicioGeminiMock, times(1)).llamar(anyString(), contains("Arroz"));
   }
 
   // --- helpers ---

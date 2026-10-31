@@ -260,6 +260,51 @@ public class RepositorioReporteTest {
     assertThat(resultado.size(), is(lessThanOrEqualTo(2)));
   }
 
+  @Test
+  @Transactional
+  @Rollback
+  public void listarRecientesDeberiaRetornarReportesUltimos7Dias() {
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Leche", "Almacen", 100.0));
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Arroz", "Kiosco", 200.0));
+
+    List<Reporte> resultado = repositorioReporte.listarRecientes(7);
+
+    assertThat(resultado, not(empty()));
+    assertThat(resultado.size(), is(greaterThanOrEqualTo(2)));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void listarRecientesNoDeberiaRetornarReportesViejos() {
+    Reporte reporteViejo = dadoQueTengoUnReporte("Fideos", "Super", 80.0);
+    reporteViejo.setFechaDeReporte(LocalDateTime.now().minusDays(10));
+    dadoQueExisteElReporte(reporteViejo);
+
+    List<Reporte> resultado = repositorioReporte.listarRecientes(7);
+
+    // el reporte de hace 10 días no debe aparecer
+    boolean contieneViejo = resultado
+      .stream()
+      .anyMatch(r -> r.getId().equals(reporteViejo.getId()));
+    assertThat(contieneViejo, is(false));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void listarRecientesDeberiaRespetarLimiteDeVeinteResultados() {
+    for (int i = 0; i < 25; i++) {
+      dadoQueExisteElReporte(
+        dadoQueTengoUnReporteConLocalidad("Producto" + i, "Comercio" + i, 100.0 + i, "Matanza")
+      );
+    }
+
+    List<Reporte> resultado = repositorioReporte.listarRecientes(7);
+
+    assertThat(resultado.size(), is(lessThanOrEqualTo(20)));
+  }
+
   // Helper adicional — misma firma que dadoQueTengoUnReporte pero acepta localidad
   private Reporte dadoQueTengoUnReporteConLocalidad(
     String nombreProducto,

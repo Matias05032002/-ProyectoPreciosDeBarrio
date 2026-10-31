@@ -5,6 +5,9 @@ import com.tallerwebi.dominio.Gemini.ServicioGemini;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,9 +30,15 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
   }
 
   @Override
-  public String consultar(String pregunta, Double latitud, Double longitud) throws Exception {
+  public String consultar(
+    String pregunta,
+    Double latitud,
+    Double longitud,
+    List<Map<String, String>> historial
+  ) throws Exception {
     List<Reporte> reportes = repositorioReporte.listarRecientes(7);
-    String contexto = construirContexto(reportes, latitud, longitud);
+    List<Reporte> reportesFiltrados = filtrarPorKeyword(reportes, pregunta);
+    String contexto = construirContexto(reportesFiltrados, latitud, longitud);
 
     String systemPrompt =
       "Sos Don Peso, el asistente del Mapa de Precios del Barrio.\n" +
@@ -37,14 +46,36 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
       "Reglas:\n" +
       "- Respondé en español rioplatense, breve y directo.\n" +
       "- Recomendá siempre el precio más bajo. Mencioná el comercio y la dirección.\n" +
-      "- Si los datos tienen más de 3 días, avisalo.\n" +
-      "- Si no tenés datos del producto, decí: 'No tenemos reportes de ese producto cerca tuyo. ¡Podés ser el primero en reportarlo!'\n" +
+      "- Si los datos tienen más de 5 días, avisalo.\n" +
       "- NO inventes precios ni comercios. Solo usá los datos que te dan.\n" +
       "- Si la pregunta no es sobre precios o compras, decí: 'Solo puedo ayudarte con precios del barrio.'";
 
-    String userPrompt = "Datos disponibles:\n" + contexto + "\nPregunta: " + pregunta;
+    String userPrompt = construirUserPrompt(contexto, pregunta, historial);
 
     return llamarGemini(systemPrompt, userPrompt);
+  }
+
+  private String construirUserPrompt(
+    String contexto,
+    String pregunta,
+    List<Map<String, String>> historial
+  ) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Datos disponibles:\n").append(contexto).append("\n");
+
+    if (historial != null && !historial.isEmpty()) {
+      sb.append("Conversación anterior:\n");
+      int desde = Math.max(0, historial.size() - 6); // últimos 3 turnos (user + assistant)
+      for (int i = desde; i < historial.size(); i++) {
+        Map<String, String> turno = historial.get(i);
+        String rol = "user".equals(turno.get("role")) ? "Vecino" : "Don Peso";
+        sb.append(rol).append(": ").append(turno.get("content")).append("\n");
+      }
+      sb.append("\n");
+    }
+
+    sb.append("Pregunta actual: ").append(pregunta);
+    return sb.toString();
   }
 
   private String construirContexto(List<Reporte> reportes, Double latitud, Double longitud) {
@@ -142,5 +173,18 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
       .get("content")
       .getAsString()
       .trim();
+  }
+
+  private List<Reporte> filtrarPorKeyword(List<Reporte> reportes, String pregunta) {
+    String preguntaLower = pregunta.toLowerCase(Locale.ROOT);
+    List<Reporte> filtrados = reportes
+      .stream()
+      .filter(reporte ->
+        reporte.getProducto() != null &&
+        reporte.getProducto().getNombre() != null &&
+        preguntaLower.contains(reporte.getProducto().getNombre().toLowerCase(Locale.ROOT))
+      )
+      .collect(Collectors.toList());
+    return filtrados.isEmpty() ? reportes : filtrados;
   }
 }
