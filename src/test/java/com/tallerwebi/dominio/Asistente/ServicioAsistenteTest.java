@@ -32,7 +32,7 @@ public class ServicioAsistenteTest {
     when(repositorioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
     String respuestaJson =
       "{\"choices\":[{\"message\":{\"content\":\"No hay productos disponibles.\"}}]}";
-    when(servicioGeminiMock.llamar(anyString())).thenReturn(respuestaJson);
+    when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
 
     String resultado = servicioAsistente.consultar("leche", null, null);
 
@@ -49,30 +49,30 @@ public class ServicioAsistenteTest {
       null,
       null
     );
-    when(repositorioReporteMock.listarTodos()).thenReturn(Arrays.asList(reporte));
+    when(repositorioReporteMock.listarRecientes(7)).thenReturn(Arrays.asList(reporte));
     String respuestaJson = "{\"choices\":[{\"message\":{\"content\":\"La leche está a $100.\"}}]}";
-    when(servicioGeminiMock.llamar(anyString())).thenReturn(respuestaJson);
+    when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
 
     String resultado = servicioAsistente.consultar("leche", null, null);
 
     assertThat(resultado, equalTo("La leche está a $100."));
-    verify(servicioGeminiMock, times(1)).llamar(contains("Leche"));
+    verify(servicioGeminiMock, times(1)).llamar(anyString(), contains("Leche"));
   }
 
   @Test
   public void consultarConCoordenadas_usaFallbackSiNoHayReportesCercanos() throws Exception {
     // Comercio a 100km de distancia
     Reporte reporte = reporteValido("Leche", 100.0, "Almacen Lejano", "Calle Lejana 1", 0.0, 0.0);
-    when(repositorioReporteMock.listarTodos()).thenReturn(Arrays.asList(reporte));
+    when(repositorioReporteMock.listarRecientes(7)).thenReturn(Arrays.asList(reporte));
     String respuestaJson = "{\"choices\":[{\"message\":{\"content\":\"Encontré leche lejos.\"}}]}";
-    when(servicioGeminiMock.llamar(anyString())).thenReturn(respuestaJson);
+    when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
 
     // Coordenadas en Buenos Aires, comercio en (0,0)
     String resultado = servicioAsistente.consultar("leche", -34.6037, -58.3816);
 
     assertThat(resultado, equalTo("Encontré leche lejos."));
     // El fallback incluye el reporte igual
-    verify(servicioGeminiMock, times(1)).llamar(contains("Almacen Lejano"));
+    verify(servicioGeminiMock, times(1)).llamar(anyString(), contains("Almacen Lejano"));
   }
 
   @Test
@@ -80,20 +80,22 @@ public class ServicioAsistenteTest {
     Reporte reporteInvalido = new Reporte();
     reporteInvalido.setComercio(null);
     reporteInvalido.setProducto(new Producto());
-    when(repositorioReporteMock.listarTodos()).thenReturn(Arrays.asList(reporteInvalido));
+    when(repositorioReporteMock.listarRecientes(7)).thenReturn(Arrays.asList(reporteInvalido));
     String respuestaJson = "{\"choices\":[{\"message\":{\"content\":\"Sin datos.\"}}]}";
-    when(servicioGeminiMock.llamar(anyString())).thenReturn(respuestaJson);
+    when(servicioGeminiMock.llamar(anyString(), anyString())).thenReturn(respuestaJson);
 
     String resultado = servicioAsistente.consultar("leche", null, null);
 
     assertThat(resultado, equalTo("Sin datos."));
-    verify(servicioGeminiMock, times(1)).llamar(contains("No hay reportes disponibles"));
+    verify(servicioGeminiMock, times(1))
+      .llamar(anyString(), contains("No hay reportes disponibles"));
   }
 
   @Test
   public void consultarCuandoGeminiLanzaExcepcionPropagaError() throws Exception {
-    when(repositorioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
-    when(servicioGeminiMock.llamar(anyString())).thenThrow(new Exception("Error de red"));
+    when(repositorioReporteMock.listarRecientes(7)).thenReturn(Collections.emptyList());
+    when(servicioGeminiMock.llamar(anyString(), anyString()))
+      .thenThrow(new Exception("Error de red"));
 
     org.junit.jupiter.api.Assertions.assertThrows(
       Exception.class,

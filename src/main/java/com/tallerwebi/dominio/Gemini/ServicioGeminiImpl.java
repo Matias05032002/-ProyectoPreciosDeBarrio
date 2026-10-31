@@ -19,6 +19,21 @@ public class ServicioGeminiImpl implements ServicioGemini {
     return llamarGroq(requestBody);
   }
 
+  @Override
+  public String llamar(String systemPrompt, String userPrompt) throws Exception {
+    String requestBody =
+      "{\"model\":\"openai/gpt-oss-20b\"," +
+      "\"messages\":[" +
+      "{\"role\":\"system\",\"content\":" +
+      escapeJson(systemPrompt) +
+      "}," +
+      "{\"role\":\"user\",\"content\":" +
+      escapeJson(userPrompt) +
+      "}" +
+      "]}";
+    return llamarGroq(requestBody);
+  }
+
   private String construirBody(String prompt) {
     return (
       "{\"model\":\"openai/gpt-oss-20b\",\"messages\":[{\"role\":\"user\",\"content\":" +

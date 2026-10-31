@@ -23,4 +23,5 @@ public interface RepositorioReporte {
   Long contarReportesDudososPorComercio(Long comercioId);
   List<Object[]> rangoEtariosVisitantes(Long comercioId);
   List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite);
+  List<Reporte> listarRecientes(int diasMaximos);
 }

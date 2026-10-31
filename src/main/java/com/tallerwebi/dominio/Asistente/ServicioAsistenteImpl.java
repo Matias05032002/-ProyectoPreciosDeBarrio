@@ -28,19 +28,23 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
 
   @Override
   public String consultar(String pregunta, Double latitud, Double longitud) throws Exception {
-    List<Reporte> reportes = repositorioReporte.listarTodos();
+    List<Reporte> reportes = repositorioReporte.listarRecientes(7);
     String contexto = construirContexto(reportes, latitud, longitud);
 
-    String prompt =
-      "Sos Don Peso, un asistente amigable del Mapa de Precios del Barrio. " +
-      "Ayudás a los vecinos a encontrar los mejores precios cerca suyo. " +
-      "Respondé en español, de forma breve y amigable. " +
-      "Usá la siguiente información de la app para responder:\n\n" +
-      contexto +
-      "\nPregunta del vecino: " +
-      pregunta;
+    String systemPrompt =
+      "Sos Don Peso, el asistente del Mapa de Precios del Barrio.\n" +
+      "Tu único trabajo es ayudar a vecinos a comprar más barato usando datos reales de la app.\n" +
+      "Reglas:\n" +
+      "- Respondé en español rioplatense, breve y directo.\n" +
+      "- Recomendá siempre el precio más bajo. Mencioná el comercio y la dirección.\n" +
+      "- Si los datos tienen más de 3 días, avisalo.\n" +
+      "- Si no tenés datos del producto, decí: 'No tenemos reportes de ese producto cerca tuyo. ¡Podés ser el primero en reportarlo!'\n" +
+      "- NO inventes precios ni comercios. Solo usá los datos que te dan.\n" +
+      "- Si la pregunta no es sobre precios o compras, decí: 'Solo puedo ayudarte con precios del barrio.'";
 
-    return llamarGemini(prompt);
+    String userPrompt = "Datos disponibles:\n" + contexto + "\nPregunta: " + pregunta;
+
+    return llamarGemini(systemPrompt, userPrompt);
   }
 
   private String construirContexto(List<Reporte> reportes, Double latitud, Double longitud) {
@@ -127,8 +131,8 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
     return radioTierra * angulo;
   }
 
-  private String llamarGemini(String prompt) throws Exception {
-    String response = servicioGemini.llamar(prompt);
+  private String llamarGemini(String systemPrompt, String userPrompt) throws Exception {
+    String response = servicioGemini.llamar(systemPrompt, userPrompt);
     JsonObject root = JsonParser.parseString(response).getAsJsonObject();
     return root
       .getAsJsonArray("choices")

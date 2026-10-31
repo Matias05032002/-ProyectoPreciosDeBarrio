@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.Usuario;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -254,5 +255,19 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       .setParameter("fechaLimite", java.time.LocalDateTime.now().minusMonths(1))
       .setMaxResults(limite)
       .list();
+  }
+
+  @Override
+  public List<Reporte> listarRecientes(int diasMaximos) {
+    LocalDateTime desde = LocalDateTime.now().minusDays(diasMaximos);
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "FROM Reporte r WHERE r.fechaDeReporte >= :desde ORDER BY r.fechaDeReporte DESC",
+        Reporte.class
+      )
+      .setParameter("desde", desde)
+      .setMaxResults(20)
+      .getResultList();
   }
 }
