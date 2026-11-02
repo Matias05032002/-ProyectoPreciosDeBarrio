@@ -125,7 +125,17 @@ public class ReiniciarDB {
     }
   }
 
+  // El reporte es del usuario 1, el mismo con el que se loguean los E2E
   public static void sembrarProductoConReporte() {
+    sembrarProductoConReporteDelUsuario(1);
+  }
+
+  // El reporte es del usuario 2: sirve para probar acciones que solo se hacen sobre reportes ajenos
+  public static void sembrarProductoConReporteDeOtroUsuario() {
+    sembrarProductoConReporteDelUsuario(2);
+  }
+
+  private static void sembrarProductoConReporteDelUsuario(int usuarioIdDelReporte) {
     try {
       String dbHost = System.getenv("DB_HOST") != null ? System.getenv("DB_HOST") : "localhost";
       String dbPort = System.getenv("DB_PORT") != null ? System.getenv("DB_PORT") : "3306";
@@ -141,7 +151,9 @@ public class ReiniciarDB {
         "INSERT INTO Producto(nombre, marca, categoria, descripcion, unidad, precio, disponible, fechaDeSubida) " +
         "VALUES('Leche', 'La Serenisima', 'Lacteos', 'Leche entera', '1L', 100.0, b'1', NOW()); " +
         "INSERT INTO Reporte(precio, puntuacion, fechaDeReporte, comercio_id, producto_id, usuario_id) " +
-        "VALUES(100.00, 8, NOW(), 1, 1, 1);";
+        "VALUES(100.00, 8, NOW(), 1, 1, " +
+        usuarioIdDelReporte +
+        ");";
 
       String dockerCmd = String.format(
         "docker exec tallerwebi-mysql mysql -h %s -P %s -u %s -p%s %s -e \"%s\"",

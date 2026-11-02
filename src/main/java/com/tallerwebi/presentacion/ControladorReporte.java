@@ -14,6 +14,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
 import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
+import com.tallerwebi.dominio.excepcion.ReportePropio;
 import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -25,6 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Controller
 @RequestMapping("/reporte")
@@ -39,6 +42,7 @@ public class ControladorReporte {
   private static final String NOMBRE_PRODUCTOS = "productos";
   private static final String NOMBRE_COMERCIOS = "comercios";
   private static final String NOMBRE_REPORTES = "reportes";
+  private static final String PARAM_NOMBRE = "nombre";
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String SESSION_ROL = "ROL";
   private static final String NOMBRE_ERROR = "error";
@@ -146,7 +150,8 @@ public class ControladorReporte {
   public ModelAndView marcarDudoso(
     @PathVariable("id") Long id,
     @RequestParam("nombreProducto") String nombreProducto,
-    HttpServletRequest request
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
   ) {
     String email = (String) request.getSession().getAttribute("EMAIL");
     if (email == null) {
@@ -156,15 +161,29 @@ public class ControladorReporte {
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    servicioReporte.marcarDudoso(id, usuario);
-    return new ModelAndView(
-      "redirect:/producto/buscar?nombre=" + nombreProducto + "&dudosoMarcado=true"
-    );
+    try {
+      servicioReporte.marcarDudoso(id, usuario);
+    } catch (ReportePropio e) {
+      redirectAttributes.addFlashAttribute("errorDudoso", e.getMessage());
+      return new ModelAndView(urlBusquedaDeProducto(nombreProducto, false));
+    }
+    return new ModelAndView(urlBusquedaDeProducto(nombreProducto, true));
+  }
+
+  // El nombre viaja en la URL: se codifica para que "&", "#" o "{" no rompan la redirección
+  private String urlBusquedaDeProducto(String nombreProducto, boolean dudosoMarcado) {
+    UriComponentsBuilder url = UriComponentsBuilder
+      .fromPath("/producto/buscar")
+      .queryParam(PARAM_NOMBRE, "{nombre}");
+    if (dudosoMarcado) {
+      url.queryParam("dudosoMarcado", true);
+    }
+    return "redirect:" + url.encode().buildAndExpand(nombreProducto).toUriString();
   }
 
   @RequestMapping(path = "/buscar", method = RequestMethod.GET)
   public ModelAndView buscarPorNombre(
-    @RequestParam("nombre") String nombre,
+    @RequestParam(PARAM_NOMBRE) String nombre,
     HttpServletRequest request
   ) {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {

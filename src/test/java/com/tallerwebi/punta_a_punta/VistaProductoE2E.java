@@ -83,11 +83,21 @@ public class VistaProductoE2E {
 
   @Test
   public void deberiaMostrarElModalCuandoSeMarcaComoDudoso() {
-    dadoQueExisteUnReporteCargado();
+    dadoQueExisteUnReporteCargadoPorOtroVecino();
     vistaProducto.escribirNombreDelProductoABuscar("Leche");
     vistaProducto.darClickEnBuscar();
     vistaProducto.darClickEnMarcarDudoso();
     assertThat(vistaProducto.hayModalDudoso(), is(true));
+  }
+
+  @Test
+  public void noDeberiaMostrarElModalCuandoSeMarcaComoDudosoUnReportePropio() {
+    dadoQueExisteUnReporteCargado();
+    vistaProducto.escribirNombreDelProductoABuscar("Leche");
+    vistaProducto.darClickEnBuscar();
+    vistaProducto.darClickEnMarcarDudoso();
+    assertThat(vistaProducto.hayModalDudoso(), is(false));
+    assertThat(vistaProducto.hayAvisoDeReportePropio(), is(true));
   }
 
   @Test
@@ -119,5 +129,9 @@ public class VistaProductoE2E {
 
   private void dadoQueExisteUnReporteCargado() {
     ReiniciarDB.sembrarProductoConReporte();
+  }
+
+  private void dadoQueExisteUnReporteCargadoPorOtroVecino() {
+    ReiniciarDB.sembrarProductoConReporteDeOtroUsuario();
   }
 }

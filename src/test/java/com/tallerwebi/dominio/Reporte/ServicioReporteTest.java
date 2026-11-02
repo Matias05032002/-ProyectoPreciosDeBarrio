@@ -213,6 +213,75 @@ public class ServicioReporteTest {
   }
 
   @Test
+  public void marcarDudosoUnReporteDeUnoMismoDeberiaLanzarReportePropio() {
+    Usuario autor = new Usuario();
+    autor.setId(7L);
+    Reporte reporte = new Reporte();
+    reporte.setUsuario(autor);
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+
+    assertThrows(ReportePropio.class, () -> servicioReporte.marcarDudoso(1L, autor));
+    verify(repositorioReporteMock, never()).marcarDudoso(anyLong(), any());
+  }
+
+  @Test
+  public void marcarDudosoUnReporteAjenoDeberiaMarcarlo() {
+    Usuario autor = new Usuario();
+    autor.setId(7L);
+    Usuario otro = new Usuario();
+    otro.setId(8L);
+    Reporte reporte = new Reporte();
+    reporte.setUsuario(autor);
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+    when(repositorioReporteMock.marcarDudoso(1L, otro)).thenReturn(reporte);
+
+    assertThat(servicioReporte.marcarDudoso(1L, otro), equalTo(reporte));
+    verify(repositorioReporteMock, times(1)).marcarDudoso(1L, otro);
+  }
+
+  @Test
+  public void guardarReporteConPrecioMuyAltoDeberiaLanzarPrecioIncorrecto() {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      10_000_000.01
+    );
+    assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarReporteConElPrecioMaximoEsValido() throws Exception {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      10_000_000.0
+    );
+    when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
+
+    assertThat(servicioReporte.guardarReporte(reporte), equalTo(reporte));
+  }
+
+  @Test
+  public void guardarReporteConPrecioNaNDeberiaLanzarPrecioIncorrecto() {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      Double.NaN
+    );
+    assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarReporteConPrecioInfinitoDeberiaLanzarPrecioIncorrecto() {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      Double.POSITIVE_INFINITY
+    );
+    assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
   public void listarTodosLosReportes() {
     List<Reporte> lista = Arrays.asList(new Reporte());
     when(repositorioReporteMock.listarTodos()).thenReturn(lista);

@@ -76,6 +76,7 @@ public class ControladorLogin {
     usuario.setPassword(password);
     usuario.setNombre(nombre);
     usuario.setApellido(apellido);
+    usuario.setLocalidad(localidad);
     usuario.setRol("USER");
 
     try {

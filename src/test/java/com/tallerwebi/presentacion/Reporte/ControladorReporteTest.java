@@ -19,6 +19,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
 import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
+import com.tallerwebi.dominio.excepcion.ReportePropio;
 import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import com.tallerwebi.presentacion.ControladorReporte;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 public class ControladorReporteTest {
 
@@ -141,13 +143,59 @@ public class ControladorReporteTest {
     when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
     when(servicioReporteMock.marcarDudoso(1L, usuarioMock)).thenReturn(reporte);
 
-    ModelAndView modelAndView = controladorReporte.marcarDudoso(1L, "Leche", requestMock);
+    ModelAndView modelAndView = controladorReporte.marcarDudoso(
+      1L,
+      "Leche",
+      requestMock,
+      new RedirectAttributesModelMap()
+    );
 
     assertThat(
       modelAndView.getViewName(),
       equalToIgnoringCase("redirect:/producto/buscar?nombre=Leche&dudosoMarcado=true")
     );
     verify(servicioReporteMock, times(1)).marcarDudoso(1L, usuarioMock);
+  }
+
+  @Test
+  public void marcarDudosoUnReportePropioNoDeberiaMostrarElAgradecimientoYDeberiaAvisar() {
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    when(servicioReporteMock.marcarDudoso(1L, usuarioMock)).thenThrow(new ReportePropio());
+    RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+
+    ModelAndView modelAndView = controladorReporte.marcarDudoso(
+      1L,
+      "Leche",
+      requestMock,
+      redirectAttributes
+    );
+
+    assertThat(
+      modelAndView.getViewName(),
+      equalToIgnoringCase("redirect:/producto/buscar?nombre=Leche")
+    );
+    assertThat(
+      redirectAttributes.getFlashAttributes().get("errorDudoso"),
+      equalTo("No podés marcar como dudoso un reporte que cargaste vos")
+    );
+  }
+
+  @Test
+  public void marcarDudosoConUnNombreConCaracteresEspecialesDeberiaCodificarLaUrl() {
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    when(servicioReporteMock.marcarDudoso(1L, usuarioMock)).thenReturn(new Reporte());
+
+    ModelAndView modelAndView = controladorReporte.marcarDudoso(
+      1L,
+      "Leche&dudosoMarcado=false #1 {x}",
+      requestMock,
+      new RedirectAttributesModelMap()
+    );
+
+    assertThat(modelAndView.getViewName(), not(containsString("&dudosoMarcado=false")));
+    assertThat(modelAndView.getViewName(), not(containsString("{")));
+    assertThat(modelAndView.getViewName(), not(containsString("#")));
+    assertThat(modelAndView.getViewName(), org.hamcrest.Matchers.endsWith("&dudosoMarcado=true"));
   }
 
   @Test

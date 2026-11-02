@@ -90,19 +90,24 @@ public class RepositorioReporteImpl implements RepositorioReporte {
     Long comercioId,
     LocalDate fecha
   ) {
+    // Se busca por rango [00:00 del día, 00:00 del día siguiente) y no con cast(... as date):
+    // el cast se calcula en la zona de la base (UTC) y el rango en la misma zona con la que se
+    // guardó el reporte, así "el mismo día" no cambia según la hora ni la zona del servidor.
     return sessionFactory
       .getCurrentSession()
       .createQuery(
         "from Reporte where usuario.id = :usuarioId " +
         "and producto.id = :productoId " +
         "and comercio.id = :comercioId " +
-        "and cast(fechaDeReporte as date) = :fecha",
+        "and fechaDeReporte >= :desde and fechaDeReporte < :hasta",
         Reporte.class
       )
       .setParameter("usuarioId", usuarioId)
       .setParameter("productoId", productoId)
       .setParameter(PARAM_COMERCIO_ID, comercioId)
-      .setParameter("fecha", fecha)
+      .setParameter("desde", fecha.atStartOfDay())
+      .setParameter("hasta", fecha.plusDays(1).atStartOfDay())
+      .setMaxResults(1)
       .uniqueResult();
   }
 
