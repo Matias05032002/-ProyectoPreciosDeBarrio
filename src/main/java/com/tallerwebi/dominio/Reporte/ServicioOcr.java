@@ -184,7 +184,6 @@ public class ServicioOcr {
     return items;
   }
 
-
   private JsonArray obtenerArray(JsonElement raiz) {
     if (raiz.isJsonArray()) {
       return raiz.getAsJsonArray();
@@ -259,8 +258,6 @@ public class ServicioOcr {
     }
     return porDefecto;
   }
-
-
 
   private String leerUnidad(JsonObject obj) {
     String unidad = leerString(obj, CAMPO_UNIDAD, DEFAULT_UNIDAD)

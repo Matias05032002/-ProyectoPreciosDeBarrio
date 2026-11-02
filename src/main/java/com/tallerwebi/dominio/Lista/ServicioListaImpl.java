@@ -2,6 +2,7 @@ package com.tallerwebi.dominio.Lista;
 
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
+import com.tallerwebi.dominio.excepcion.AccesoDenegado;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,9 @@ import org.springframework.stereotype.Service;
 @Service
 @Transactional
 public class ServicioListaImpl implements ServicioLista {
+
+  private static final String LISTA_AJENA = "La lista no pertenece al usuario";
+  private static final int CANTIDAD_MINIMA = 1;
 
   private final RepositorioLista repositorioLista;
   private final RepositorioReporte repositorioReporte;
@@ -44,9 +48,11 @@ public class ServicioListaImpl implements ServicioLista {
   }
 
   @Override
-  public void agregarProductoALista(Long listaId, Long reporteId, int cantidad) {
+  public void agregarProductoALista(Long listaId, Long reporteId, int cantidad, Long usuarioId) {
+    validarCantidad(cantidad);
     Lista lista = repositorioLista.buscarPorId(listaId);
     if (lista == null) throw new IllegalArgumentException("Lista no encontrada");
+    validarDuenio(lista, usuarioId);
 
     Reporte reporte = repositorioReporte.buscarReporte(reporteId);
     if (reporte == null) throw new IllegalArgumentException("Reporte no encontrado");
@@ -56,10 +62,12 @@ public class ServicioListaImpl implements ServicioLista {
   }
 
   @Override
-  public void eliminarItemDeLista(Long itemId) {
+  public void eliminarItemDeLista(Long itemId, Long usuarioId) {
     ItemLista item = repositorioLista.buscarItemPorId(itemId);
     if (item != null) {
+      // El dueño se toma de la lista del ítem, nunca del listaId que manda el formulario
       Lista lista = item.getLista();
+      validarDuenio(lista, usuarioId);
       lista.getItems().remove(item);
       repositorioLista.guardar(lista);
     }
@@ -71,7 +79,23 @@ public class ServicioListaImpl implements ServicioLista {
   }
 
   @Override
-  public void editarCantidadItem(Long itemId, int cantidad) {
+  public void editarCantidadItem(Long itemId, int cantidad, Long usuarioId) {
+    validarCantidad(cantidad);
+    ItemLista item = repositorioLista.buscarItemPorId(itemId);
+    if (item == null) throw new IllegalArgumentException("Producto de la lista no encontrado");
+    validarDuenio(item.getLista(), usuarioId);
     repositorioLista.editarCantidadItem(itemId, cantidad);
+  }
+
+  private void validarDuenio(Lista lista, Long usuarioId) {
+    if (lista == null || usuarioId == null || !usuarioId.equals(lista.getUsuarioId())) {
+      throw new AccesoDenegado(LISTA_AJENA);
+    }
+  }
+
+  private void validarCantidad(int cantidad) {
+    if (cantidad < CANTIDAD_MINIMA) {
+      throw new IllegalArgumentException("La cantidad debe ser al menos 1");
+    }
   }
 }

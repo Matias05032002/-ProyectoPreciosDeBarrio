@@ -113,6 +113,7 @@ public class ServicioGeminiImpl implements ServicioGemini {
       return new RespuestaHttp(504, "El modelo tardo demasiado en responder");
     }
   }
+
   private boolean esErrorTemporal(int codigo) {
     return codigo == 429 || codigo >= 500;
   }
