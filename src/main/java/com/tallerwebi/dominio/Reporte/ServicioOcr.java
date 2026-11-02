@@ -1,10 +1,22 @@
 package com.tallerwebi.dominio.Reporte;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.tallerwebi.dominio.Gemini.ServicioGemini;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import javax.imageio.ImageIO;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,9 +26,14 @@ public class ServicioOcr {
   private static final String CAMPO_MARCA = "marca";
   private static final String CAMPO_CATEGORIA = "categoria";
   private static final String CAMPO_UNIDAD = "unidad";
+  private static final String CAMPO_PRECIO = "precio";
+  private static final String CAMPO_TEXTO = "text";
   private static final String DEFAULT_MARCA = "Sin marca";
   private static final String DEFAULT_CATEGORIA = "Varios";
   private static final String DEFAULT_UNIDAD = "1u";
+  private static final String MIME_JPEG = "image/jpeg";
+  private static final double PRECIO_MAXIMO = 1_000_000;
+  private static final int LADO_MAXIMO = 1600;
 
   private final ServicioGemini geminiClient;
 
@@ -25,19 +42,11 @@ public class ServicioOcr {
   }
 
   public List<ItemTicket> extraerProductosDeTicket(byte[] imagenBytes) throws Exception {
-    try {
-      String imagenBase64 = Base64.getEncoder().encodeToString(imagenBytes);
-      String prompt = buildPrompt();
-      String requestBody = buildRequestBody(imagenBase64, prompt);
-      String response = geminiClient.llamar(requestBody);
-      return parseResponse(response);
-    } catch (Exception e) {
-      return new ArrayList<>();
-    }
+    String response = geminiClient.llamarGemini(buildRequestBody(imagenBytes, buildPrompt()));
+    return parseResponse(response);
   }
 
   public ItemTicket reconocerProducto(byte[] imagenBytes) throws Exception {
-    String imagenBase64 = Base64.getEncoder().encodeToString(imagenBytes);
     String prompt =
       "Sos un asistente que identifica productos de supermercado argentino a partir de fotos. " +
       "Analizá esta imagen y devolvé UN objeto JSON con: " +
@@ -50,36 +59,18 @@ public class ServicioOcr {
       "Productos de dietetica, Snacks y golosinas, Tabaco, Verduras y frutas, Varios), " +
       "unidad (string con gramaje/volumen como '1kg', '500g', '1L', o null si no se ve). " +
       "Devolvé ÚNICAMENTE el objeto JSON, sin explicación, sin markdown.";
-    String requestBody = buildRequestBody(imagenBase64, prompt);
-    String response = geminiClient.llamar(requestBody);
+    String response = geminiClient.llamarGemini(buildRequestBody(imagenBytes, prompt));
 
-    JsonObject root = JsonParser.parseString(response).getAsJsonObject();
-    String texto = root
-      .getAsJsonArray("candidates")
-      .get(0)
-      .getAsJsonObject()
-      .getAsJsonObject("content")
-      .getAsJsonArray("parts")
-      .get(0)
-      .getAsJsonObject()
-      .get("text")
-      .getAsString()
-      .trim();
-    if (texto.startsWith("```")) {
-      texto = texto.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
-    }
-    JsonObject obj = JsonParser.parseString(texto).getAsJsonObject();
-    String nombre = obj.has(CAMPO_NOMBRE) ? obj.get(CAMPO_NOMBRE).getAsString() : "";
-    String marca = obj.has(CAMPO_MARCA) && !obj.get(CAMPO_MARCA).isJsonNull()
-      ? obj.get(CAMPO_MARCA).getAsString()
-      : DEFAULT_MARCA;
-    String categoria = obj.has(CAMPO_CATEGORIA) && !obj.get(CAMPO_CATEGORIA).isJsonNull()
-      ? obj.get(CAMPO_CATEGORIA).getAsString()
-      : DEFAULT_CATEGORIA;
-    String unidad = obj.has(CAMPO_UNIDAD) && !obj.get(CAMPO_UNIDAD).isJsonNull()
-      ? obj.get(CAMPO_UNIDAD).getAsString()
-      : DEFAULT_UNIDAD;
-    return new ItemTicket(nombre, 0, categoria, marca, unidad);
+    JsonObject obj = JsonParser
+      .parseString(limpiarMarkdown(extraerTexto(response)))
+      .getAsJsonObject();
+    return new ItemTicket(
+      leerString(obj, CAMPO_NOMBRE, ""),
+      0,
+      leerString(obj, CAMPO_CATEGORIA, DEFAULT_CATEGORIA),
+      leerString(obj, CAMPO_MARCA, DEFAULT_MARCA),
+      leerUnidad(obj)
+    );
   }
 
   private String buildPrompt() {
@@ -90,7 +81,9 @@ public class ServicioOcr {
       "subtotales, IVA, TOTAL, descuentos, leyendas, agradecimientos. " +
       "Para cada producto devolvé un objeto JSON con estos campos: " +
       "nombre (string, solo el nombre sin marca ni gramaje), " +
-      "precio (number), " +
+      "precio (number, el PRECIO UNITARIO, sin signo $ ni separador de miles, ej: 2490.50; " +
+      "si la línea muestra cantidad por precio unitario, por ejemplo '2,00 X 6890,00' con " +
+      "importe 13780,00, el precio es 6890 y NO el importe total de la línea), " +
       "categoria (string: uno EXACTAMENTE de estos valores: Almacen, Bebidas sin alcohol, " +
       "Bebidas con alcohol, Carnes y aves, Cereales y legumbres, Condimentos y salsas, " +
       "Congelados, Enlatados y conservas, Farmacia y perfumeria, Ferreteria y bazar, " +
@@ -103,20 +96,22 @@ public class ServicioOcr {
     );
   }
 
-  private String buildRequestBody(String imagenBase64, String prompt) {
-    JsonObject part1 = new JsonObject();
-    part1.addProperty("text", prompt);
+  private String buildRequestBody(byte[] imagenBytes, String prompt) throws IOException {
+    byte[] imagen = reducirImagen(imagenBytes);
+
+    JsonObject parteTexto = new JsonObject();
+    parteTexto.addProperty(CAMPO_TEXTO, prompt);
 
     JsonObject inlineData = new JsonObject();
-    inlineData.addProperty("mime_type", "image/jpeg");
-    inlineData.addProperty("data", imagenBase64);
+    inlineData.addProperty("mime_type", detectarMimeType(imagen));
+    inlineData.addProperty("data", Base64.getEncoder().encodeToString(imagen));
 
-    JsonObject part2 = new JsonObject();
-    part2.add("inline_data", inlineData);
+    JsonObject parteImagen = new JsonObject();
+    parteImagen.add("inline_data", inlineData);
 
     JsonArray parts = new JsonArray();
-    parts.add(part1);
-    parts.add(part2);
+    parts.add(parteTexto);
+    parts.add(parteImagen);
 
     JsonObject content = new JsonObject();
     content.add("parts", parts);
@@ -124,54 +119,171 @@ public class ServicioOcr {
     JsonArray contents = new JsonArray();
     contents.add(content);
 
+    JsonObject thinking = new JsonObject();
+    thinking.addProperty("thinkingLevel", "low");
+
+    JsonObject config = new JsonObject();
+    config.addProperty("responseMimeType", "application/json");
+    config.add("thinkingConfig", thinking);
+
     JsonObject body = new JsonObject();
     body.add("contents", contents);
-
+    body.add("generationConfig", config);
     return body.toString();
   }
 
-  @SuppressWarnings("PMD.CyclomaticComplexity")
+  // Las fotos de celular pesan varios MB y hacen que Gemini tarde demasiado (Read timed out).
+  // Para leer un ticket alcanza con 1600 px en el lado largo.
+  private byte[] reducirImagen(byte[] bytes) throws IOException {
+    BufferedImage original = ImageIO.read(new ByteArrayInputStream(bytes));
+    if (original == null) {
+      return bytes;
+    }
+    int ladoLargo = Math.max(original.getWidth(), original.getHeight());
+    double escala = Math.min(1.0, (double) LADO_MAXIMO / ladoLargo);
+    int ancho = (int) Math.round(original.getWidth() * escala);
+    int alto = (int) Math.round(original.getHeight() * escala);
+
+    BufferedImage reducida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+    Graphics2D grafico = reducida.createGraphics();
+    grafico.setColor(Color.WHITE);
+    grafico.fillRect(0, 0, ancho, alto);
+    grafico.setRenderingHint(
+      RenderingHints.KEY_INTERPOLATION,
+      RenderingHints.VALUE_INTERPOLATION_BILINEAR
+    );
+    grafico.drawImage(original, 0, 0, ancho, alto, null);
+    grafico.dispose();
+
+    ByteArrayOutputStream salida = new ByteArrayOutputStream();
+    ImageIO.write(reducida, "jpg", salida);
+    return salida.toByteArray();
+  }
+
+  private String detectarMimeType(byte[] bytes) {
+    boolean esPng = bytes.length > 3 && (bytes[0] & 0xFF) == 0x89 && bytes[1] == 'P';
+    boolean esWebp = bytes.length > 11 && bytes[0] == 'R' && bytes[8] == 'W';
+    if (esPng) {
+      return "image/png";
+    }
+    if (esWebp) {
+      return "image/webp";
+    }
+    return MIME_JPEG;
+  }
+
   private List<ItemTicket> parseResponse(String jsonResponse) {
     List<ItemTicket> items = new ArrayList<>();
-    try {
-      JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
-      String texto = root
-        .getAsJsonArray("candidates")
-        .get(0)
-        .getAsJsonObject()
-        .getAsJsonObject("content")
-        .getAsJsonArray("parts")
-        .get(0)
-        .getAsJsonObject()
-        .get("text")
-        .getAsString()
-        .trim();
-
-      if (texto.startsWith("```")) {
-        texto = texto.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
+    JsonElement raiz = JsonParser.parseString(limpiarMarkdown(extraerTexto(jsonResponse)));
+    for (JsonElement el : obtenerArray(raiz)) {
+      ItemTicket item = convertirEnItem(el);
+      if (item != null) {
+        items.add(item);
       }
-
-      JsonArray array = JsonParser.parseString(texto).getAsJsonArray();
-      for (JsonElement el : array) {
-        JsonObject obj = el.getAsJsonObject();
-        String nombre = obj.get(CAMPO_NOMBRE).getAsString();
-        double precio = obj.get("precio").getAsDouble();
-        String categoria = obj.has(CAMPO_CATEGORIA) && !obj.get(CAMPO_CATEGORIA).isJsonNull()
-          ? obj.get(CAMPO_CATEGORIA).getAsString()
-          : DEFAULT_CATEGORIA;
-        String marca = obj.has(CAMPO_MARCA) && !obj.get(CAMPO_MARCA).isJsonNull()
-          ? obj.get(CAMPO_MARCA).getAsString()
-          : DEFAULT_MARCA;
-        if (precio > 0 && precio < 1000000) {
-          String unidad = obj.has(CAMPO_UNIDAD) && !obj.get(CAMPO_UNIDAD).isJsonNull()
-            ? obj.get(CAMPO_UNIDAD).getAsString()
-            : DEFAULT_UNIDAD;
-          items.add(new ItemTicket(nombre, precio, categoria, marca, unidad));
-        }
-      }
-    } catch (Exception e) {
-      return items;
     }
     return items;
+  }
+
+
+  private JsonArray obtenerArray(JsonElement raiz) {
+    if (raiz.isJsonArray()) {
+      return raiz.getAsJsonArray();
+    }
+    if (raiz.isJsonObject()) {
+      for (String clave : raiz.getAsJsonObject().keySet()) {
+        JsonElement valor = raiz.getAsJsonObject().get(clave);
+        if (valor.isJsonArray()) {
+          return valor.getAsJsonArray();
+        }
+      }
+    }
+    return new JsonArray();
+  }
+
+  private ItemTicket convertirEnItem(JsonElement el) {
+    if (!el.isJsonObject()) {
+      return null;
+    }
+    JsonObject obj = el.getAsJsonObject();
+    double precio;
+    try {
+      precio = leerPrecio(obj);
+    } catch (NumberFormatException | IllegalStateException e) {
+      return null;
+    }
+    if (precio <= 0 || precio >= PRECIO_MAXIMO) {
+      return null;
+    }
+    return new ItemTicket(
+      leerString(obj, CAMPO_NOMBRE, ""),
+      precio,
+      leerString(obj, CAMPO_CATEGORIA, DEFAULT_CATEGORIA),
+      leerString(obj, CAMPO_MARCA, DEFAULT_MARCA),
+      leerUnidad(obj)
+    );
+  }
+
+  private String extraerTexto(String jsonResponse) {
+    StringBuilder sb = new StringBuilder();
+    for (JsonElement p : obtenerParts(jsonResponse)) {
+      JsonObject part = p.getAsJsonObject();
+      boolean esPensamiento = part.has("thought") && part.get("thought").getAsBoolean();
+      if (part.has(CAMPO_TEXTO) && !esPensamiento) {
+        sb.append(part.get(CAMPO_TEXTO).getAsString());
+      }
+    }
+    return sb.toString().trim();
+  }
+
+  // Si Gemini bloquea la imagen o no responde nada, avisamos con el JSON para poder diagnosticar
+  private JsonArray obtenerParts(String jsonResponse) {
+    JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
+    JsonArray candidatos = root.getAsJsonArray("candidates");
+    if (candidatos == null || candidatos.isEmpty()) {
+      throw new IllegalStateException("Gemini no devolvio resultados: " + jsonResponse);
+    }
+    JsonObject contenido = candidatos.get(0).getAsJsonObject().getAsJsonObject("content");
+    if (contenido == null || !contenido.has("parts")) {
+      throw new IllegalStateException("Gemini devolvio una respuesta vacia: " + jsonResponse);
+    }
+    return contenido.getAsJsonArray("parts");
+  }
+
+  private String limpiarMarkdown(String texto) {
+    return texto.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
+  }
+
+  private String leerString(JsonObject obj, String campo, String porDefecto) {
+    if (obj.has(campo) && !obj.get(campo).isJsonNull()) {
+      return obj.get(campo).getAsString();
+    }
+    return porDefecto;
+  }
+
+
+
+  private String leerUnidad(JsonObject obj) {
+    String unidad = leerString(obj, CAMPO_UNIDAD, DEFAULT_UNIDAD)
+      .replace(",", ".")
+      .replace(" ", "");
+    return unidad.matches(ServicioReporteImpl.FORMATO_UNIDAD) ? unidad : DEFAULT_UNIDAD;
+  }
+
+  private double leerPrecio(JsonObject obj) {
+    JsonElement el = obj.get(CAMPO_PRECIO);
+    if (el == null || el.isJsonNull()) {
+      return 0;
+    }
+    JsonPrimitive primitivo = el.getAsJsonPrimitive();
+    if (primitivo.isNumber()) {
+      return primitivo.getAsDouble();
+    }
+    String texto = primitivo.getAsString().replaceAll("[^0-9.,]", "");
+    if (texto.contains(",")) {
+      texto = texto.replace(".", "").replace(",", ".");
+    } else if (!texto.matches("\\d+\\.\\d{1,2}")) {
+      texto = texto.replace(".", "");
+    }
+    return texto.isEmpty() ? 0 : Double.parseDouble(texto);
   }
 }

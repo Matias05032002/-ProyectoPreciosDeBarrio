@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ServicioReporteImpl implements ServicioReporte {
 
+  static final String FORMATO_UNIDAD = "^[0-9]+(\\.[0-9]+)?(?i)(g|kg|gr|ml|l|u)$";
+
   private RepositorioReporte repositorioReporte;
   private ServicioComercio servicioComercio;
   private ServicioProducto servicioProducto;
@@ -198,9 +200,10 @@ public class ServicioReporteImpl implements ServicioReporte {
   }
 
   private void validarUnidad(String unidad) throws UnidadInvalida {
-    if (!unidad.matches("^[0-9]+(\\.[0-9]+)?(?i)(g|kg|gr|ml|l)$")) {
+    if (!unidad.matches(FORMATO_UNIDAD)) {
       throw new UnidadInvalida(
-        "La unidad debe ser un número seguido de g, kg, ml, L o gr (ej: 500g, 1kg, 250ml)"
+        "La unidad debe ser un número seguido de g, kg, gr, ml, L o u " +
+        "(ej: 500g, 1kg, 250ml, 1u)"
       );
     }
   }

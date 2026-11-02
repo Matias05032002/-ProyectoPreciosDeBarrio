@@ -16,6 +16,7 @@ import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -330,7 +331,11 @@ public class ControladorReporte {
       return mav;
     } catch (Exception e) {
       ModelAndView mav = new ModelAndView("reporte/subir-ticket");
-      mav.addObject(NOMBRE_ERROR, "No se pudo procesar el ticket");
+      mav.addObject(
+        NOMBRE_ERROR,
+        "No pudimos leer el ticket en este momento. " +
+        "Probá de nuevo en unos minutos o cargá los productos manualmente."
+      );
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
       return mav;
     }
@@ -343,7 +348,7 @@ public class ControladorReporte {
     @RequestParam("comercioLocalidad") String comercioLocalidad,
     @RequestParam Map<String, String> params,
     HttpServletRequest request
-  ) throws CamposObligatoriosVacios, ReporteExistente, UnidadInvalida, PrecioIncorrecto {
+  ) {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -355,34 +360,66 @@ public class ControladorReporte {
     comercio.setDireccion(comercioDireccion);
     comercio.setLocalidad(comercioLocalidad);
 
+    // Cada producto se guarda por separado: si uno falla, los demás igual se guardan
+    List<String> errores = new ArrayList<>();
     int indice = 0;
     while (params.containsKey(PREFIJO_ITEMS + indice + "].nombre")) {
-      String incluir = params.get("incluir[" + indice + "]");
-      if (incluir != null) {
-        String nombre = params.get(PREFIJO_ITEMS + indice + "].nombre");
-        String precioStr = params.get(PREFIJO_ITEMS + indice + "].precio");
-        try {
-          double precio = Double.parseDouble(precioStr);
-          Producto producto = new Producto();
-          producto.setNombre(nombre);
-          producto.setMarca(params.getOrDefault(PREFIJO_ITEMS + indice + "].marca", "Sin marca"));
-          producto.setCategoria(
-            params.getOrDefault(PREFIJO_ITEMS + indice + "].categoria", "Varios")
-          );
-          producto.setUnidad(params.getOrDefault(PREFIJO_ITEMS + indice + "].unidad", "1u"));
-          Reporte reporte = new Reporte();
-          reporte.setProducto(producto);
-          reporte.setPrecio(precio);
-          reporte.setComercio(comercio);
-          reporte.setUsuario(usuario);
-          servicioReporte.guardarReporte(reporte);
-        } catch (NumberFormatException ex) {
-          assert ex != null;
+      if (params.get("incluir[" + indice + "]") != null) {
+        String error = guardarItemDelTicket(
+          params,
+          PREFIJO_ITEMS + indice + "].",
+          comercio,
+          usuario
+        );
+        if (error != null) {
+          errores.add(error);
         }
       }
       indice++;
     }
+    if (!errores.isEmpty()) {
+      return vistaConError(
+        "Algunos productos del ticket no se guardaron. " + String.join(" · ", errores),
+        request
+      );
+    }
     return new ModelAndView("redirect:/reporte?guardado=true");
+  }
+
+  // Devuelve null si se guardó (o si se descartó por precio no numérico), o el motivo del error
+  private String guardarItemDelTicket(
+    Map<String, String> params,
+    String prefijo,
+    Comercio comercio,
+    Usuario usuario
+  ) {
+    String nombre = params.get(prefijo + "nombre");
+    String precioTexto = params.get(prefijo + "precio");
+    double precio;
+    try {
+      precio = Double.parseDouble(precioTexto == null ? "" : precioTexto);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+    String unidad = params.getOrDefault(prefijo + "unidad", "");
+    Producto producto = new Producto();
+    producto.setNombre(nombre);
+    producto.setMarca(params.getOrDefault(prefijo + "marca", "Sin marca"));
+    producto.setCategoria(params.getOrDefault(prefijo + "categoria", "Varios"));
+    producto.setUnidad(unidad.isBlank() ? "1u" : unidad);
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setPrecio(precio);
+    reporte.setComercio(comercio);
+    reporte.setUsuario(usuario);
+    try {
+      servicioReporte.guardarReporte(reporte);
+      return null;
+    } catch (ReporteExistente e) {
+      return nombre + ": ya lo reportaste hoy en este comercio";
+    } catch (CamposObligatoriosVacios | UnidadInvalida | PrecioIncorrecto e) {
+      return nombre + ": " + e.getMessage();
+    }
   }
 
   @RequestMapping(path = "/ticket/reconocer-producto", method = RequestMethod.POST)

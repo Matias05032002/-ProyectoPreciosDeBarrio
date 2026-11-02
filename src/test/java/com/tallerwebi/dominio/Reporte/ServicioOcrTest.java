@@ -2,13 +2,20 @@ package com.tallerwebi.dominio.Reporte;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Gemini.ServicioGemini;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
+import java.util.Random;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 public class ServicioOcrTest {
 
@@ -104,7 +111,7 @@ public class ServicioOcrTest {
   public void extraerProductosDeTicket_conRespuestaValida_devuelveItems() throws Exception {
     String respuestaFake =
       "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[{\\\"nombre\\\":\\\"Leche\\\",\\\"precio\\\":500,\\\"categoria\\\":\\\"Lacteos\\\",\\\"marca\\\":\\\"Serenisima\\\",\\\"unidad\\\":\\\"1L\\\"}]\"}]}}]}";
-    when(geminiClientMock.llamar(anyString())).thenReturn(respuestaFake);
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
 
     List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
 
@@ -114,19 +121,20 @@ public class ServicioOcrTest {
   }
 
   @Test
-  public void extraerProductosDeTicket_conErrorDeApi_devuelveListaVacia() throws Exception {
-    when(geminiClientMock.llamar(anyString())).thenThrow(new Exception("Error de red"));
+  public void extraerProductosDeTicket_conErrorDeApi_propagaLaExcepcion() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString())).thenThrow(new Exception("Error de red"));
 
-    List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
-
-    assertThat(items.size(), equalTo(0));
+    assertThrows(
+      Exception.class,
+      () -> servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 })
+    );
   }
 
   @Test
   public void extraerProductos_ignoraProductosConPrecioCero() throws Exception {
     String respuestaFake =
       "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[{\\\"nombre\\\":\\\"Aceite\\\",\\\"precio\\\":0,\\\"categoria\\\":\\\"Almacen\\\",\\\"marca\\\":null,\\\"unidad\\\":null}]\"}]}}]}";
-    when(geminiClientMock.llamar(anyString())).thenReturn(respuestaFake);
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
 
     List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
 
@@ -134,10 +142,88 @@ public class ServicioOcrTest {
   }
 
   @Test
+  public void extraerProductos_conPrecioComoTextoConFormatoArgentino_loConvierte()
+    throws Exception {
+    String respuestaFake =
+      "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[{\\\"nombre\\\":\\\"Queso\\\",\\\"precio\\\":\\\"$10.190,50\\\"}]\"}]}}]}";
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
+
+    List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
+
+    assertThat(items.get(0).getPrecio(), equalTo(10190.50));
+  }
+
+  @Test
+  public void extraerProductos_ignoraLasPartesDePensamientoDelModelo() throws Exception {
+    String respuestaFake =
+      "{\"candidates\":[{\"content\":{\"parts\":[" +
+      "{\"text\":\"analizando el ticket...\",\"thought\":true}," +
+      "{\"text\":\"[{\\\"nombre\\\":\\\"Ajo\\\",\\\"precio\\\":2490}]\"}]}}]}";
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
+
+    List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
+
+    assertThat(items.size(), equalTo(1));
+    assertThat(items.get(0).getNombre(), equalTo("Ajo"));
+  }
+
+  @Test
+  public void extraerProductos_conListaEnvueltaEnUnObjeto_igualLaLee() throws Exception {
+    String respuestaFake =
+      "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"{\\\"productos\\\":[{\\\"nombre\\\":\\\"Aquarius\\\",\\\"precio\\\":3100}]}\"}]}}]}";
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
+
+    List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
+
+    assertThat(items.size(), equalTo(1));
+    assertThat(items.get(0).getPrecio(), equalTo(3100.0));
+  }
+
+  @Test
+  public void extraerProductos_siGeminiBloqueaLaImagen_lanzaExcepcion() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn("{\"promptFeedback\":{\"blockReason\":\"OTHER\"}}");
+
+    assertThrows(
+      IllegalStateException.class,
+      () -> servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 })
+    );
+  }
+
+  @Test
+  public void extraerProductos_conFotoGrande_laAchicaAntesDeEnviarlaAGemini() throws Exception {
+    byte[] fotoGrande = crearFotoJpeg(3000, 4000);
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[]\"}]}}]}");
+
+    servicioOcr.extraerProductosDeTicket(fotoGrande);
+
+    ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+    verify(geminiClientMock).llamarGemini(body.capture());
+    int tamanioOriginalEnBase64 = (fotoGrande.length * 4) / 3;
+    assertThat(body.getValue().length(), lessThan(tamanioOriginalEnBase64 / 3));
+  }
+
+  @Test
+  public void extraerProductos_normalizaLaUnidadYUsaUnaUnidadSiNoEsValida() throws Exception {
+    String respuestaFake =
+      "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[" +
+      "{\\\"nombre\\\":\\\"Aquarius\\\",\\\"precio\\\":3100,\\\"unidad\\\":\\\"1,5 L\\\"}," +
+      "{\\\"nombre\\\":\\\"Ajo\\\",\\\"precio\\\":2490,\\\"unidad\\\":\\\"por unidad\\\"}" +
+      "]\"}]}}]}";
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
+
+    List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
+
+    assertThat(items.get(0).getUnidad(), equalTo("1.5L"));
+    assertThat(items.get(1).getUnidad(), equalTo("1u"));
+  }
+
+  @Test
   public void reconocerProducto_conRespuestaValida_devuelveItemTicket() throws Exception {
     String respuestaFake =
       "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"{\\\"nombre\\\":\\\"Fideos\\\",\\\"marca\\\":\\\"Don Satur\\\",\\\"categoria\\\":\\\"Almacen\\\",\\\"unidad\\\":\\\"500g\\\"}\"}]}}]}";
-    when(geminiClientMock.llamar(anyString())).thenReturn(respuestaFake);
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
 
     ItemTicket item = servicioOcr.reconocerProducto(new byte[] { 1, 2, 3 });
 
@@ -150,12 +236,27 @@ public class ServicioOcrTest {
   public void reconocerProducto_conCamposNull_usaValoresPorDefecto() throws Exception {
     String respuestaFake =
       "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"{\\\"nombre\\\":\\\"Pan\\\",\\\"marca\\\":null,\\\"categoria\\\":null,\\\"unidad\\\":null}\"}]}}]}";
-    when(geminiClientMock.llamar(anyString())).thenReturn(respuestaFake);
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
 
     ItemTicket item = servicioOcr.reconocerProducto(new byte[] { 1, 2, 3 });
 
     assertThat(item.getMarca(), equalTo("Sin marca"));
     assertThat(item.getCategoria(), equalTo("Varios"));
     assertThat(item.getUnidad(), equalTo("1u"));
+  }
+
+  // --- helpers ---
+
+  private byte[] crearFotoJpeg(int ancho, int alto) throws Exception {
+    BufferedImage imagen = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+    Random random = new Random(1);
+    for (int y = 0; y < alto; y += 2) {
+      for (int x = 0; x < ancho; x += 2) {
+        imagen.setRGB(x, y, random.nextInt());
+      }
+    }
+    ByteArrayOutputStream salida = new ByteArrayOutputStream();
+    ImageIO.write(imagen, "jpg", salida);
+    return salida.toByteArray();
   }
 }

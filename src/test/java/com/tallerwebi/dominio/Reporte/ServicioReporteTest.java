@@ -103,6 +103,21 @@ public class ServicioReporteTest {
   }
 
   @Test
+  public void guardarReporteConUnidadPorUnidadEsValido() throws Exception {
+    Producto producto = productoValido("Ajo", "1u");
+    Comercio comercio = comercioConNombre("Dia");
+    Reporte reporte = reporteConProductoYComercio(producto, comercio, 2490.0);
+
+    when(servicioComercioMock.buscarComercioPorNombre("Dia")).thenReturn(Arrays.asList(comercio));
+    when(servicioProductoMock.buscarProductoPorNombreExacto("Ajo")).thenReturn(producto);
+    when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
+
+    servicioReporte.guardarReporte(reporte);
+
+    verify(repositorioReporteMock, times(1)).guardarReporte(reporte);
+  }
+
+  @Test
   public void guardarReporteConUnidadInvalidaDeberiaLanzarUnidadInvalida() {
     Reporte reporte = reporteConProductoYComercio(
       productoValido("Leche", "litro"),

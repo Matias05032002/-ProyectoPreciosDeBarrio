@@ -85,7 +85,7 @@
             </select>
         </div>
 
-        <button type="submit" class="btn btn-primary">Analizar ticket</button>
+        <button type="submit" id="btn-analizar" class="btn btn-primary">Analizar ticket</button>
         <a th:href="@{/reporte}" class="btn btn-secondary ms-2">Cargar manualmente</a>
     </form>
 </div>
@@ -98,13 +98,41 @@
             alert('Seleccioná una foto del ticket');
             return;
         }
+        var boton = document.getElementById('btn-analizar');
+        boton.disabled = true;
+        boton.textContent = 'Analizando ticket...';
+
         var lector = new FileReader();
         lector.onload = function(evento) {
-            document.getElementById('ticket-base64').value = evento.target.result;
-            document.getElementById('form-ticket').submit();
+            achicarImagen(evento.target.result, function(base64) {
+                document.getElementById('ticket-base64').value = base64;
+                document.getElementById('form-ticket').submit();
+            });
         };
         lector.readAsDataURL(foto.files[0]);
     });
+
+    // Las fotos de celular pesan varios MB: se achican a 1600 px en el lado largo
+    // para que el envío sea rápido y Gemini no tarde de más.
+    function achicarImagen(dataUrl, alTerminar) {
+        var LADO_MAXIMO = 1600;
+        var imagen = new Image();
+        imagen.onload = function() {
+            var escala = Math.min(1, LADO_MAXIMO / Math.max(imagen.width, imagen.height));
+            var lienzo = document.createElement('canvas');
+            lienzo.width = Math.round(imagen.width * escala);
+            lienzo.height = Math.round(imagen.height * escala);
+            var contexto = lienzo.getContext('2d');
+            contexto.fillStyle = '#ffffff';
+            contexto.fillRect(0, 0, lienzo.width, lienzo.height);
+            contexto.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+            alTerminar(lienzo.toDataURL('image/jpeg', 0.85));
+        };
+        imagen.onerror = function() {
+            alTerminar(dataUrl);
+        };
+        imagen.src = dataUrl;
+    }
 </script>
 </body>
 </html>

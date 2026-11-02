@@ -3,6 +3,7 @@ package com.tallerwebi.presentacion.Reporte;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.web.servlet.ModelAndView;
 
 public class ControladorReporteTest {
@@ -343,6 +345,79 @@ public class ControladorReporteTest {
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
     verify(servicioReporteMock, never()).guardarReporte(any());
+  }
+
+  @Test
+  public void guardarTicketSiUnProductoFallaGuardaLosDemasYMuestraElMotivo() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    when(
+      servicioReporteMock.guardarReporte(
+        argThat(r -> r != null && "Ajo".equals(r.getProducto().getNombre()))
+      )
+    )
+      .thenThrow(new UnidadInvalida("La unidad no es valida"));
+
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Ajo");
+    params.put("items[0].precio", "2490.0");
+    params.put("incluir[0]", "on");
+    params.put("items[1].nombre", "Jamon Cocido");
+    params.put("items[1].precio", "6890.0");
+    params.put("incluir[1]", "on");
+
+    ModelAndView mav = controladorReporte.guardarTicket(
+      "Dia",
+      "Alberdi 5925",
+      "Buenos Aires",
+      params,
+      requestMock
+    );
+
+    verify(servicioReporteMock, times(2)).guardarReporte(any());
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
+    assertThat((String) mav.getModel().get("error"), containsString("Ajo"));
+  }
+
+  @Test
+  public void guardarTicketConProductoYaReportadoHoyMuestraMensajeSinError500() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    when(servicioReporteMock.guardarReporte(any())).thenThrow(new ReporteExistente());
+
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Leche");
+    params.put("items[0].precio", "150.0");
+    params.put("incluir[0]", "on");
+
+    ModelAndView mav = controladorReporte.guardarTicket(
+      "Almacen",
+      "Calle 1",
+      "La Matanza",
+      params,
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
+    assertThat((String) mav.getModel().get("error"), containsString("ya lo reportaste hoy"));
+  }
+
+  @Test
+  public void guardarTicketConUnidadVaciaGuardaElProductoComoUnaUnidad() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Ajo");
+    params.put("items[0].precio", "2490.0");
+    params.put("items[0].unidad", "");
+    params.put("incluir[0]", "on");
+
+    controladorReporte.guardarTicket("Dia", "Alberdi 5925", "Buenos Aires", params, requestMock);
+
+    ArgumentCaptor<Reporte> reporte = ArgumentCaptor.forClass(Reporte.class);
+    verify(servicioReporteMock).guardarReporte(reporte.capture());
+    assertThat(reporte.getValue().getProducto().getUnidad(), equalTo("1u"));
   }
 
   @Test
