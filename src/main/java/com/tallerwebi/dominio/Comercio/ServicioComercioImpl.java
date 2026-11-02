@@ -19,8 +19,8 @@ public class ServicioComercioImpl implements ServicioComercio {
 
   @Autowired
   public ServicioComercioImpl(
-          RepositorioComercio repositorioComercio,
-          RepositorioHorario repositorioHorario
+    RepositorioComercio repositorioComercio,
+    RepositorioHorario repositorioHorario
   ) {
     this.repositorioComercio = repositorioComercio;
     this.repositorioHorario = repositorioHorario;
@@ -29,29 +29,29 @@ public class ServicioComercioImpl implements ServicioComercio {
   @Override
   public Comercio guardarComercio(Comercio comercio) {
     Comercio existente = repositorioComercio.buscarComercioPorDireccionYLocalidad(
-            comercio.getDireccion(),
-            comercio.getLocalidad()
+      comercio.getDireccion(),
+      comercio.getLocalidad()
     );
     if (existente != null && existente.getUsuarioId() != null) {
       return existente;
     }
     try {
       String direccionCompleta =
-              comercio.getDireccion() + ", " + comercio.getLocalidad() + ", Buenos Aires, Argentina";
+        comercio.getDireccion() + ", " + comercio.getLocalidad() + ", Buenos Aires, Argentina";
       String url =
-              "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
-                      java.net.URLEncoder.encode(direccionCompleta, "UTF-8");
+        "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+        java.net.URLEncoder.encode(direccionCompleta, "UTF-8");
 
       java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url)
-              .openConnection();
+        .openConnection();
       conn.setRequestProperty("User-Agent", "TallerWebi/1.0");
 
       String response;
       try (
-              java.util.Scanner scanner = new java.util.Scanner(
-                      conn.getInputStream(),
-                      java.nio.charset.StandardCharsets.UTF_8
-              )
+        java.util.Scanner scanner = new java.util.Scanner(
+          conn.getInputStream(),
+          java.nio.charset.StandardCharsets.UTF_8
+        )
       ) {
         response = scanner.useDelimiter("\\A").next();
       }
@@ -80,9 +80,9 @@ public class ServicioComercioImpl implements ServicioComercio {
     }
 
     Comercio existente = repositorioComercio.buscarComercioPorNombreDireccionYLocalidad(
-            comercio.getNombre(),
-            comercio.getDireccion(),
-            comercio.getLocalidad()
+      comercio.getNombre(),
+      comercio.getDireccion(),
+      comercio.getLocalidad()
     );
 
     if (existente != null) {
@@ -155,18 +155,18 @@ public class ServicioComercioImpl implements ServicioComercio {
 
     for (HorarioComercio horario : horarios) {
       if (
-              horario.getDiaSemana().equals(diaHoy) &&
-                      Boolean.TRUE.equals(horario.getAbierto()) &&
-                      horario.getHoraApertura() != null &&
-                      horario.getHoraCierre() != null
+        horario.getDiaSemana().equals(diaHoy) &&
+        Boolean.TRUE.equals(horario.getAbierto()) &&
+        horario.getHoraApertura() != null &&
+        horario.getHoraCierre() != null
       ) {
         if (horario.getHoraCierre().isBefore(horario.getHoraApertura())) {
           return (
-                  !ahora.isBefore(horario.getHoraApertura()) || !ahora.isAfter(horario.getHoraCierre())
+            !ahora.isBefore(horario.getHoraApertura()) || !ahora.isAfter(horario.getHoraCierre())
           );
         }
         return (
-                !ahora.isBefore(horario.getHoraApertura()) && !ahora.isAfter(horario.getHoraCierre())
+          !ahora.isBefore(horario.getHoraApertura()) && !ahora.isAfter(horario.getHoraCierre())
         );
       }
     }

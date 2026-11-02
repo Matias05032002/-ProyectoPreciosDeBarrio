@@ -21,7 +21,7 @@ public class ServicioComercioTest {
     this.repositorioComercioMock = mock(RepositorioComercio.class);
     this.repositorioHorarioMock = mock(RepositorioHorario.class);
     this.servicioComercio =
-            new ServicioComercioImpl(this.repositorioComercioMock, this.repositorioHorarioMock);
+      new ServicioComercioImpl(this.repositorioComercioMock, this.repositorioHorarioMock);
   }
 
   @Test
@@ -64,7 +64,7 @@ public class ServicioComercioTest {
     Comercio comercio = new Comercio();
     List<Comercio> listaDeComercios = Arrays.asList(comercio);
     when(this.repositorioComercioMock.buscarComercioPorNombre("Almacen Mati"))
-            .thenReturn(listaDeComercios);
+      .thenReturn(listaDeComercios);
 
     List<Comercio> comercioBuscado = this.servicioComercio.buscarComercioPorNombre("Almacen Mati");
 
@@ -75,10 +75,10 @@ public class ServicioComercioTest {
   @Test
   public void buscarComercioPorNombreSiNoExisteRetornaNull() {
     when(this.repositorioComercioMock.buscarComercioPorNombre("ComercioInexistente"))
-            .thenReturn(Collections.emptyList());
+      .thenReturn(Collections.emptyList());
 
     List<Comercio> comercioBuscado =
-            this.servicioComercio.buscarComercioPorNombre("ComercioInexistente");
+      this.servicioComercio.buscarComercioPorNombre("ComercioInexistente");
 
     assertThat(comercioBuscado, equalTo(Collections.emptyList()));
     verify(this.repositorioComercioMock, times(1)).buscarComercioPorNombre("ComercioInexistente");
@@ -143,13 +143,13 @@ public class ServicioComercioTest {
     formulario.setLocalidad("La Matanza");
 
     when(
-            repositorioComercioMock.buscarComercioPorNombreDireccionYLocalidad(
-                    "Supermercado Prueba",
-                    "San Martin 100",
-                    "La Matanza"
-            )
+      repositorioComercioMock.buscarComercioPorNombreDireccionYLocalidad(
+        "Supermercado Prueba",
+        "San Martin 100",
+        "La Matanza"
+      )
     )
-            .thenReturn(existente);
+      .thenReturn(existente);
 
     Comercio resultado = servicioComercio.vincularComercioAUsuario(formulario, 7L);
 
@@ -167,13 +167,13 @@ public class ServicioComercioTest {
     nuevo.setLocalidad("La Matanza");
 
     when(
-            repositorioComercioMock.buscarComercioPorNombreDireccionYLocalidad(
-                    "Supermercado Nuevo",
-                    "Rivadavia 200",
-                    "La Matanza"
-            )
+      repositorioComercioMock.buscarComercioPorNombreDireccionYLocalidad(
+        "Supermercado Nuevo",
+        "Rivadavia 200",
+        "La Matanza"
+      )
     )
-            .thenReturn(null);
+      .thenReturn(null);
 
     when(repositorioComercioMock.guardarComercio(nuevo)).thenReturn(nuevo);
 
@@ -201,7 +201,7 @@ public class ServicioComercioTest {
 
     assertThat(resultado, equalTo(propio));
     verify(repositorioComercioMock, never())
-            .buscarComercioPorNombreDireccionYLocalidad(anyString(), anyString(), anyString());
+      .buscarComercioPorNombreDireccionYLocalidad(anyString(), anyString(), anyString());
     verify(repositorioComercioMock, never()).actualizarComercio(any());
     verify(repositorioComercioMock, never()).guardarComercio(any());
   }
@@ -234,7 +234,7 @@ public class ServicioComercioTest {
   public void estaAbiertoDeberiaRetornarFalseSiNoHayHorariosCargados() {
     Long comercioId = 3L;
     when(repositorioHorarioMock.buscarPorComercioId(comercioId))
-            .thenReturn(Collections.emptyList());
+      .thenReturn(Collections.emptyList());
 
     boolean resultado = servicioComercio.estaAbierto(comercioId);
 

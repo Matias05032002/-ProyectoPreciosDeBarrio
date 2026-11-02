@@ -71,17 +71,6 @@ public class ControladorProductoTest {
   }
 
   @Test
-  public void guardarUnNuevoProductoDeberiaRedirigirAProductos() {
-    Producto producto = new Producto();
-    when(this.servicioProductoMock.guardarProducto(producto)).thenReturn(producto);
-
-    ModelAndView modelAndView = controladorProducto.guardarProducto(producto);
-
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/producto"));
-    verify(this.servicioProductoMock, times(1)).guardarProducto(producto);
-  }
-
-  @Test
   public void buscarUnProductoPorNombre() {
     ProductoConPrecio dto = new ProductoConPrecio(
       "Leche",

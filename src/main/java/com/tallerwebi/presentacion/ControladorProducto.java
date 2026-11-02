@@ -44,12 +44,6 @@ public class ControladorProducto {
     this.servicioPaginador = servicioPaginador;
   }
 
-  @RequestMapping(method = RequestMethod.POST)
-  public ModelAndView guardarProducto(@ModelAttribute Producto producto) {
-    servicioProducto.guardarProducto(producto);
-    return new ModelAndView("redirect:/producto");
-  }
-
   @RequestMapping(method = RequestMethod.GET)
   public ModelAndView listarProductos(HttpServletRequest request) {
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);

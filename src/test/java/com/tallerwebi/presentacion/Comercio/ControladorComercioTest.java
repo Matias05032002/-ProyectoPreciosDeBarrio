@@ -36,7 +36,7 @@ public class ControladorComercioTest {
     this.servicioReporteMock = mock(ServicioReporte.class);
     this.servicioLoginMock = mock(ServicioLogin.class);
     this.controladorComercio =
-            new ControladorComercio(servicioComercioMock, servicioReporteMock, servicioLoginMock);
+      new ControladorComercio(servicioComercioMock, servicioReporteMock, servicioLoginMock);
     this.requestMock = mock(HttpServletRequest.class);
     this.sessionMock = mock(HttpSession.class);
     when(this.requestMock.getSession()).thenReturn(sessionMock);
@@ -45,17 +45,6 @@ public class ControladorComercioTest {
   }
 
   // ── tests existentes ──────────────────────────────────────────────────────
-
-  @Test
-  public void guardarUnNuevoComercio() {
-    Comercio comercio = new Comercio();
-    when(this.servicioComercioMock.guardarComercio(comercio)).thenReturn(comercio);
-
-    ModelAndView modelAndView = this.controladorComercio.guardarComercio(comercio);
-
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/comercio"));
-    verify(this.servicioComercioMock, times(1)).guardarComercio(comercio);
-  }
 
   @Test
   public void listarTodosLosComercios() {
@@ -86,10 +75,10 @@ public class ControladorComercioTest {
     Comercio comercio = new Comercio();
     List<Comercio> comercios = Arrays.asList(comercio);
     when(this.servicioComercioMock.buscarComercioPorNombre("Almacen de Matias"))
-            .thenReturn(comercios);
+      .thenReturn(comercios);
 
     ModelAndView modelAndView =
-            this.controladorComercio.buscarComercioPorNombre("Almacen de Matias");
+      this.controladorComercio.buscarComercioPorNombre("Almacen de Matias");
 
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/lista-comercios"));
     assertThat(modelAndView.getModel().get("comercios"), is(comercios));
@@ -238,10 +227,10 @@ public class ControladorComercioTest {
     when(sessionMock.getAttribute("ID")).thenReturn(null);
 
     ModelAndView mav = controladorComercio.cambiarContrasena(
-            "vieja",
-            "nueva",
-            "nueva",
-            requestMock
+      "vieja",
+      "nueva",
+      "nueva",
+      requestMock
     );
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
@@ -252,10 +241,10 @@ public class ControladorComercioTest {
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
 
     ModelAndView mav = controladorComercio.cambiarContrasena(
-            "vieja",
-            "nueva1",
-            "nueva2",
-            requestMock
+      "vieja",
+      "nueva1",
+      "nueva2",
+      requestMock
     );
 
     assertThat(mav.getViewName(), containsString("errorContrasena=noCoinciden"));
@@ -267,10 +256,10 @@ public class ControladorComercioTest {
     when(servicioLoginMock.cambiarContrasena(1L, "vieja", "nueva")).thenReturn(false);
 
     ModelAndView mav = controladorComercio.cambiarContrasena(
-            "vieja",
-            "nueva",
-            "nueva",
-            requestMock
+      "vieja",
+      "nueva",
+      "nueva",
+      requestMock
     );
 
     assertThat(mav.getViewName(), containsString("errorContrasena=incorrecta"));
@@ -282,10 +271,10 @@ public class ControladorComercioTest {
     when(servicioLoginMock.cambiarContrasena(1L, "vieja", "nueva")).thenReturn(true);
 
     ModelAndView mav = controladorComercio.cambiarContrasena(
-            "vieja",
-            "nueva",
-            "nueva",
-            requestMock
+      "vieja",
+      "nueva",
+      "nueva",
+      requestMock
     );
 
     assertThat(mav.getViewName(), containsString("contrasenaCambiada=true"));
@@ -323,7 +312,7 @@ public class ControladorComercioTest {
     when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
     when(servicioReporteMock.buscarPorComercio(1L)).thenReturn(Collections.emptyList());
     when(servicioReporteMock.contarUsuariosDistintosPorComercio(1L))
-            .thenReturn(Collections.emptyList());
+      .thenReturn(Collections.emptyList());
     when(servicioReporteMock.contarReportesDudososPorComercio(1L)).thenReturn(0L);
     when(servicioReporteMock.rangoEtariosVisitantes(1L)).thenReturn(Collections.emptyList());
 
@@ -348,7 +337,7 @@ public class ControladorComercioTest {
     r2.setPrecio(200.0);
     when(servicioReporteMock.buscarPorComercio(1L)).thenReturn(Arrays.asList(r1, r2));
     when(servicioReporteMock.contarUsuariosDistintosPorComercio(1L))
-            .thenReturn(Collections.emptyList());
+      .thenReturn(Collections.emptyList());
     when(servicioReporteMock.contarReportesDudososPorComercio(1L)).thenReturn(0L);
     when(servicioReporteMock.rangoEtariosVisitantes(1L)).thenReturn(Collections.emptyList());
 
@@ -392,14 +381,14 @@ public class ControladorComercioTest {
     when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
     when(servicioReporteMock.buscarPorComercio(1L)).thenReturn(Collections.emptyList());
     when(servicioReporteMock.contarUsuariosDistintosPorComercio(1L))
-            .thenReturn(Collections.emptyList());
+      .thenReturn(Collections.emptyList());
     when(servicioReporteMock.contarReportesDudososPorComercio(1L)).thenReturn(0L);
     when(servicioReporteMock.rangoEtariosVisitantes(1L)).thenReturn(Collections.emptyList());
 
     List<Object[]> productosMasBuscados = new java.util.ArrayList<>();
     productosMasBuscados.add(new Object[] { "Leche", "Lácteos", 3L });
     when(servicioReporteMock.productosMasBuscadosPorLocalidad("Matanza", 5))
-            .thenReturn(productosMasBuscados);
+      .thenReturn(productosMasBuscados);
 
     ModelAndView mav = controladorComercio.verDashboard(requestMock);
 
@@ -420,12 +409,12 @@ public class ControladorComercioTest {
     when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
 
     org.springframework.mock.web.MockMultipartFile archivo =
-            new org.springframework.mock.web.MockMultipartFile(
-                    "foto",
-                    "foto.gif",
-                    "image/gif",
-                    new byte[100]
-            );
+      new org.springframework.mock.web.MockMultipartFile(
+        "foto",
+        "foto.gif",
+        "image/gif",
+        new byte[100]
+      );
 
     ModelAndView mav = controladorComercio.subirFoto(archivo, sessionMock);
 
@@ -445,7 +434,7 @@ public class ControladorComercioTest {
     // 6 MB > 5 MB límite
     byte[] bytes = new byte[6 * 1024 * 1024];
     org.springframework.mock.web.MockMultipartFile archivo =
-            new org.springframework.mock.web.MockMultipartFile("foto", "foto.jpg", "image/jpeg", bytes);
+      new org.springframework.mock.web.MockMultipartFile("foto", "foto.jpg", "image/jpeg", bytes);
 
     ModelAndView mav = controladorComercio.subirFoto(archivo, sessionMock);
 
@@ -464,13 +453,13 @@ public class ControladorComercioTest {
 
     byte[] bytes = new byte[100];
     org.springframework.mock.web.MockMultipartFile archivo =
-            new org.springframework.mock.web.MockMultipartFile("foto", "foto.jpg", "image/jpeg", bytes);
+      new org.springframework.mock.web.MockMultipartFile("foto", "foto.jpg", "image/jpeg", bytes);
 
     ModelAndView mav = controladorComercio.subirFoto(archivo, sessionMock);
 
     assertThat(
-            mav.getViewName(),
-            equalToIgnoringCase("redirect:/comercio/perfil?fotoActualizada=true")
+      mav.getViewName(),
+      equalToIgnoringCase("redirect:/comercio/perfil?fotoActualizada=true")
     );
     verify(servicioComercioMock, times(1)).guardarFoto(1L, bytes, "image/jpeg");
   }
