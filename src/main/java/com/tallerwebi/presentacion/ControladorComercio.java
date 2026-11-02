@@ -34,14 +34,14 @@ public class ControladorComercio {
   private static final String ROL_SESION = "ROL";
   private static final String REDIRECT_HOME = "redirect:/home";
   private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(
-    ControladorComercio.class
+          ControladorComercio.class
   );
 
   @Autowired
   public ControladorComercio(
-    ServicioComercio servicioComercio,
-    ServicioReporte servicioReporte,
-    ServicioLogin servicioLogin
+          ServicioComercio servicioComercio,
+          ServicioReporte servicioReporte,
+          ServicioLogin servicioLogin
   ) {
     this.servicioComercio = servicioComercio;
     this.servicioReporte = servicioReporte;
@@ -94,6 +94,7 @@ public class ControladorComercio {
   public ModelAndView verPerfil(HttpServletRequest request) {
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
+    if (!esComercio(request)) return new ModelAndView(REDIRECT_HOME);
     Comercio comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
     Usuario usuario = servicioLogin.buscarPorId(usuarioId);
     long cantidadProductos = 0;
@@ -112,6 +113,7 @@ public class ControladorComercio {
   public ModelAndView guardarPerfil(@ModelAttribute Comercio comercio, HttpServletRequest request) {
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
+    if (!esComercio(request)) return new ModelAndView(REDIRECT_HOME);
     servicioComercio.vincularComercioAUsuario(comercio, usuarioId);
     return new ModelAndView(REDIRECT_PERFIL);
   }
@@ -120,6 +122,7 @@ public class ControladorComercio {
   public ModelAndView editarPerfil(@ModelAttribute Comercio comercio, HttpServletRequest request) {
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
+    if (!esComercio(request)) return new ModelAndView(REDIRECT_HOME);
     Comercio existente = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
     if (existente == null) return new ModelAndView(REDIRECT_PERFIL);
     existente.setNombre(comercio.getNombre());
@@ -133,13 +136,14 @@ public class ControladorComercio {
 
   @RequestMapping(path = "/perfil/cambiar-contrasena", method = RequestMethod.POST)
   public ModelAndView cambiarContrasena(
-    @RequestParam("contrasenaActual") String contrasenaActual,
-    @RequestParam("contrasenaNueva") String contrasenaNueva,
-    @RequestParam("confirmarContrasena") String confirmarContrasena,
-    HttpServletRequest request
+          @RequestParam("contrasenaActual") String contrasenaActual,
+          @RequestParam("contrasenaNueva") String contrasenaNueva,
+          @RequestParam("confirmarContrasena") String confirmarContrasena,
+          HttpServletRequest request
   ) {
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
+    if (!esComercio(request)) return new ModelAndView(REDIRECT_HOME);
     if (!contrasenaNueva.equals(confirmarContrasena)) {
       return new ModelAndView(REDIRECT_PERFIL + "?errorContrasena=noCoinciden");
     }
@@ -148,6 +152,11 @@ public class ControladorComercio {
       return new ModelAndView(REDIRECT_PERFIL + "?errorContrasena=incorrecta");
     }
     return new ModelAndView(REDIRECT_PERFIL + "?contrasenaCambiada=true");
+  }
+
+
+  private boolean esComercio(HttpServletRequest request) {
+    return ROL_COMERCIO.equals(request.getSession().getAttribute(ROL_SESION));
   }
 
   @RequestMapping(path = "/dashboard", method = RequestMethod.GET)
@@ -174,8 +183,8 @@ public class ControladorComercio {
     mav.addObject("rangosEtarios", rangosEtarios);
     mav.addObject("topVecinos", vecinos);
     List<Object[]> productosMasBuscados = servicioReporte.productosMasBuscadosPorLocalidad(
-      comercio.getLocalidad(),
-      5
+            comercio.getLocalidad(),
+            5
     );
     mav.addObject("productosMasBuscados", productosMasBuscados);
     return mav;
@@ -296,23 +305,23 @@ public class ControladorComercio {
     long count = reportes.stream().filter(r -> r.getPrecio() != null).count();
     if (count == 0) return 0.0;
     double suma = reportes
-      .stream()
-      .filter(r -> r.getPrecio() != null)
-      .mapToDouble(Reporte::getPrecio)
-      .sum();
+            .stream()
+            .filter(r -> r.getPrecio() != null)
+            .mapToDouble(Reporte::getPrecio)
+            .sum();
     return suma / count;
   }
 
   private String calcularProductoEstrella(List<Reporte> reportes) {
     if (reportes == null || reportes.isEmpty()) return "-";
     return reportes
-      .stream()
-      .filter(r -> r.getProducto() != null && r.getProducto().getNombre() != null)
-      .collect(Collectors.groupingBy(r -> r.getProducto().getNombre(), Collectors.counting()))
-      .entrySet()
-      .stream()
-      .max(Map.Entry.comparingByValue())
-      .map(Map.Entry::getKey)
-      .orElse("-");
+            .stream()
+            .filter(r -> r.getProducto() != null && r.getProducto().getNombre() != null)
+            .collect(Collectors.groupingBy(r -> r.getProducto().getNombre(), Collectors.counting()))
+            .entrySet()
+            .stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse("-");
   }
 }

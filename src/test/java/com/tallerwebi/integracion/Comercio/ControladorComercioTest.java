@@ -39,7 +39,7 @@ public class ControladorComercioTest {
   @Test
   public void verificarQueGetComercioDevuelveDosCientosYlaVista() throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/comercio")).andExpect(status().isOk()).andReturn();
+            this.mockMvc.perform(get("/comercio")).andExpect(status().isOk()).andReturn();
 
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;
@@ -49,7 +49,7 @@ public class ControladorComercioTest {
   @Test
   public void verificarQueGetComercioDevuelveElModeloConComercios() throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/comercio")).andExpect(status().isOk()).andReturn();
+            this.mockMvc.perform(get("/comercio")).andExpect(status().isOk()).andReturn();
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;
     assertThat(modelAndView.getModel().containsKey("comercios"), is(true));
@@ -58,9 +58,9 @@ public class ControladorComercioTest {
   @Test
   public void verificarQueBuscarUnComercioDevuelveLaVistaComercios() throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/comercio/buscar?nombre=Almacen+de+Matias"))
-        .andExpect(status().isOk())
-        .andReturn();
+            this.mockMvc.perform(get("/comercio/buscar?nombre=Almacen+de+Matias"))
+                    .andExpect(status().isOk())
+                    .andReturn();
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/lista-comercios"));
@@ -69,7 +69,7 @@ public class ControladorComercioTest {
   @Test
   public void verificarQueGetIdDevuelveLavistaCorrecta() throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/comercio/1")).andExpect(status().isOk()).andReturn();
+            this.mockMvc.perform(get("/comercio/1")).andExpect(status().isOk()).andReturn();
 
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;
@@ -79,7 +79,7 @@ public class ControladorComercioTest {
   @Test
   public void verificarQueGetIdDevuelveElModeloConComercioYReportes() throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/comercio/1")).andExpect(status().isOk()).andReturn();
+            this.mockMvc.perform(get("/comercio/1")).andExpect(status().isOk()).andReturn();
 
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;
@@ -95,9 +95,11 @@ public class ControladorComercioTest {
   @Test
   public void deberiaMostrarPerfilCuandoHaySesion() throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/comercio/perfil").sessionAttr("ID", 1L))
-        .andExpect(status().isOk())
-        .andReturn();
+            this.mockMvc.perform(
+                            get("/comercio/perfil").sessionAttr("ID", 1L).sessionAttr("ROL", "COMERCIO")
+                    )
+                    .andExpect(status().isOk())
+                    .andReturn();
     ModelAndView mav = result.getModelAndView();
     assertThat(mav.getModel().containsKey("comercio"), is(true));
   }
@@ -105,12 +107,12 @@ public class ControladorComercioTest {
   @Test
   public void deberiaRedirigirALoginSiNoHaySesionEnPostPerfil() throws Exception {
     this.mockMvc.perform(
-        org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-          .post("/comercio/perfil")
-          .param("nombre", "Test")
-          .param("direccion", "Av Test 123")
-          .param("localidad", "La Matanza")
-      )
-      .andExpect(status().is3xxRedirection());
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .post("/comercio/perfil")
+                            .param("nombre", "Test")
+                            .param("direccion", "Av Test 123")
+                            .param("localidad", "La Matanza")
+            )
+            .andExpect(status().is3xxRedirection());
   }
 }
