@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Horarios de atención</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/main.css}" />
+</head>
+<body>
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<main class="container mt-5" style="max-width: 700px;">
+
+    <div class="d-flex align-items-center gap-3 mb-1">
+        <h2 class="mb-0"><i class="bi bi-clock me-2"></i>Horarios de atención</h2>
+    </div>
+    <p class="text-muted mb-4">Indicá en qué días y horarios está abierto tu comercio.</p>
+
+    <div th:if="${param.guardado}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i> Horarios guardados correctamente.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form th:action="@{/comercio/perfil/horarios}" method="POST">
+                <div th:each="horario : ${horarios}"
+                     class="row align-items-center py-2 border-bottom g-2">
+
+                    <!-- Nombre del día -->
+                    <div class="col-3 col-md-2 fw-semibold small"
+                         th:text="${horario.nombreDia}"></div>
+
+                    <!-- Toggle abierto/cerrado -->
+                    <div class="col-3 col-md-2">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input horario-toggle"
+                                   type="checkbox"
+                                   th:name="'abierto_' + ${horario.diaSemana}"
+                                   th:id="'sw_' + ${horario.diaSemana}"
+                                   th:checked="${horario.abierto}"
+                                   th:data-dia="${horario.diaSemana}">
+                            <label class="form-check-label small visually-hidden"
+                                   th:for="'sw_' + ${horario.diaSemana}">Abierto</label>
+                        </div>
+                    </div>
+
+                    <!-- Inputs de horario -->
+                    <div class="col-6 col-md-8 d-flex gap-2"
+                         th:id="'horario_campos_' + ${horario.diaSemana}">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Desde</span>
+                            <input type="time" class="form-control"
+                                   th:name="'apertura_' + ${horario.diaSemana}"
+                                   th:value="${horario.horaApertura}">
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Hasta</span>
+                            <input type="time" class="form-control"
+                                   th:name="'cierre_' + ${horario.diaSemana}"
+                                   th:value="${horario.horaCierre}">
+                        </div>
+                    </div>
+
+                </div><!-- /row -->
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i> Guardar horarios
+                    </button>
+                    <a th:href="@{/comercio/perfil}" class="btn btn-outline-secondary">
+                        Volver al perfil
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    function actualizarCampos(checkbox) {
+        var dia = checkbox.dataset.dia;
+        var campos = document.getElementById('horario_campos_' + dia);
+        campos.style.opacity = checkbox.checked ? '1' : '0.35';
+        campos.querySelectorAll('input[type="time"]').forEach(function(inp) {
+            inp.disabled = !checkbox.checked;
+        });
+    }
+
+    document.querySelectorAll('.horario-toggle').forEach(function(sw) {
+        actualizarCampos(sw);
+        sw.addEventListener('change', function() { actualizarCampos(this); });
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<div th:replace="~{don-peso :: don-peso}"></div>
+</body>
+</html>

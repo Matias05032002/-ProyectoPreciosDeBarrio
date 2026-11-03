@@ -76,6 +76,7 @@ public class ControladorLogin {
     usuario.setPassword(password);
     usuario.setNombre(nombre);
     usuario.setApellido(apellido);
+    usuario.setLocalidad(localidad);
     usuario.setRol("USER");
 
     try {
@@ -99,12 +100,10 @@ public class ControladorLogin {
     RedirectAttributes redirectAttrs
   ) {
     Comercio existente = servicioComercio.buscarPorDireccionYLocalidad(direccion, localidad);
-    if (existente != null) {
-      redirectAttrs.addFlashAttribute(
-        "errorComercio",
-        "Ya existe un comercio registrado en esa dirección y localidad"
+    if (existente != null && existente.getUsuarioId() != null) {
+      return new ModelAndView(
+        "redirect:/nuevo-usuario?errorComercio=Ya+existe+un+comercio+en+esa+direcci%C3%B3n+y+localidad"
       );
-      return new ModelAndView("redirect:/nuevo-usuario");
     }
 
     Usuario usuario = new Usuario();
@@ -116,30 +115,51 @@ public class ControladorLogin {
     try {
       servicioLogin.registrar(usuario);
     } catch (Exception e) {
-      redirectAttrs.addFlashAttribute("errorComercio", e.getMessage());
-      return new ModelAndView("redirect:/nuevo-usuario");
+      return new ModelAndView(
+        "redirect:/nuevo-usuario?errorComercio=" +
+        java.net.URLEncoder.encode(
+          e.getMessage() != null ? e.getMessage() : "Error al registrar",
+          java.nio.charset.StandardCharsets.UTF_8
+        )
+      );
     }
 
     Usuario usuarioCreado = servicioLogin.buscarPorEmail(email);
-    Comercio comercio = new Comercio();
-    comercio.setNombre(nombre);
-    comercio.setTipo(tipo);
-    comercio.setDireccion(direccion);
-    comercio.setLocalidad(localidad);
-    comercio.setActivo(true);
-    comercio.setFechaRegistro(LocalDateTime.now());
     if (usuarioCreado != null) {
-      comercio.setUsuarioId(usuarioCreado.getId());
+      Comercio comercioExistente = servicioComercio.buscarPorDireccionYLocalidad(
+        direccion,
+        localidad
+      );
+      if (comercioExistente != null) {
+        comercioExistente.setUsuarioId(usuarioCreado.getId());
+        servicioComercio.actualizarComercio(comercioExistente);
+      } else {
+        Comercio comercio = new Comercio();
+        comercio.setNombre(nombre);
+        comercio.setTipo(tipo);
+        comercio.setDireccion(direccion);
+        comercio.setLocalidad(localidad);
+        comercio.setActivo(true);
+        comercio.setFechaRegistro(LocalDateTime.now());
+        comercio.setUsuarioId(usuarioCreado.getId());
+        servicioComercio.guardarComercio(comercio);
+      }
     }
-
-    servicioComercio.guardarComercio(comercio);
     return new ModelAndView(REDIRECT_LOGIN);
   }
 
   @RequestMapping(path = "/nuevo-usuario", method = RequestMethod.GET)
-  public ModelAndView nuevoUsuario() {
+  public ModelAndView nuevoUsuario(
+    @RequestParam(value = "errorComercio", required = false) String errorComercio,
+    @RequestParam(value = ATTR_ERROR, required = false) String error
+  ) {
     Map<String, Object> model = new ModelMap();
     model.put(ATTR_USUARIO, new Usuario());
+    if (errorComercio != null && !errorComercio.isEmpty()) model.put(
+      "errorComercio",
+      errorComercio
+    );
+    if (error != null && !error.isEmpty()) model.put(ATTR_ERROR, error);
     return new ModelAndView(VISTA_NUEVO_USUARIO, model);
   }
 

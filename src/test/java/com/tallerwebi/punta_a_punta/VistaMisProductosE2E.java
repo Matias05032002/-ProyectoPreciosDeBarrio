@@ -67,7 +67,7 @@ public class VistaMisProductosE2E {
     Page page = context.pages().get(0);
     page.navigate("http://localhost:8080/spring/login");
     page.locator("#email").fill("test-comercio@unlam.edu.ar");
-    page.locator("#password").fill("TestComercio1");
+    page.locator("#password").fill("test");
     page.locator("#btn-login").click();
   }
 
@@ -75,7 +75,7 @@ public class VistaMisProductosE2E {
     Page page = context.pages().get(0);
     page.navigate("http://localhost:8080/spring/login");
     page.locator("#email").fill("test-comercio@unlam.edu.ar");
-    page.locator("#password").fill("TestComercio1");
+    page.locator("#password").fill("test");
     page.locator("#btn-login").click();
     VistaPerfil vistaPerfil = new VistaPerfil(page);
     vistaPerfil.escribirNombreComercio("Mi Almacen Test");

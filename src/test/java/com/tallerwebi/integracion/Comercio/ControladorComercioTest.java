@@ -95,11 +95,27 @@ public class ControladorComercioTest {
   @Test
   public void deberiaMostrarPerfilCuandoHaySesion() throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/comercio/perfil").sessionAttr("ID", 1L))
+      this.mockMvc.perform(
+          get("/comercio/perfil").sessionAttr("ID", 1L).sessionAttr("ROL", "COMERCIO")
+        )
         .andExpect(status().isOk())
         .andReturn();
     ModelAndView mav = result.getModelAndView();
     assertThat(mav.getModel().containsKey("comercio"), is(true));
+  }
+
+  @Test
+  public void postComercioNoDeberiaPermitirCrearComerciosDesdeFuera() throws Exception {
+    this.mockMvc.perform(
+        org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+          .post("/comercio")
+          .param("nombre", "Comercio falso")
+          .param("direccion", "Av Falsa 123")
+          .param("localidad", "La Matanza")
+          .sessionAttr("ID", 1L)
+          .sessionAttr("ROL", "USER")
+      )
+      .andExpect(status().isMethodNotAllowed());
   }
 
   @Test

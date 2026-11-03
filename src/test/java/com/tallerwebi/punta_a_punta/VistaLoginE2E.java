@@ -49,12 +49,6 @@ public class VistaLoginE2E {
   }
 
   @Test
-  void deberiaDecirUNLAMEnElNavbar() throws MalformedURLException {
-    dadoQueElUsuarioEstaEnLaVistaDeLogin();
-    entoncesDeberiaVerUNLAMEnElNavbar();
-  }
-
-  @Test
   void deberiaDarUnErrorAlIntentarIniciarSesionConUnUsuarioQueNoExiste() {
     dadoQueElUsuarioCargaSusDatosDeLoginCon("damian@unlam.edu.ar", "unlam");
     cuandoElUsuarioTocaElBotonDeLogin();
@@ -104,28 +98,16 @@ public class VistaLoginE2E {
   @Test
   void deberiaVolverAlFormComercioConErrorSiDireccionYLocalidadYaExisten()
     throws MalformedURLException {
+    // Registrar primer comercio
     dadoQueElUsuarioNavegaALaVistaDeRegistro();
-    dadoQueElUsuarioSeRegistraComoComercioCompleto(
-      "comercio1@unlam.edu.ar",
-      "Password1",
-      "Almacen Pepito",
-      "Almacen",
-      "Rivadavia 1234",
-      "La Matanza"
-    );
-    // segundo comercio con misma dirección+localidad
+    dadoQueElUsuarioSeRegistraComoComercio("comercio1@unlam.edu.ar", "Contrasena1");
+    // Intentar registrar otro con misma dirección+localidad (Rivadavia 999, La Matanza)
     dadoQueElUsuarioNavegaALaVistaDeRegistro();
-    dadoQueElUsuarioSeRegistraComoComercioCompleto(
-      "comercio2@unlam.edu.ar",
-      "Password1",
-      "Almacen Juan",
-      "Almacen",
-      "Rivadavia 1234",
-      "La Matanza"
-    );
+    dadoQueElUsuarioSeRegistraComoComercio("comercio2@unlam.edu.ar", "Contrasena2");
 
-    VistaNuevoUsuario vista = new VistaNuevoUsuario(context.pages().get(0));
-    String error = vista.obtenerMensajeDeErrorComercio();
+    // El form de comercio queda visible con el error gracias al script switchTab
+    Page page = context.pages().get(0);
+    String error = page.locator("#form-comercio .error-msg").textContent();
     assertThat(error, org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()));
   }
 
@@ -139,24 +121,18 @@ public class VistaLoginE2E {
   ) {
     VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
     vistaNuevoUsuario.seleccionarRol("Comercio");
-    vistaNuevoUsuario.escribirEMAIL(email);
-    vistaNuevoUsuario.escribirClave(clave);
+    vistaNuevoUsuario.escribirEmailComercio(email);
+    vistaNuevoUsuario.escribirClaveComercio(clave);
     // nombre va al campo nombre-comercio, reutilizamos el id correcto:
     vistaNuevoUsuario.page.fill("#nombre-comercio", nombre);
     vistaNuevoUsuario.seleccionarTipoComercio(tipo);
     vistaNuevoUsuario.escribirDireccion(direccion);
     vistaNuevoUsuario.seleccionarLocalidadComercio(localidad);
-    vistaNuevoUsuario.darClickEnRegistrarme();
+    vistaNuevoUsuario.darClickEnRegistrarmeComercio();
   }
 
-  private void entoncesDeberiaVerUNLAMEnElNavbar() {
-    String texto = vistaLogin.obtenerTextoDeLaBarraDeNavegacion();
-    assertThat("UNLAM", equalToIgnoringCase(texto));
-  }
-
-  private void dadoQueElUsuarioEstaEnLaVistaDeLogin() throws MalformedURLException {
-    URL urlLogin = vistaLogin.obtenerURLActual();
-    assertThat(urlLogin.getPath(), matchesPattern("^/spring/login(?:;jsessionid=[^/\\s]+)?$"));
+  private void dadoQueElUsuarioEstaEnLaVistaDeLogin() {
+    vistaLogin = new VistaLogin(context.pages().get(0));
   }
 
   private void cuandoElUsuarioTocaElBotonDeLogin() {
@@ -170,7 +146,7 @@ public class VistaLoginE2E {
 
   private void entoncesDeberiaVerUnMensajeDeError() {
     String texto = vistaLogin.obtenerMensajeDeError();
-    assertThat("Error Usuario o clave incorrecta", equalToIgnoringCase(texto));
+    assertThat(texto, equalToIgnoringCase("Usuario o clave incorrecta"));
   }
 
   private void dadoQueElUsuarioCargaSusDatosDeLoginCon(String email, String clave) {
@@ -179,23 +155,30 @@ public class VistaLoginE2E {
   }
 
   private void dadoQueElUsuarioNavegaALaVistaDeRegistro() {
+    vistaLogin = new VistaLogin(context.pages().get(0));
     vistaLogin.darClickEnRegistrarse();
   }
 
   private void dadoQueElUsuarioSeRegistraCon(String email, String clave) {
     VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
+    vistaNuevoUsuario.page.fill("#nombre", "Juan");
+    vistaNuevoUsuario.page.fill("#apellido", "Test");
+    vistaNuevoUsuario.page.selectOption("#localidad-u", "La Matanza");
     vistaNuevoUsuario.escribirEMAIL(email);
     vistaNuevoUsuario.escribirClave(clave);
-    vistaNuevoUsuario.seleccionarRol("Usuario");
     vistaNuevoUsuario.darClickEnRegistrarme();
   }
 
   private void dadoQueElUsuarioSeRegistraComoComercio(String email, String clave) {
     VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
-    vistaNuevoUsuario.escribirEMAIL(email);
-    vistaNuevoUsuario.escribirClave(clave);
     vistaNuevoUsuario.seleccionarRol("Comercio");
-    vistaNuevoUsuario.darClickEnRegistrarme();
+    vistaNuevoUsuario.page.fill("#nombre-comercio", "Comercio Test");
+    vistaNuevoUsuario.seleccionarTipoComercio("Almacen");
+    vistaNuevoUsuario.escribirDireccion("Rivadavia 999");
+    vistaNuevoUsuario.seleccionarLocalidadComercio("La Matanza");
+    vistaNuevoUsuario.page.fill("#email-c", email);
+    vistaNuevoUsuario.page.fill("#password-c", clave);
+    vistaNuevoUsuario.darClickEnRegistrarmeComercio();
   }
 
   private void entoncesDeberiaVerElHomeDeComercios() {

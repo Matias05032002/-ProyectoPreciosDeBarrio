@@ -1,6 +1,7 @@
 package com.tallerwebi.presentacion;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.mockito.Mockito.*;
@@ -16,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
@@ -86,6 +88,24 @@ public class ControladorLoginTest {
     );
 
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
+  }
+
+  @Test
+  public void registrarmeDeberiaGuardarLaLocalidadElegidaEnElUsuario()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    controladorLogin.registrarme(
+      "dami@unlam.com",
+      "Password1",
+      "Dami",
+      "Lopez",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+    verify(servicioLoginMock).registrar(captor.capture());
+    assertThat(captor.getValue().getLocalidad(), equalTo("La Matanza"));
   }
 
   @Test
@@ -169,7 +189,10 @@ public class ControladorLoginTest {
       redirectAttrs
     );
 
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
+    assertThat(
+      modelAndView.getViewName(),
+      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario")
+    );
     verify(servicioLoginMock, never()).registrar(any(Usuario.class));
     verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
   }
@@ -192,7 +215,10 @@ public class ControladorLoginTest {
       redirectAttrs
     );
 
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
+    assertThat(
+      modelAndView.getViewName(),
+      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario")
+    );
     verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
   }
 
@@ -208,7 +234,8 @@ public class ControladorLoginTest {
 
   @Test
   public void nuevoUsuarioDeberiaRetornarVistaNuevoUsuarioConUsuarioVacio() {
-    ModelAndView modelAndView = controladorLogin.nuevoUsuario(); // sin parámetros
+    org.springframework.ui.ExtendedModelMap model = new org.springframework.ui.ExtendedModelMap();
+    ModelAndView modelAndView = controladorLogin.nuevoUsuario(null, null);
 
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("nuevo-usuario"));
     assertThat(modelAndView.getModel().get("usuario"), instanceOf(Usuario.class));

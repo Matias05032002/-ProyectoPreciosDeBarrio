@@ -19,10 +19,13 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ServicioReporteImpl implements ServicioReporte {
 
+  static final String FORMATO_UNIDAD = "^[0-9]+(\\.[0-9]+)?(?i)(g|kg|gr|ml|l|u)$";
+
   private RepositorioReporte repositorioReporte;
   private ServicioComercio servicioComercio;
   private ServicioProducto servicioProducto;
   private static final int DIAS_PLAZO_EDICION = 2;
+  private static final double PRECIO_MAXIMO = 10_000_000.0;
 
   @Autowired
   public ServicioReporteImpl(
@@ -128,13 +131,13 @@ public class ServicioReporteImpl implements ServicioReporte {
     if (reporte == null) {
       return null;
     }
-    // No puede marcar su propio reporte
+    // No puede marcar su propio reporte: se avisa en vez de ignorarlo en silencio
     if (
       reporte.getUsuario() != null &&
       usuario != null &&
       reporte.getUsuario().getId().equals(usuario.getId())
     ) {
-      return reporte;
+      throw new ReportePropio();
     }
     // No puede marcar dos veces el mismo reporte
     if (usuario != null) {
@@ -198,20 +201,28 @@ public class ServicioReporteImpl implements ServicioReporte {
   }
 
   private void validarUnidad(String unidad) throws UnidadInvalida {
-    if (!unidad.matches("^[0-9]+(\\.[0-9]+)?(?i)(g|kg|gr|ml|l)$")) {
+    if (!unidad.matches(FORMATO_UNIDAD)) {
       throw new UnidadInvalida(
-        "La unidad debe ser un número seguido de g, kg, ml, L o gr (ej: 500g, 1kg, 250ml)"
+        "La unidad debe ser un número seguido de g, kg, gr, ml, L o u " +
+        "(ej: 500g, 1kg, 250ml, 1u)"
       );
     }
   }
 
   private void validarPrecio(Double precio) throws PrecioIncorrecto {
-    if (precio == null || precio <= 0) {
+    if (!esPrecioPositivo(precio)) {
       throw new PrecioIncorrecto("El precio debe ser mayor a cero");
+    }
+    if (precio > PRECIO_MAXIMO) {
+      throw new PrecioIncorrecto("El precio no puede superar $10.000.000");
     }
     if (Math.round(precio * 100) != (long) (precio * 100)) {
       throw new PrecioIncorrecto("El precio no puede tener más de 2 decimales");
     }
+  }
+
+  private boolean esPrecioPositivo(Double precio) {
+    return precio != null && !precio.isNaN() && !precio.isInfinite() && precio > 0;
   }
 
   @Override
@@ -275,5 +286,10 @@ public class ServicioReporteImpl implements ServicioReporte {
   @Override
   public List<Object[]> rangoEtariosVisitantes(Long comercioId) {
     return repositorioReporte.rangoEtariosVisitantes(comercioId);
+  }
+
+  @Override
+  public List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite) {
+    return repositorioReporte.productosMasBuscadosPorLocalidad(localidad, limite);
   }
 }

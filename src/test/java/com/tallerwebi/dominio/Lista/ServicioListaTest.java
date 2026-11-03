@@ -9,6 +9,7 @@ import static org.mockito.Mockito.*;
 import com.tallerwebi.dominio.Lista.*;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
+import com.tallerwebi.dominio.excepcion.AccesoDenegado;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -76,7 +77,7 @@ public class ServicioListaTest {
     when(repositorioLista.buscarPorId(1L)).thenReturn(lista);
     when(repositorioReporte.buscarReporte(5L)).thenReturn(reporte);
 
-    servicioLista.agregarProductoALista(1L, 5L, 2);
+    servicioLista.agregarProductoALista(1L, 5L, 2, 1L);
 
     verify(repositorioLista).agregarItem(any(ItemLista.class));
   }
@@ -87,7 +88,7 @@ public class ServicioListaTest {
 
     assertThrows(
       IllegalArgumentException.class,
-      () -> servicioLista.agregarProductoALista(999L, 1L, 1)
+      () -> servicioLista.agregarProductoALista(999L, 1L, 1, 1L)
     );
   }
 
@@ -100,7 +101,7 @@ public class ServicioListaTest {
 
     when(repositorioLista.buscarItemPorId(1L)).thenReturn(item);
 
-    servicioLista.eliminarItemDeLista(1L);
+    servicioLista.eliminarItemDeLista(1L, 1L);
 
     verify(repositorioLista).guardar(lista);
     assertThat(lista.getItems(), is(empty()));
@@ -124,7 +125,67 @@ public class ServicioListaTest {
 
   @Test
   void deberiaEditarCantidadDeUnItem() {
-    servicioLista.editarCantidadItem(1L, 5);
+    when(repositorioLista.buscarItemPorId(1L)).thenReturn(itemDeLista(1L, 1L));
+
+    servicioLista.editarCantidadItem(1L, 5, 1L);
+
     verify(repositorioLista).editarCantidadItem(1L, 5);
+  }
+
+  // --- solo el dueño puede modificar su lista ---
+
+  @Test
+  void agregarProductoAListaAjenaDeberiaLanzarAccesoDenegado() {
+    Lista listaDeOtro = new Lista("Lista ajena", 2L);
+    listaDeOtro.setId(1L);
+    when(repositorioLista.buscarPorId(1L)).thenReturn(listaDeOtro);
+
+    assertThrows(AccesoDenegado.class, () -> servicioLista.agregarProductoALista(1L, 5L, 1, 1L));
+    verify(repositorioLista, never()).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  void eliminarItemDeListaAjenaDeberiaLanzarAccesoDenegado() {
+    ItemLista itemAjeno = itemDeLista(7L, 2L);
+    when(repositorioLista.buscarItemPorId(7L)).thenReturn(itemAjeno);
+
+    assertThrows(AccesoDenegado.class, () -> servicioLista.eliminarItemDeLista(7L, 1L));
+    verify(repositorioLista, never()).guardar(any(Lista.class));
+    assertThat(itemAjeno.getLista().getItems().size(), is(1));
+  }
+
+  @Test
+  void editarCantidadDeItemAjenoDeberiaLanzarAccesoDenegado() {
+    when(repositorioLista.buscarItemPorId(7L)).thenReturn(itemDeLista(7L, 2L));
+
+    assertThrows(AccesoDenegado.class, () -> servicioLista.editarCantidadItem(7L, 99, 1L));
+    verify(repositorioLista, never()).editarCantidadItem(anyLong(), anyInt());
+  }
+
+  @Test
+  void agregarProductoConCantidadCeroONegativaDeberiaLanzarExcepcion() {
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioLista.agregarProductoALista(1L, 5L, 0, 1L)
+    );
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioLista.agregarProductoALista(1L, 5L, -3, 1L)
+    );
+    verify(repositorioLista, never()).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  void editarCantidadACeroDeberiaLanzarExcepcion() {
+    assertThrows(IllegalArgumentException.class, () -> servicioLista.editarCantidadItem(1L, 0, 1L));
+    verify(repositorioLista, never()).editarCantidadItem(anyLong(), anyInt());
+  }
+
+  private ItemLista itemDeLista(Long itemId, Long duenioId) {
+    Lista lista = new Lista("Lista", duenioId);
+    ItemLista item = new ItemLista(lista, new Reporte(), 1);
+    item.setId(itemId);
+    lista.setItems(new java.util.ArrayList<>(java.util.List.of(item)));
+    return item;
   }
 }

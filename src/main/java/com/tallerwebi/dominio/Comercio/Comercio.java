@@ -30,6 +30,12 @@ public class Comercio {
   @Column(length = 50)
   private String tipo;
 
+  @Lob
+  private byte[] foto;
+
+  @Column(name = "fotoTipo", length = 50)
+  private String fotoTipo;
+
   private Boolean activo;
   private LocalDateTime fechaRegistro;
   private Double latitud;
@@ -124,5 +130,28 @@ public class Comercio {
 
   public void setUsuarioId(Long usuarioId) {
     this.usuarioId = usuarioId;
+  }
+
+  public byte[] getFoto() {
+    if (foto == null) {
+      return new byte[0];
+    }
+    return foto.clone();
+  }
+
+  public void setFoto(byte[] fotoNueva) {
+    if (fotoNueva == null) {
+      this.foto = new byte[0];
+    } else {
+      this.foto = fotoNueva.clone();
+    }
+  }
+
+  public String getFotoTipo() {
+    return fotoTipo;
+  }
+
+  public void setFotoTipo(String fotoTipo) {
+    this.fotoTipo = fotoTipo;
   }
 }

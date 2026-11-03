@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.Usuario;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,19 +90,24 @@ public class RepositorioReporteImpl implements RepositorioReporte {
     Long comercioId,
     LocalDate fecha
   ) {
+    // Se busca por rango [00:00 del día, 00:00 del día siguiente) y no con cast(... as date):
+    // el cast se calcula en la zona de la base (UTC) y el rango en la misma zona con la que se
+    // guardó el reporte, así "el mismo día" no cambia según la hora ni la zona del servidor.
     return sessionFactory
       .getCurrentSession()
       .createQuery(
         "from Reporte where usuario.id = :usuarioId " +
         "and producto.id = :productoId " +
         "and comercio.id = :comercioId " +
-        "and cast(fechaDeReporte as date) = :fecha",
+        "and fechaDeReporte >= :desde and fechaDeReporte < :hasta",
         Reporte.class
       )
       .setParameter("usuarioId", usuarioId)
       .setParameter("productoId", productoId)
       .setParameter(PARAM_COMERCIO_ID, comercioId)
-      .setParameter("fecha", fecha)
+      .setParameter("desde", fecha.atStartOfDay())
+      .setParameter("hasta", fecha.plusDays(1).atStartOfDay())
+      .setMaxResults(1)
       .uniqueResult();
   }
 
@@ -236,5 +242,37 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       )
       .setParameter(PARAM_COMERCIO_ID, comercioId)
       .list();
+  }
+
+  @Override
+  public List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite) {
+    String hql =
+      "SELECT p.nombre, p.categoria, COUNT(r) as cantidad " +
+      "FROM Reporte r JOIN r.producto p JOIN r.comercio c " +
+      "WHERE c.localidad = :localidad " +
+      "AND r.fechaDeReporte >= :fechaLimite " +
+      "GROUP BY p.id, p.nombre, p.categoria " +
+      "ORDER BY cantidad DESC";
+    return (List<Object[]>) sessionFactory
+      .getCurrentSession()
+      .createQuery(hql)
+      .setParameter("localidad", localidad)
+      .setParameter("fechaLimite", java.time.LocalDateTime.now().minusMonths(1))
+      .setMaxResults(limite)
+      .list();
+  }
+
+  @Override
+  public List<Reporte> listarRecientes(int diasMaximos) {
+    LocalDateTime desde = LocalDateTime.now().minusDays(diasMaximos);
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "FROM Reporte r WHERE r.fechaDeReporte >= :desde ORDER BY r.fechaDeReporte DESC",
+        Reporte.class
+      )
+      .setParameter("desde", desde)
+      .setMaxResults(20)
+      .getResultList();
   }
 }

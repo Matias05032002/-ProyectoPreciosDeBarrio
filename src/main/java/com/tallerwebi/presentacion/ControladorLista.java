@@ -2,6 +2,7 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Lista.Lista;
 import com.tallerwebi.dominio.Lista.ServicioLista;
+import com.tallerwebi.dominio.excepcion.AccesoDenegado;
 import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
@@ -40,8 +41,12 @@ public class ControladorLista {
   public ModelAndView crearLista(@RequestParam("nombre") String nombre, HttpSession session) {
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
-    Lista lista = servicioLista.crearLista(nombre, usuarioId);
-    return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + lista.getId());
+    try {
+      Lista lista = servicioLista.crearLista(nombre, usuarioId);
+      return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + lista.getId());
+    } catch (IllegalArgumentException e) {
+      return new ModelAndView(REDIRECT_MIS_LISTAS);
+    }
   }
 
   @GetMapping("/mis-listas/{id}")
@@ -69,7 +74,11 @@ public class ControladorLista {
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
 
-    servicioLista.agregarProductoALista(listaId, reporteId, cantidad);
+    try {
+      servicioLista.agregarProductoALista(listaId, reporteId, cantidad, usuarioId);
+    } catch (AccesoDenegado | IllegalArgumentException e) {
+      return new ModelAndView(REDIRECT_MIS_LISTAS);
+    }
     return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + listaId);
   }
 
@@ -82,7 +91,11 @@ public class ControladorLista {
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
 
-    servicioLista.eliminarItemDeLista(itemId);
+    try {
+      servicioLista.eliminarItemDeLista(itemId, usuarioId);
+    } catch (AccesoDenegado e) {
+      return new ModelAndView(REDIRECT_MIS_LISTAS);
+    }
     return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + listaId);
   }
 
@@ -113,7 +126,11 @@ public class ControladorLista {
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
 
-    servicioLista.editarCantidadItem(itemId, cantidad);
+    try {
+      servicioLista.editarCantidadItem(itemId, cantidad, usuarioId);
+    } catch (AccesoDenegado | IllegalArgumentException e) {
+      return new ModelAndView(REDIRECT_MIS_LISTAS);
+    }
     return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + listaId);
   }
 }

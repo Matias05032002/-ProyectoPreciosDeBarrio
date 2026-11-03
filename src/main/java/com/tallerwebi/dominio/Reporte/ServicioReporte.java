@@ -22,4 +22,5 @@ public interface ServicioReporte {
   List<Object[]> contarUsuariosDistintosPorComercio(Long comercioId);
   Long contarReportesDudososPorComercio(Long comercioId);
   List<Object[]> rangoEtariosVisitantes(Long comercioId);
+  List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite);
 }

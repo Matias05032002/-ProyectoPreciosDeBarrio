@@ -115,7 +115,26 @@
                 </div>
             </div>
         </div>
-
+        <!-- Productos más buscados en la zona -->
+        <div class="col-md-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-fire text-danger me-2"></i>Productos más buscados en la zona</h5>
+                    <p class="text-muted small">Los productos que más buscan los vecinos de tu localidad en el último mes.</p>
+                    <hr>
+                    <div th:if="${productosMasBuscados == null or #lists.isEmpty(productosMasBuscados)}"
+                         class="text-muted small">Sin datos suficientes en tu zona.</div>
+                    <ol th:if="${productosMasBuscados != null and !#lists.isEmpty(productosMasBuscados)}"
+                        class="mb-0 ps-3">
+                        <li th:each="prod, stat : ${productosMasBuscados}" class="mb-2">
+                            <span class="fw-semibold" th:text="${prod[0]}"></span>
+                            <span class="text-muted small" th:text="' · ' + ${prod[1]}"></span>
+                            <span class="badge bg-danger ms-1" th:text="${prod[2]} + ' reportes'"></span>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

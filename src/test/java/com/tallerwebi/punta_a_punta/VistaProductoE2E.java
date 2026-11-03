@@ -41,6 +41,10 @@ public class VistaProductoE2E {
     ReiniciarDB.limpiarBaseDeDatos();
     context = browser.newContext();
     Page page = context.newPage();
+    VistaLogin vistaLogin = new VistaLogin(page);
+    vistaLogin.escribirEMAIL("test@unlam.edu.ar");
+    vistaLogin.escribirClave("test");
+    vistaLogin.darClickEnIniciarSesion();
     vistaProducto = new VistaProducto(page);
   }
 
@@ -79,22 +83,21 @@ public class VistaProductoE2E {
 
   @Test
   public void deberiaMostrarElModalCuandoSeMarcaComoDudoso() {
-    dadoQueExisteUnReporteCargado();
-
-    // Login primero
-    VistaLogin vistaLogin = new VistaLogin(context.pages().get(0));
-    vistaLogin.escribirEMAIL("test@unlam.edu.ar");
-    vistaLogin.escribirClave("test");
-    vistaLogin.darClickEnIniciarSesion();
-
-    // Ahora ir a producto y buscar
-    vistaProducto = new VistaProducto(context.pages().get(0));
+    dadoQueExisteUnReporteCargadoPorOtroVecino();
     vistaProducto.escribirNombreDelProductoABuscar("Leche");
     vistaProducto.darClickEnBuscar();
-
     vistaProducto.darClickEnMarcarDudoso();
-
     assertThat(vistaProducto.hayModalDudoso(), is(true));
+  }
+
+  @Test
+  public void noDeberiaMostrarElModalCuandoSeMarcaComoDudosoUnReportePropio() {
+    dadoQueExisteUnReporteCargado();
+    vistaProducto.escribirNombreDelProductoABuscar("Leche");
+    vistaProducto.darClickEnBuscar();
+    vistaProducto.darClickEnMarcarDudoso();
+    assertThat(vistaProducto.hayModalDudoso(), is(false));
+    assertThat(vistaProducto.hayAvisoDeReportePropio(), is(true));
   }
 
   @Test
@@ -126,5 +129,9 @@ public class VistaProductoE2E {
 
   private void dadoQueExisteUnReporteCargado() {
     ReiniciarDB.sembrarProductoConReporte();
+  }
+
+  private void dadoQueExisteUnReporteCargadoPorOtroVecino() {
+    ReiniciarDB.sembrarProductoConReporteDeOtroUsuario();
   }
 }

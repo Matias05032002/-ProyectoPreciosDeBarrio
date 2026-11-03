@@ -10,6 +10,7 @@ import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.infraestructura.RepositorioReporteImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import jakarta.transaction.Transactional;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.hibernate.SessionFactory;
@@ -211,6 +212,234 @@ public class RepositorioReporteTest {
     Reporte resultado = repositorioReporte.marcarDudoso(reporte.getId(), null);
 
     assertThat(resultado, is(nullValue()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void productosMasBuscadosPorLocalidadDeberiaRetornarProductosOrdenados() {
+    // 2 reportes de Leche y 1 de Arroz en la misma localidad
+    Reporte r1 = dadoQueTengoUnReporteConLocalidad("Leche", "Almacen", 100.0, "Matanza");
+    Reporte r2 = dadoQueTengoUnReporteConLocalidad("Leche", "Kiosco", 110.0, "Matanza");
+    Reporte r3 = dadoQueTengoUnReporteConLocalidad("Arroz", "Almacen", 90.0, "Matanza");
+    dadoQueExisteElReporte(r1);
+    dadoQueExisteElReporte(r2);
+    dadoQueExisteElReporte(r3);
+
+    List<Object[]> resultado = repositorioReporte.productosMasBuscadosPorLocalidad("Matanza", 5);
+
+    assertThat(resultado, not(empty()));
+    // el primero debe ser Leche (más reportes)
+    assertThat(resultado.get(0)[0].toString(), equalTo("Leche"));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void productosMasBuscadosPorLocalidadNoDeberiaIncluirOtraLocalidad() {
+    Reporte r1 = dadoQueTengoUnReporteConLocalidad("Leche", "Almacen", 100.0, "Matanza");
+    Reporte r2 = dadoQueTengoUnReporteConLocalidad("Leche", "Kiosco", 110.0, "Lomas");
+    dadoQueExisteElReporte(r1);
+    dadoQueExisteElReporte(r2);
+
+    List<Object[]> resultado = repositorioReporte.productosMasBuscadosPorLocalidad("Matanza", 5);
+
+    // solo debe aparecer el de Matanza
+    assertThat(resultado.size(), is(1));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void productosMasBuscadosPorLocalidadDeberiaRespetarElLimite() {
+    dadoQueExisteElReporte(dadoQueTengoUnReporteConLocalidad("Leche", "Almacen", 100.0, "Matanza"));
+    dadoQueExisteElReporte(dadoQueTengoUnReporteConLocalidad("Arroz", "Kiosco", 50.0, "Matanza"));
+    dadoQueExisteElReporte(dadoQueTengoUnReporteConLocalidad("Fideos", "Super", 80.0, "Matanza"));
+
+    List<Object[]> resultado = repositorioReporte.productosMasBuscadosPorLocalidad("Matanza", 2);
+
+    assertThat(resultado.size(), is(lessThanOrEqualTo(2)));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void listarRecientesDeberiaRetornarReportesUltimos7Dias() {
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Leche", "Almacen", 100.0));
+    dadoQueExisteElReporte(dadoQueTengoUnReporte("Arroz", "Kiosco", 200.0));
+
+    List<Reporte> resultado = repositorioReporte.listarRecientes(7);
+
+    assertThat(resultado, not(empty()));
+    assertThat(resultado.size(), is(greaterThanOrEqualTo(2)));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void listarRecientesNoDeberiaRetornarReportesViejos() {
+    Reporte reporteViejo = dadoQueTengoUnReporte("Fideos", "Super", 80.0);
+    reporteViejo.setFechaDeReporte(LocalDateTime.now().minusDays(10));
+    dadoQueExisteElReporte(reporteViejo);
+
+    List<Reporte> resultado = repositorioReporte.listarRecientes(7);
+
+    // el reporte de hace 10 días no debe aparecer
+    boolean contieneViejo = resultado
+      .stream()
+      .anyMatch(r -> r.getId().equals(reporteViejo.getId()));
+    assertThat(contieneViejo, is(false));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void listarRecientesDeberiaRespetarLimiteDeVeinteResultados() {
+    for (int i = 0; i < 25; i++) {
+      dadoQueExisteElReporte(
+        dadoQueTengoUnReporteConLocalidad("Producto" + i, "Comercio" + i, 100.0 + i, "Matanza")
+      );
+    }
+
+    List<Reporte> resultado = repositorioReporte.listarRecientes(7);
+
+    assertThat(resultado.size(), is(lessThanOrEqualTo(20)));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void buscarReporteDuplicadoDeberiaEncontrarUnReporteDeEsaFecha() {
+    LocalDate dia = LocalDate.of(2026, 11, 2);
+    Reporte reporte = dadoQueExisteUnReporteDeUnUsuarioEn(dia.atTime(10, 0));
+
+    Reporte resultado = cuandoBuscoElDuplicadoEn(reporte, dia);
+
+    assertThat(resultado, is(notNullValue()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void buscarReporteDuplicadoDeberiaEncontrarUnReporteHechoDeNoche() {
+    // Entre las 21 y las 24 hora argentina el día en UTC ya es el siguiente
+    LocalDate dia = LocalDate.of(2026, 11, 2);
+    Reporte reporte = dadoQueExisteUnReporteDeUnUsuarioEn(dia.atTime(23, 30));
+
+    Reporte resultado = cuandoBuscoElDuplicadoEn(reporte, dia);
+
+    assertThat(resultado, is(notNullValue()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void buscarReporteDuplicadoNoDeberiaEncontrarUnReporteDelDiaAnterior() {
+    LocalDate dia = LocalDate.of(2026, 11, 2);
+    Reporte reporte = dadoQueExisteUnReporteDeUnUsuarioEn(dia.atTime(23, 30));
+
+    Reporte resultado = cuandoBuscoElDuplicadoEn(reporte, dia.plusDays(1));
+
+    assertThat(resultado, is(nullValue()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void buscarReporteDuplicadoNoDeberiaEncontrarUnReporteDelDiaSiguiente() {
+    LocalDate dia = LocalDate.of(2026, 11, 2);
+    Reporte reporte = dadoQueExisteUnReporteDeUnUsuarioEn(dia.plusDays(1).atTime(0, 10));
+
+    Reporte resultado = cuandoBuscoElDuplicadoEn(reporte, dia);
+
+    assertThat(resultado, is(nullValue()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void buscarReporteDuplicadoNoDeberiaEncontrarElReporteDeOtroUsuario() {
+    LocalDate dia = LocalDate.of(2026, 11, 2);
+    Reporte reporte = dadoQueExisteUnReporteDeUnUsuarioEn(dia.atTime(10, 0));
+
+    Reporte resultado = repositorioReporte.buscarReporteDuplicado(
+      reporte.getUsuario().getId() + 1000,
+      reporte.getProducto().getId(),
+      reporte.getComercio().getId(),
+      dia
+    );
+
+    assertThat(resultado, is(nullValue()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void buscarReporteDuplicadoNoDeberiaFallarSiYaHayDosReportesDelMismoDia() {
+    // Pasaba con los datos cargados antes de corregir la detección por zona horaria
+    LocalDate dia = LocalDate.of(2026, 11, 2);
+    Reporte primero = dadoQueExisteUnReporteDeUnUsuarioEn(dia.atTime(10, 0));
+    Reporte segundo = new Reporte();
+    segundo.setUsuario(primero.getUsuario());
+    segundo.setProducto(primero.getProducto());
+    segundo.setComercio(primero.getComercio());
+    segundo.setPrecio(120.0);
+    segundo.setFechaDeReporte(dia.atTime(23, 30));
+    dadoQueExisteElReporte(segundo);
+
+    Reporte resultado = cuandoBuscoElDuplicadoEn(primero, dia);
+
+    assertThat(resultado, is(notNullValue()));
+  }
+
+  private Reporte dadoQueExisteUnReporteDeUnUsuarioEn(LocalDateTime fecha) {
+    com.tallerwebi.dominio.Usuario usuario = new com.tallerwebi.dominio.Usuario();
+    usuario.setEmail("duplicado" + System.nanoTime() + "@test.com");
+    usuario.setNombre("Test");
+    usuario.setRol("USER");
+    usuario.setActivo(true);
+    usuario.setPassword("1234");
+    sessionFactory.getCurrentSession().persist(usuario);
+
+    Reporte reporte = dadoQueTengoUnReporte("Leche", "Almacen", 100.0);
+    reporte.setUsuario(usuario);
+    reporte.setFechaDeReporte(fecha);
+    dadoQueExisteElReporte(reporte);
+    return reporte;
+  }
+
+  private Reporte cuandoBuscoElDuplicadoEn(Reporte reporte, LocalDate fecha) {
+    return repositorioReporte.buscarReporteDuplicado(
+      reporte.getUsuario().getId(),
+      reporte.getProducto().getId(),
+      reporte.getComercio().getId(),
+      fecha
+    );
+  }
+
+  // Helper adicional — misma firma que dadoQueTengoUnReporte pero acepta localidad
+  private Reporte dadoQueTengoUnReporteConLocalidad(
+    String nombreProducto,
+    String nombreComercio,
+    Double precio,
+    String localidad
+  ) {
+    Producto producto = new Producto();
+    producto.setNombre(nombreProducto);
+    sessionFactory.getCurrentSession().persist(producto);
+
+    Comercio comercio = new Comercio();
+    comercio.setNombre(nombreComercio);
+    comercio.setDireccion("Av. Test " + nombreComercio + "-" + localidad + "-" + System.nanoTime());
+    comercio.setLocalidad(localidad);
+    sessionFactory.getCurrentSession().persist(comercio);
+
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(precio);
+    reporte.setFechaDeReporte(java.time.LocalDateTime.now());
+    return reporte;
   }
 
   private Reporte dadoQueTengoUnReporte(

@@ -13,6 +13,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -99,6 +100,21 @@ public class ServicioReporteTest {
       0.0
     );
     assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarReporteConUnidadPorUnidadEsValido() throws Exception {
+    Producto producto = productoValido("Ajo", "1u");
+    Comercio comercio = comercioConNombre("Dia");
+    Reporte reporte = reporteConProductoYComercio(producto, comercio, 2490.0);
+
+    when(servicioComercioMock.buscarComercioPorNombre("Dia")).thenReturn(Arrays.asList(comercio));
+    when(servicioProductoMock.buscarProductoPorNombreExacto("Ajo")).thenReturn(producto);
+    when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
+
+    servicioReporte.guardarReporte(reporte);
+
+    verify(repositorioReporteMock, times(1)).guardarReporte(reporte);
   }
 
   @Test
@@ -194,6 +210,75 @@ public class ServicioReporteTest {
 
     assertThat(servicioReporte.marcarDudoso(1L, null), equalTo(reporte));
     verify(repositorioReporteMock, times(1)).marcarDudoso(1L, null);
+  }
+
+  @Test
+  public void marcarDudosoUnReporteDeUnoMismoDeberiaLanzarReportePropio() {
+    Usuario autor = new Usuario();
+    autor.setId(7L);
+    Reporte reporte = new Reporte();
+    reporte.setUsuario(autor);
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+
+    assertThrows(ReportePropio.class, () -> servicioReporte.marcarDudoso(1L, autor));
+    verify(repositorioReporteMock, never()).marcarDudoso(anyLong(), any());
+  }
+
+  @Test
+  public void marcarDudosoUnReporteAjenoDeberiaMarcarlo() {
+    Usuario autor = new Usuario();
+    autor.setId(7L);
+    Usuario otro = new Usuario();
+    otro.setId(8L);
+    Reporte reporte = new Reporte();
+    reporte.setUsuario(autor);
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+    when(repositorioReporteMock.marcarDudoso(1L, otro)).thenReturn(reporte);
+
+    assertThat(servicioReporte.marcarDudoso(1L, otro), equalTo(reporte));
+    verify(repositorioReporteMock, times(1)).marcarDudoso(1L, otro);
+  }
+
+  @Test
+  public void guardarReporteConPrecioMuyAltoDeberiaLanzarPrecioIncorrecto() {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      10_000_000.01
+    );
+    assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarReporteConElPrecioMaximoEsValido() throws Exception {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      10_000_000.0
+    );
+    when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
+
+    assertThat(servicioReporte.guardarReporte(reporte), equalTo(reporte));
+  }
+
+  @Test
+  public void guardarReporteConPrecioNaNDeberiaLanzarPrecioIncorrecto() {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      Double.NaN
+    );
+    assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarReporteConPrecioInfinitoDeberiaLanzarPrecioIncorrecto() {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      Double.POSITIVE_INFINITY
+    );
+    assertThrows(PrecioIncorrecto.class, () -> servicioReporte.guardarReporte(reporte));
   }
 
   @Test
@@ -346,6 +431,33 @@ public class ServicioReporteTest {
       () -> servicioReporte.editarReporte(99L, datosEdicion("Leche", "1000ml", 100.0), 1L)
     );
     verify(repositorioReporteMock, never()).guardarReporte(any(Reporte.class));
+  }
+
+  @Test
+  public void productosMasBuscadosPorLocalidadDeberiaDelegar() {
+    List<Object[]> esperado = new ArrayList<>();
+    esperado.add(new Object[] { "Leche", "Lácteos", 3L });
+    when(repositorioReporteMock.productosMasBuscadosPorLocalidad("Matanza", 5))
+      .thenReturn(esperado);
+
+    List<Object[]> resultado = servicioReporte.productosMasBuscadosPorLocalidad("Matanza", 5);
+
+    assertThat(resultado, equalTo(esperado));
+    verify(repositorioReporteMock, times(1)).productosMasBuscadosPorLocalidad("Matanza", 5);
+  }
+
+  @Test
+  public void productosMasBuscadosPorLocalidadSinReportesDeberiaRetornarListaVacia() {
+    when(repositorioReporteMock.productosMasBuscadosPorLocalidad("Zona Sin Datos", 5))
+      .thenReturn(Collections.emptyList());
+
+    List<Object[]> resultado = servicioReporte.productosMasBuscadosPorLocalidad(
+      "Zona Sin Datos",
+      5
+    );
+
+    assertThat(resultado, equalTo(Collections.emptyList()));
+    verify(repositorioReporteMock, times(1)).productosMasBuscadosPorLocalidad("Zona Sin Datos", 5);
   }
 
   // --- helpers ---

@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
@@ -53,6 +54,19 @@ public class ControladorProductoTest {
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("producto/lista-productos"));
+  }
+
+  @Test
+  public void postProductoNoDeberiaPermitirCrearProductosDesdeFuera() throws Exception {
+    this.mockMvc.perform(
+        post("/producto")
+          .param("nombre", "Producto falso")
+          .param("marca", "Marca falsa")
+          .param("unidad", "1kg")
+          .sessionAttr("ID", 1L)
+          .sessionAttr("ROL", "USER")
+      )
+      .andExpect(status().isMethodNotAllowed());
   }
 
   @Test

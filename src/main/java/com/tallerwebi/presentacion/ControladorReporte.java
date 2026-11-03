@@ -14,8 +14,10 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
 import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
+import com.tallerwebi.dominio.excepcion.ReportePropio;
 import com.tallerwebi.dominio.excepcion.UnidadInvalida;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Controller
 @RequestMapping("/reporte")
@@ -38,6 +42,7 @@ public class ControladorReporte {
   private static final String NOMBRE_PRODUCTOS = "productos";
   private static final String NOMBRE_COMERCIOS = "comercios";
   private static final String NOMBRE_REPORTES = "reportes";
+  private static final String PARAM_NOMBRE = "nombre";
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String SESSION_ROL = "ROL";
   private static final String NOMBRE_ERROR = "error";
@@ -145,7 +150,8 @@ public class ControladorReporte {
   public ModelAndView marcarDudoso(
     @PathVariable("id") Long id,
     @RequestParam("nombreProducto") String nombreProducto,
-    HttpServletRequest request
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
   ) {
     String email = (String) request.getSession().getAttribute("EMAIL");
     if (email == null) {
@@ -155,15 +161,29 @@ public class ControladorReporte {
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    servicioReporte.marcarDudoso(id, usuario);
-    return new ModelAndView(
-      "redirect:/producto/buscar?nombre=" + nombreProducto + "&dudosoMarcado=true"
-    );
+    try {
+      servicioReporte.marcarDudoso(id, usuario);
+    } catch (ReportePropio e) {
+      redirectAttributes.addFlashAttribute("errorDudoso", e.getMessage());
+      return new ModelAndView(urlBusquedaDeProducto(nombreProducto, false));
+    }
+    return new ModelAndView(urlBusquedaDeProducto(nombreProducto, true));
+  }
+
+  // El nombre viaja en la URL: se codifica para que "&", "#" o "{" no rompan la redirección
+  private String urlBusquedaDeProducto(String nombreProducto, boolean dudosoMarcado) {
+    UriComponentsBuilder url = UriComponentsBuilder
+      .fromPath("/producto/buscar")
+      .queryParam(PARAM_NOMBRE, "{nombre}");
+    if (dudosoMarcado) {
+      url.queryParam("dudosoMarcado", true);
+    }
+    return "redirect:" + url.encode().buildAndExpand(nombreProducto).toUriString();
   }
 
   @RequestMapping(path = "/buscar", method = RequestMethod.GET)
   public ModelAndView buscarPorNombre(
-    @RequestParam("nombre") String nombre,
+    @RequestParam(PARAM_NOMBRE) String nombre,
     HttpServletRequest request
   ) {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {
@@ -330,7 +350,11 @@ public class ControladorReporte {
       return mav;
     } catch (Exception e) {
       ModelAndView mav = new ModelAndView("reporte/subir-ticket");
-      mav.addObject(NOMBRE_ERROR, "No se pudo procesar el ticket");
+      mav.addObject(
+        NOMBRE_ERROR,
+        "No pudimos leer el ticket en este momento. " +
+        "Probá de nuevo en unos minutos o cargá los productos manualmente."
+      );
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
       return mav;
     }
@@ -343,7 +367,7 @@ public class ControladorReporte {
     @RequestParam("comercioLocalidad") String comercioLocalidad,
     @RequestParam Map<String, String> params,
     HttpServletRequest request
-  ) throws CamposObligatoriosVacios, ReporteExistente, UnidadInvalida, PrecioIncorrecto {
+  ) {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -355,34 +379,66 @@ public class ControladorReporte {
     comercio.setDireccion(comercioDireccion);
     comercio.setLocalidad(comercioLocalidad);
 
+    // Cada producto se guarda por separado: si uno falla, los demás igual se guardan
+    List<String> errores = new ArrayList<>();
     int indice = 0;
     while (params.containsKey(PREFIJO_ITEMS + indice + "].nombre")) {
-      String incluir = params.get("incluir[" + indice + "]");
-      if (incluir != null) {
-        String nombre = params.get(PREFIJO_ITEMS + indice + "].nombre");
-        String precioStr = params.get(PREFIJO_ITEMS + indice + "].precio");
-        try {
-          double precio = Double.parseDouble(precioStr);
-          Producto producto = new Producto();
-          producto.setNombre(nombre);
-          producto.setMarca(params.getOrDefault(PREFIJO_ITEMS + indice + "].marca", "Sin marca"));
-          producto.setCategoria(
-            params.getOrDefault(PREFIJO_ITEMS + indice + "].categoria", "Varios")
-          );
-          producto.setUnidad(params.getOrDefault(PREFIJO_ITEMS + indice + "].unidad", "1u"));
-          Reporte reporte = new Reporte();
-          reporte.setProducto(producto);
-          reporte.setPrecio(precio);
-          reporte.setComercio(comercio);
-          reporte.setUsuario(usuario);
-          servicioReporte.guardarReporte(reporte);
-        } catch (NumberFormatException ex) {
-          assert ex != null;
+      if (params.get("incluir[" + indice + "]") != null) {
+        String error = guardarItemDelTicket(
+          params,
+          PREFIJO_ITEMS + indice + "].",
+          comercio,
+          usuario
+        );
+        if (error != null) {
+          errores.add(error);
         }
       }
       indice++;
     }
+    if (!errores.isEmpty()) {
+      return vistaConError(
+        "Algunos productos del ticket no se guardaron. " + String.join(" · ", errores),
+        request
+      );
+    }
     return new ModelAndView("redirect:/reporte?guardado=true");
+  }
+
+  // Devuelve null si se guardó (o si se descartó por precio no numérico), o el motivo del error
+  private String guardarItemDelTicket(
+    Map<String, String> params,
+    String prefijo,
+    Comercio comercio,
+    Usuario usuario
+  ) {
+    String nombre = params.get(prefijo + "nombre");
+    String precioTexto = params.get(prefijo + "precio");
+    double precio;
+    try {
+      precio = Double.parseDouble(precioTexto == null ? "" : precioTexto);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+    String unidad = params.getOrDefault(prefijo + "unidad", "");
+    Producto producto = new Producto();
+    producto.setNombre(nombre);
+    producto.setMarca(params.getOrDefault(prefijo + "marca", "Sin marca"));
+    producto.setCategoria(params.getOrDefault(prefijo + "categoria", "Varios"));
+    producto.setUnidad(unidad.isBlank() ? "1u" : unidad);
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setPrecio(precio);
+    reporte.setComercio(comercio);
+    reporte.setUsuario(usuario);
+    try {
+      servicioReporte.guardarReporte(reporte);
+      return null;
+    } catch (ReporteExistente e) {
+      return nombre + ": ya lo reportaste hoy en este comercio";
+    } catch (CamposObligatoriosVacios | UnidadInvalida | PrecioIncorrecto e) {
+      return nombre + ": " + e.getMessage();
+    }
   }
 
   @RequestMapping(path = "/ticket/reconocer-producto", method = RequestMethod.POST)

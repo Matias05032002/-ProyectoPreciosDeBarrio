@@ -41,6 +41,18 @@ public class VistaNuevoUsuario extends VistaWeb {
   }
 
   public String obtenerMensajeDeErrorComercio() {
-    return this.obtenerTextoDelElemento("#form-comercio p.error-msg");
+    return this.obtenerTextoDelElemento("#form-comercio .error-msg");
+  }
+
+  public void darClickEnRegistrarmeComercio() {
+    this.darClickEnElElemento("#btn-registrarme-comercio");
+  }
+
+  public void escribirEmailComercio(String email) {
+    this.escribirEnElElemento("#email-c", email);
+  }
+
+  public void escribirClaveComercio(String clave) {
+    this.escribirEnElElemento("#password-c", clave);
   }
 }

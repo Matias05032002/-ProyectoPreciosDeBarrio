@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Lista.Lista;
 import com.tallerwebi.dominio.Lista.ServicioLista;
+import com.tallerwebi.dominio.excepcion.AccesoDenegado;
 import com.tallerwebi.presentacion.ControladorLista;
 import jakarta.servlet.http.HttpSession;
 import java.util.Arrays;
@@ -160,7 +161,7 @@ public class ControladorListaTest {
     ModelAndView mav = controladorLista.agregarProducto(3L, 5L, 2, sessionMock);
 
     assertThat(mav.getViewName(), equalTo("redirect:/mis-listas/3"));
-    verify(servicioListaMock, times(1)).agregarProductoALista(3L, 5L, 2);
+    verify(servicioListaMock, times(1)).agregarProductoALista(3L, 5L, 2, 1L);
   }
 
   // --- eliminarItem ---
@@ -182,7 +183,7 @@ public class ControladorListaTest {
     ModelAndView mav = controladorLista.eliminarItem(10L, 3L, sessionMock);
 
     assertThat(mav.getViewName(), equalTo("redirect:/mis-listas/3"));
-    verify(servicioListaMock, times(1)).eliminarItemDeLista(10L);
+    verify(servicioListaMock, times(1)).eliminarItemDeLista(10L, 1L);
   }
 
   // --- eliminarLista ---
@@ -253,6 +254,55 @@ public class ControladorListaTest {
     ModelAndView mav = controladorLista.editarItem(10L, 3L, 5, sessionMock);
 
     assertThat(mav.getViewName(), equalTo("redirect:/mis-listas/3"));
-    verify(servicioListaMock, times(1)).editarCantidadItem(10L, 5);
+    verify(servicioListaMock, times(1)).editarCantidadItem(10L, 5, 1L);
+  }
+
+  // --- listas ajenas ---
+
+  @Test
+  public void agregarProductoAListaAjenaDeberiaRedirigirAMisListas() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    doThrow(new AccesoDenegado("La lista no pertenece al usuario"))
+      .when(servicioListaMock)
+      .agregarProductoALista(5L, 7L, 1, 1L);
+
+    ModelAndView mav = controladorLista.agregarProducto(5L, 7L, 1, sessionMock);
+
+    assertThat(mav.getViewName(), equalTo("redirect:/mis-listas"));
+  }
+
+  @Test
+  public void eliminarItemDeListaAjenaDeberiaRedirigirAMisListas() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    doThrow(new AccesoDenegado("La lista no pertenece al usuario"))
+      .when(servicioListaMock)
+      .eliminarItemDeLista(10L, 1L);
+
+    ModelAndView mav = controladorLista.eliminarItem(10L, 5L, sessionMock);
+
+    assertThat(mav.getViewName(), equalTo("redirect:/mis-listas"));
+  }
+
+  @Test
+  public void editarItemDeListaAjenaDeberiaRedirigirAMisListas() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    doThrow(new AccesoDenegado("La lista no pertenece al usuario"))
+      .when(servicioListaMock)
+      .editarCantidadItem(10L, 99, 1L);
+
+    ModelAndView mav = controladorLista.editarItem(10L, 5L, 99, sessionMock);
+
+    assertThat(mav.getViewName(), equalTo("redirect:/mis-listas"));
+  }
+
+  @Test
+  public void crearListaConNombreVacioDeberiaRedirigirSinError500() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(servicioListaMock.crearLista("", 1L))
+      .thenThrow(new IllegalArgumentException("El nombre de la lista no puede estar vacío"));
+
+    ModelAndView mav = controladorLista.crearLista("", sessionMock);
+
+    assertThat(mav.getViewName(), equalTo("redirect:/mis-listas"));
   }
 }

@@ -36,6 +36,10 @@ public class VistaProducto extends VistaWeb {
     return page.locator("#modalDudoso").count() > 0;
   }
 
+  public boolean hayAvisoDeReportePropio() {
+    return page.locator("#alerta-dudoso").count() > 0;
+  }
+
   public void darClickEnMarcarDudoso() {
     page.locator("[id^='btn-marcar-dudoso']").first().click();
     page.waitForLoadState();
