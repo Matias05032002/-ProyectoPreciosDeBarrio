@@ -41,8 +41,9 @@ public class ServicioEmailImpl implements ServicioEmail {
 
   ServicioEmailImpl(String usuario, String clave) {
     this.usuario = usuario;
-    // Google muestra la contraseña de aplicación en grupos de 4 con espacios: se aceptan igual
-    this.clave = clave == null ? "" : clave.replace(" ", "");
+    // Google muestra la contraseña de aplicación en grupos de 4 separados por espacios, y al
+    // copiarla pueden venir espacios "duros" (\u00A0) o comillas: se sacan todos
+    this.clave = clave == null ? "" : clave.replaceAll("[\\s\\u00A0\"']", "");
   }
 
   public boolean estaConfigurado() {

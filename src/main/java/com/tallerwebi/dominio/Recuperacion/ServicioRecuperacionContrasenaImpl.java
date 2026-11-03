@@ -18,6 +18,8 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,9 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ServicioRecuperacionContrasenaImpl implements ServicioRecuperacionContrasena {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(
+    ServicioRecuperacionContrasenaImpl.class
+  );
   static final int MINUTOS_DE_VALIDEZ = 30;
   static final int MINUTOS_ENTRE_PEDIDOS = 2;
   private static final int BYTES_DEL_TOKEN = 32;
@@ -79,8 +84,16 @@ public class ServicioRecuperacionContrasenaImpl implements ServicioRecuperacionC
   public void solicitarRecuperacion(String email) {
     if (email == null || email.isBlank()) return;
 
-    Usuario usuario = repositorioUsuario.buscar(email.trim().toLowerCase(Locale.ROOT));
-    if (usuario == null || !Boolean.TRUE.equals(usuario.getActivo())) return;
+    String emailNormalizado = email.trim().toLowerCase(Locale.ROOT);
+    Usuario usuario = repositorioUsuario.buscar(emailNormalizado);
+    // Al vecino siempre se le muestra lo mismo; el motivo real queda solo en la consola del servidor
+    if (usuario == null || !Boolean.TRUE.equals(usuario.getActivo())) {
+      LOGGER.info(
+        "Recuperación pedida para {}: no hay una cuenta activa con ese email",
+        emailNormalizado
+      );
+      return;
+    }
 
     LocalDateTime ahora = LocalDateTime.now(reloj);
     List<TokenRecuperacion> vigentes = repositorioToken.buscarVigentesDelUsuario(
@@ -88,7 +101,14 @@ public class ServicioRecuperacionContrasenaImpl implements ServicioRecuperacionC
       ahora
     );
     // Evita que alguien llene de mails la casilla de otro tocando el botón muchas veces
-    if (hayUnPedidoReciente(vigentes, ahora)) return;
+    if (hayUnPedidoReciente(vigentes, ahora)) {
+      LOGGER.info(
+        "Recuperación pedida para {}: ya se mandó un link hace menos de {} minutos",
+        emailNormalizado,
+        MINUTOS_ENTRE_PEDIDOS
+      );
+      return;
+    }
 
     // Solo sirve el último link enviado
     for (TokenRecuperacion anterior : vigentes) {
@@ -105,6 +125,7 @@ public class ServicioRecuperacionContrasenaImpl implements ServicioRecuperacionC
         ahora.plusMinutes(MINUTOS_DE_VALIDEZ)
       )
     );
+    LOGGER.info("Recuperación pedida para {}: link generado, se envía por mail", emailNormalizado);
     servicioEmail.enviar(usuario.getEmail(), ASUNTO, armarCuerpo(usuario, token));
   }
 

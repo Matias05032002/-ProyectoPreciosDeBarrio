@@ -139,6 +139,12 @@
             <artifactId>angus-mail</artifactId>
             <version>2.0.3</version>
         </dependency>
+        <!-- Muestra en la consola los mensajes de LOGGER (sin esto, SLF4J los descarta en silencio) -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.17</version>
+        </dependency>
     </dependencies>
 
     <build>

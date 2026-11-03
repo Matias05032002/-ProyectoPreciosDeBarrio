@@ -29,4 +29,16 @@ public class ServicioEmailImplTest {
 
     assertDoesNotThrow(() -> servicio.enviar("vecina@test.com", "Asunto", "Cuerpo"));
   }
+
+  @Test
+  public void laClaveCopiadaConEspaciosDurosOComillasTambienSirve() {
+    assertThat(
+      new ServicioEmailImpl("pdb@gmail.com", "\"abcd\u00A0efgh ijkl\tmnop\"").estaConfigurado(),
+      equalTo(true)
+    );
+    assertThat(
+      new ServicioEmailImpl("pdb@gmail.com", "\u00A0 \u00A0").estaConfigurado(),
+      equalTo(false)
+    );
+  }
 }
