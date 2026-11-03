@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -20,7 +19,7 @@
         <a th:href="@{/comercio/dashboard}" class="btn btn-outline-primary">Volver al dashboard</a>
     </div>
 
-    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" id="error-promocion" th:text="${error}"></div>
 
     <section class="card shadow-sm border-0 mb-4">
         <div class="card-body p-4">
@@ -29,16 +28,16 @@
             <form th:action="@{/promociones/crear}" th:object="${promocion}" method="post" class="row g-3">
                 <div class="col-md-6">
                     <label for="titulo" class="form-label">Título</label>
-                    <input id="titulo" type="text" th:field="*{titulo}" class="form-control" required>
+                    <input id="titulo" type="text" th:field="*{titulo}" class="form-control" maxlength="100" required>
                 </div>
                 <div class="col-md-6">
                     <label for="precioPromocional" class="form-label">Precio promocional</label>
                     <input id="precioPromocional" type="number" th:field="*{precioPromocional}"
-                           class="form-control" min="0.01" step="0.01" required>
+                           class="form-control" min="0.01" max="10000000" step="0.01" required>
                 </div>
                 <div class="col-12">
                     <label for="descripcion" class="form-label">Descripción</label>
-                    <textarea id="descripcion" th:field="*{descripcion}" class="form-control" rows="3"></textarea>
+                    <textarea id="descripcion" th:field="*{descripcion}" class="form-control" rows="3" maxlength="500"></textarea>
                 </div>
                 <div class="col-md-6">
                     <label for="fechaInicio" class="form-label">Fecha de inicio</label>
@@ -71,7 +70,12 @@
                                   th:text="${item.activa ? 'Activa' : 'Inactiva'}"></span>
                         </div>
                         <p class="text-muted" th:text="${item.descripcion}"></p>
-                        <p class="mb-3">Precio promocional: <strong th:text="${item.precioPromocional}"></strong></p>
+                        <p class="mb-1">Precio promocional:
+                            <strong th:text="${'$' + #numbers.formatDecimal(item.precioPromocional, 1, 'POINT', 2, 'COMMA')}"></strong></p>
+                        <p class="text-muted small mb-3">
+                            Del <span th:text="${#temporals.format(item.fechaInicio, 'dd/MM/yyyy HH:mm')}"></span>
+                            al <span th:text="${#temporals.format(item.fechaFin, 'dd/MM/yyyy HH:mm')}"></span>
+                        </p>
                         <form th:if="${item.activa}" th:action="@{/promociones/{id}/desactivar(id=${item.id})}" method="post">
                             <button type="submit" class="btn btn-outline-danger btn-sm">Desactivar promoción</button>
                         </form>

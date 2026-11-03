@@ -5,6 +5,7 @@ import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
+import com.tallerwebi.dominio.excepcion.UsuarioNoEncontrado;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -162,6 +163,26 @@ public class ServicioLoginImpl implements ServicioLogin {
     usuario.setPassword(passwordEncoder.encode(contrasenaNueva));
     repositorioUsuario.modificar(usuario);
     return true;
+  }
+
+  @Override
+  public void restablecerContrasena(Long usuarioId, String contrasenaNueva)
+    throws ContrasenaInvalida {
+    Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
+    if (usuario == null) {
+      throw new UsuarioNoEncontrado();
+    }
+    validarContrasena(contrasenaNueva);
+
+    usuario.setPassword(passwordEncoder.encode(contrasenaNueva));
+    repositorioUsuario.modificar(usuario);
+
+    // Quien recuperó su cuenta no tiene por qué seguir bloqueado por los intentos de antes
+    if (usuario.getEmail() != null) {
+      String emailNorm = usuario.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
+      intentosFallidos.remove(emailNorm);
+      bloqueadoHasta.remove(emailNorm);
+    }
   }
 
   // El comercio se registra con el nombre del local: solo el vecino necesita apellido y localidad

@@ -10,6 +10,7 @@ import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
+import com.tallerwebi.dominio.excepcion.UsuarioNoEncontrado;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -508,5 +509,67 @@ public class ServicioLoginTest {
   public void consultarUsuarioConEmailNuloDeberiaDevolverNullSinErrorInterno() {
     assertThat(this.servicioLogin.consultarUsuario(null, "Contrasena1"), equalTo(null));
     verifyNoInteractions(this.repositorioUsuarioMock);
+  }
+
+  @Test
+  public void restablecerContrasenaGuardaLaNuevaEncriptada() throws ContrasenaInvalida {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("vecina@test.com");
+    usuario.setPassword("viejo");
+    when(this.repositorioUsuarioMock.buscarPorId(1L)).thenReturn(usuario);
+
+    this.servicioLogin.restablecerContrasena(1L, "NuevaClave1");
+
+    assertThat(
+      new BCryptPasswordEncoder().matches("NuevaClave1", usuario.getPassword()),
+      equalTo(true)
+    );
+    verify(this.repositorioUsuarioMock).modificar(usuario);
+  }
+
+  @Test
+  public void restablecerContrasenaDebilNoCambiaNada() {
+    Usuario usuario = new Usuario();
+    usuario.setPassword("viejo");
+    when(this.repositorioUsuarioMock.buscarPorId(1L)).thenReturn(usuario);
+
+    assertThrows(
+      ContrasenaInvalida.class,
+      () -> this.servicioLogin.restablecerContrasena(1L, "sinmayuscula1")
+    );
+    assertThat(usuario.getPassword(), equalTo("viejo"));
+    verify(this.repositorioUsuarioMock, never()).modificar(any());
+  }
+
+  @Test
+  public void restablecerContrasenaDeUnUsuarioInexistenteLanzaExcepcion() {
+    when(this.repositorioUsuarioMock.buscarPorId(99L)).thenReturn(null);
+
+    assertThrows(
+      UsuarioNoEncontrado.class,
+      () -> this.servicioLogin.restablecerContrasena(99L, "NuevaClave1")
+    );
+  }
+
+  @Test
+  public void restablecerContrasenaLevantaElBloqueoPorIntentosFallidos() throws ContrasenaInvalida {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("bloqueada@test.com");
+    usuario.setPassword(new BCryptPasswordEncoder().encode("Original1"));
+    usuario.activar();
+    when(this.repositorioUsuarioMock.buscar("bloqueada@test.com")).thenReturn(usuario);
+    when(this.repositorioUsuarioMock.buscarPorId(1L)).thenReturn(usuario);
+    for (int intento = 0; intento < 5; intento++) {
+      this.servicioLogin.consultarUsuario("bloqueada@test.com", "Equivocada1");
+    }
+    assertThat(this.servicioLogin.estaBloqueado("bloqueada@test.com"), equalTo(true));
+
+    this.servicioLogin.restablecerContrasena(1L, "NuevaClave1");
+
+    assertThat(this.servicioLogin.estaBloqueado("bloqueada@test.com"), equalTo(false));
+    assertThat(
+      this.servicioLogin.consultarUsuario("bloqueada@test.com", "NuevaClave1"),
+      equalTo(usuario)
+    );
   }
 }

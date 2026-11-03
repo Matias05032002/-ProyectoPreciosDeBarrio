@@ -15,6 +15,7 @@ public interface ServicioLogin {
 
   boolean actualizarEmail(Long usuarioId, String nuevoEmail);
   boolean cambiarContrasena(Long usuarioId, String contrasenaActual, String contrasenaNueva);
+  void restablecerContrasena(Long usuarioId, String contrasenaNueva) throws ContrasenaInvalida;
   Usuario buscarPorId(Long id);
   void actualizarDatosPersonales(
     Long id,

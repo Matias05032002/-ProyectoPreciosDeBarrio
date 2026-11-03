@@ -1,6 +1,5 @@
-
 /* =========================================
-   MAPA DE PRECIOS DE BARRIO
+   PRECIOS DE BARRIO (PDB)
    Identidad visual global
    ========================================= */
 
@@ -34,8 +33,9 @@ html {
     scroll-behavior: smooth;
 }
 
+/* El navbar es sticky-top: ocupa su lugar en el flujo y queda pegado arriba al scrollear.
+   Un padding-top en el body dejaba una franja vacía encima del navbar. */
 body {
-    padding-top: 5rem;
     background: var(--mp-bg);
     color: var(--mp-text);
     font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -548,10 +548,6 @@ a:hover {
 }
 
 @media (max-width: 575.98px) {
-    body {
-        padding-top: 4.5rem;
-    }
-
     .perfil-page main.container {
         padding-top: 1.5rem;
     }

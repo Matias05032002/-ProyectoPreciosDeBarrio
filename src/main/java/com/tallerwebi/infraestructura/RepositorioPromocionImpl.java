@@ -33,7 +33,11 @@ public class RepositorioPromocionImpl implements RepositorioPromocion {
   public List<Promocion> listarPorComercio(Long comercioId) {
     return sessionFactory
       .getCurrentSession()
-      .createQuery("FROM Promocion p WHERE p.comercio.id = :comercioId", Promocion.class)
+      .createQuery(
+        "SELECT p FROM Promocion p JOIN FETCH p.comercio " +
+        "WHERE p.comercio.id = :comercioId ORDER BY p.fechaFin DESC",
+        Promocion.class
+      )
       .setParameter("comercioId", comercioId)
       .list();
   }
@@ -43,9 +47,11 @@ public class RepositorioPromocionImpl implements RepositorioPromocion {
     return sessionFactory
       .getCurrentSession()
       .createQuery(
-        "FROM Promocion p WHERE p.activa = true " +
+        "SELECT p FROM Promocion p JOIN FETCH p.comercio " +
+        "WHERE p.activa = true " +
         "AND p.fechaInicio <= :ahora " +
-        "AND p.fechaFin >= :ahora",
+        "AND p.fechaFin >= :ahora " +
+        "ORDER BY p.fechaFin ASC",
         Promocion.class
       )
       .setParameter("ahora", LocalDateTime.now())

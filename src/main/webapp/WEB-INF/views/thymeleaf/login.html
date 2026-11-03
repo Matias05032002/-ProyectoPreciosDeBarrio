@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar sesión — Mapa de Precios</title>
+    <title>Iniciar sesión — Precios de Barrio</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap">
     <link rel="stylesheet" th:href="@{/css/login.css}">
 </head>
@@ -22,7 +22,7 @@
             </svg>
         </div>
         <div class="brand-text">
-            Mapa de Precios
+            Precios de Barrio
             <span>Barrio · Comunidad</span>
         </div>
     </div>
@@ -30,15 +30,13 @@
     <div class="form-title">¡Hola, vecino!</div>
     <div class="form-sub">Accedé o creá tu cuenta</div>
 
-    <div class="live-badge">
-        <span class="green-dot"></span> 340 vecinos activos ahora
-    </div>
-
     <div class="tabs">
         <a class="tab active" th:href="@{/login}">Ingresar</a>
         <a class="tab" id="btn-register" th:href="@{/nuevo-usuario}">Registrarme</a>
     </div>
 
+    <p th:if="${contrasenaRestablecida != null}" id="contrasena-restablecida" class="alert alert-success"
+       th:text="${contrasenaRestablecida}"></p>
     <p th:if="${registroExitoso != null}" id="registro-exitoso" class="alert alert-success"
        th:text="${registroExitoso}"></p>
     <p th:if="${error != null}" class="alert alert-danger" th:text="${error}"></p>
@@ -53,7 +51,7 @@
             <input type="password" th:field="*{password}" id="password" placeholder="••••••••">
         </div>
 
-        <div class="forgot"><a href="#">¿Olvidaste tu contraseña?</a></div>
+        <div class="forgot"><a id="link-olvide-contrasena" th:href="@{/olvide-contrasena}">¿Olvidaste tu contraseña?</a></div>
 
         <button type="submit" id="btn-login" class="btn-primary">Entrar al barrio →</button>
     </form>

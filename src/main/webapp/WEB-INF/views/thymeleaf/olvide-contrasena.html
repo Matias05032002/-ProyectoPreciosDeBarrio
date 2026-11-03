@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar contraseña — Precios de Barrio</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+
+<div th:replace="~{fragmentos/mapa-svg :: mapa}"></div>
+<div class="map-overlay"></div>
+
+<main class="card">
+    <div class="brand-bar">
+        <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="white" width="18" height="18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+        </div>
+        <div class="brand-text">
+            Precios de Barrio
+            <span>Barrio · Comunidad</span>
+        </div>
+    </div>
+
+    <h1 class="form-title">¿Olvidaste tu contraseña?</h1>
+    <p class="form-sub">Escribí el email de tu cuenta y te mandamos un link para elegir una nueva.</p>
+
+    <p th:if="${pedidoEnviado != null}" id="pedido-enviado" class="alert alert-success" role="status"
+       th:text="${pedidoEnviado}"></p>
+
+    <form th:action="@{/olvide-contrasena}" method="post">
+        <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="vos@barrio.com"
+                   autocomplete="email" maxlength="150" required>
+        </div>
+
+        <button type="submit" id="btn-enviar-link" class="btn-primary">Enviarme el link</button>
+    </form>
+
+    <div class="bottom-link">
+        ¿Te acordaste? <a th:href="@{/login}">Volver a ingresar</a>
+    </div>
+</main>
+
+</body>
+</html>

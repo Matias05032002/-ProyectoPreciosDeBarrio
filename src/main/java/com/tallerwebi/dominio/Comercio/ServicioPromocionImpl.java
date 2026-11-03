@@ -10,6 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ServicioPromocionImpl implements ServicioPromocion {
 
+  private static final double PRECIO_MAXIMO = 10_000_000.0;
+  private static final int LARGO_MAXIMO_TITULO = 100;
+  private static final int LARGO_MAXIMO_DESCRIPCION = 500;
+
   private final RepositorioPromocion repositorioPromocion;
   private final RepositorioComercio repositorioComercio;
 
@@ -32,6 +36,9 @@ public class ServicioPromocionImpl implements ServicioPromocion {
 
     validarPromocion(promocion);
 
+    // El id nunca viene del formulario: si llegara uno, el guardado pisaría otra promoción
+    promocion.setId(null);
+    normalizarTextos(promocion);
     promocion.setComercio(comercio);
     promocion.setActiva(true);
 
@@ -62,6 +69,7 @@ public class ServicioPromocionImpl implements ServicioPromocion {
 
     validarPropietario(existente, usuarioId);
     validarPromocion(promocion);
+    normalizarTextos(promocion);
 
     existente.setTitulo(promocion.getTitulo());
     existente.setDescripcion(promocion.getDescripcion());
@@ -100,16 +108,51 @@ public class ServicioPromocionImpl implements ServicioPromocion {
     validarFechas(promocion);
   }
 
+  private void normalizarTextos(Promocion promocion) {
+    promocion.setTitulo(promocion.getTitulo().trim());
+    if (promocion.getDescripcion() != null) {
+      String descripcion = promocion.getDescripcion().trim();
+      promocion.setDescripcion(descripcion.isEmpty() ? null : descripcion);
+    }
+  }
+
   private void validarTitulo(Promocion promocion) {
     if (promocion.getTitulo() == null || promocion.getTitulo().isBlank()) {
       throw new IllegalArgumentException("El título es obligatorio.");
     }
+    if (promocion.getTitulo().trim().length() > LARGO_MAXIMO_TITULO) {
+      throw new IllegalArgumentException(
+        "El título no puede superar los " + LARGO_MAXIMO_TITULO + " caracteres."
+      );
+    }
+    if (
+      promocion.getDescripcion() != null &&
+      promocion.getDescripcion().trim().length() > LARGO_MAXIMO_DESCRIPCION
+    ) {
+      throw new IllegalArgumentException(
+        "La descripción no puede superar los " + LARGO_MAXIMO_DESCRIPCION + " caracteres."
+      );
+    }
   }
 
   private void validarPrecio(Promocion promocion) {
-    if (promocion.getPrecioPromocional() == null || promocion.getPrecioPromocional() <= 0) {
+    Double precio = promocion.getPrecioPromocional();
+    if (!esPrecioPositivo(precio)) {
       throw new IllegalArgumentException("El precio promocional debe ser mayor a cero.");
     }
+    if (precio > PRECIO_MAXIMO) {
+      throw new IllegalArgumentException("El precio promocional no puede superar $10.000.000.");
+    }
+    if (Math.round(precio * 100) != (long) (precio * 100)) {
+      throw new IllegalArgumentException(
+        "El precio promocional no puede tener más de 2 decimales."
+      );
+    }
+  }
+
+  // NaN e infinito no son <= 0 pero tampoco son precios: se rechazan junto con el nulo
+  private boolean esPrecioPositivo(Double precio) {
+    return precio != null && !precio.isNaN() && !precio.isInfinite() && precio > 0;
   }
 
   private void validarFechas(Promocion promocion) {

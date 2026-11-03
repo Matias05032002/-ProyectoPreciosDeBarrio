@@ -41,7 +41,7 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
     String contexto = construirContexto(reportesFiltrados, latitud, longitud);
 
     String systemPrompt =
-      "Sos Don Peso, el asistente del Mapa de Precios del Barrio.\n" +
+      "Sos Don Peso, el asistente de Precios de Barrio.\n" +
       "Tu único trabajo es ayudar a vecinos a comprar más barato usando datos reales de la app.\n" +
       "Reglas:\n" +
       "- Respondé en español rioplatense, breve y directo.\n" +
@@ -65,7 +65,7 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
 
     if (historial != null && !historial.isEmpty()) {
       sb.append("Conversación anterior:\n");
-      int desde = Math.max(0, historial.size() - 6);
+      int desde = Math.max(0, historial.size() - 6); // últimos 3 turnos (user + assistant)
       for (int i = desde; i < historial.size(); i++) {
         Map<String, String> turno = historial.get(i);
         String rol = "user".equals(turno.get("role")) ? "Vecino" : "Don Peso";
@@ -131,19 +131,30 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
   }
 
   private String formatearReporte(Reporte reporte, Double latitud, Double longitud) {
+    String linea = String.format(
+      "- %s: $%.2f en %s (%s)",
+      reporte.getProducto().getNombre(),
+      reporte.getPrecio(),
+      reporte.getComercio().getNombre(),
+      reporte.getComercio().getDireccion()
+    );
+    // Sin ubicación del vecino (o del comercio) no hay distancia que informar: no se inventa "0.0 km"
+    if (!hayDistancia(reporte, latitud, longitud)) return linea + System.lineSeparator();
     double distancia = calcularDistanciaKm(
       latitud,
       longitud,
       reporte.getComercio().getLatitud(),
       reporte.getComercio().getLongitud()
     );
-    return String.format(
-      "- %s: $%.2f en %s (%s) a %.1f km%n",
-      reporte.getProducto().getNombre(),
-      reporte.getPrecio(),
-      reporte.getComercio().getNombre(),
-      reporte.getComercio().getDireccion(),
-      distancia
+    return linea + String.format(" a %.1f km%n", distancia);
+  }
+
+  private boolean hayDistancia(Reporte reporte, Double latitud, Double longitud) {
+    return (
+      latitud != null &&
+      longitud != null &&
+      reporte.getComercio().getLatitud() != null &&
+      reporte.getComercio().getLongitud() != null
     );
   }
 

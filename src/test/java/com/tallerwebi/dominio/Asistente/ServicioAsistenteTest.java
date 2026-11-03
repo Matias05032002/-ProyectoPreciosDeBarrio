@@ -96,6 +96,30 @@ public class ServicioAsistenteTest {
   }
 
   @Test
+  public void consultarSinUbicacionNoInformaDistanciaEnElContexto() throws Exception {
+    Reporte reporte = reporteValido("Leche", 100.0, "Almacen Don Jose", "Calle 1", -34.6, -58.4);
+    when(repositorioReporteMock.listarRecientes(7)).thenReturn(Arrays.asList(reporte));
+    when(servicioGeminiMock.llamar(anyString(), anyString()))
+      .thenReturn("{\"choices\":[{\"message\":{\"content\":\"ok\"}}]}");
+
+    servicioAsistente.consultar("leche", null, null, Collections.emptyList());
+
+    verify(servicioGeminiMock).llamar(anyString(), argThat(contexto -> !contexto.contains(" km")));
+  }
+
+  @Test
+  public void consultarConUbicacionInformaLaDistanciaEnElContexto() throws Exception {
+    Reporte reporte = reporteValido("Leche", 100.0, "Almacen Don Jose", "Calle 1", -34.6, -58.4);
+    when(repositorioReporteMock.listarRecientes(7)).thenReturn(Arrays.asList(reporte));
+    when(servicioGeminiMock.llamar(anyString(), anyString()))
+      .thenReturn("{\"choices\":[{\"message\":{\"content\":\"ok\"}}]}");
+
+    servicioAsistente.consultar("leche", -34.61, -58.41, Collections.emptyList());
+
+    verify(servicioGeminiMock).llamar(anyString(), contains(" km"));
+  }
+
+  @Test
   public void consultarCuandoGeminiLanzaExcepcionPropagaError() throws Exception {
     when(repositorioReporteMock.listarRecientes(7)).thenReturn(Collections.emptyList());
     when(servicioGeminiMock.llamar(anyString(), anyString()))

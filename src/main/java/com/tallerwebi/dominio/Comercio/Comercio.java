@@ -139,6 +139,12 @@ public class Comercio {
     return foto.clone();
   }
 
+  // Para las vistas: saber si hay foto sin copiar los bytes como hace getFoto().
+  // Sin foto no se pide /comercio/{id}/foto, que respondería 404.
+  public boolean tieneFoto() {
+    return foto != null && foto.length > 0;
+  }
+
   public void setFoto(byte[] fotoNueva) {
     if (fotoNueva == null) {
       this.foto = new byte[0];

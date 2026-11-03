@@ -47,6 +47,8 @@ public class SpringWebConfig implements WebMvcConfigurer {
         "/nuevo-usuario",
         "/registrarme",
         "/registrarme-comercio",
+        "/olvide-contrasena",
+        "/restablecer-contrasena",
         "/css/**",
         "/js/**",
         "/webjars/**"

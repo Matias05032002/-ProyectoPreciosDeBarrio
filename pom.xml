@@ -133,6 +133,12 @@
             <artifactId>dotenv-java</artifactId>
             <version>3.0.0</version>
         </dependency>
+        <!-- Envío de mails (recuperación de contraseña). Trae jakarta.mail-api. -->
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-mail</artifactId>
+            <version>2.0.3</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -190,7 +196,7 @@
                 <executions>
                     <execution>
                         <id>format-code</id>
-                        <!-- Se ejecuta en la fase 'process-sources' para formatear automáticamente 
+                        <!-- Se ejecuta en la fase 'process-sources' para formatear automáticamente
                              el código antes de la compilación y los tests -->
                         <phase>process-sources</phase>
                         <goals>
@@ -226,7 +232,7 @@
                         <!-- Fase del ciclo de vida de Maven en la que se ejecutará (validación inicial) -->
                         <phase>validate</phase>
                         <goals>
-                            <!-- Ejecuta la verificación (check) de las reglas de estilo. 
+                            <!-- Ejecuta la verificación (check) de las reglas de estilo.
                                  Si falla, el build se detendrá según la configuración anterior -->
                             <goal>check</goal>
                             <!-- Genera el reporte visual (HTML) durante la validación -->
@@ -358,7 +364,7 @@
                             <outputDirectory>${project.basedir}/.calidad-de-codigo/jacoco</outputDirectory>
                             <!-- Archivo de datos de entrada generado por prepare-agent -->
                             <dataFile>${project.basedir}/.calidad-de-codigo/jacoco/jacoco.exec</dataFile>
-                            <!-- Exclusiones para el reporte visual: Se omiten clases de configuración 
+                            <!-- Exclusiones para el reporte visual: Se omiten clases de configuración
                                  que no contienen lógica de negocio para no distorsionar la métrica global -->
                             <excludes>
                                 <exclude>com/tallerwebi/config/*</exclude>
@@ -383,8 +389,8 @@
                                     <element>BUNDLE</element>
                                     <limits>
                                         <limit>
-                                            <!-- Métrica a evaluar. 
-                                                 Opciones: 
+                                            <!-- Métrica a evaluar.
+                                                 Opciones:
                                                  - LINE (Líneas de código)
                                                  - BRANCH (Ramas de decisión: if/switch)
                                                  - INSTRUCTION (Instrucciones bytecode)
@@ -435,7 +441,7 @@
 
         <pluginManagement>
             <plugins>
-                <!-- Esta configuración es para calmar las advertencias del IDE (m2e) 
+                <!-- Esta configuración es para calmar las advertencias del IDE (m2e)
                      sobre ejecuciones de plugins que no reconoce en su ciclo de vida interno -->
                 <plugin>
                     <groupId>org.eclipse.m2e</groupId>

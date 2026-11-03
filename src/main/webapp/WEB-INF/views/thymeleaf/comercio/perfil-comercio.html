@@ -177,12 +177,15 @@
 
                         <!-- Avatar + upload centrado -->
                         <div class="text-center mb-4">
-                            <img th:src="@{/comercio/{id}/foto(id=${comercio.id})}"
+                            <img th:if="${comercio.tieneFoto()}"
+                                 th:src="@{/comercio/{id}/foto(id=${comercio.id})}"
                                  class="rounded-circle"
                                  style="width:90px;height:90px;object-fit:cover;border:3px solid #e9ecef;"
                                  alt="Logo del comercio"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div style="display:none;width:90px;height:90px;border-radius:50%;background:#198754;color:#fff;font-size:2rem;font-weight:700;align-items:center;justify-content:center;margin:0 auto;">
+                            <div id="foto-inicial-comercio" aria-hidden="true"
+                                 style="width:90px;height:90px;border-radius:50%;background:#198754;color:#fff;font-size:2rem;font-weight:700;align-items:center;justify-content:center;margin:0 auto;"
+                                 th:styleappend="${comercio.tieneFoto()} ? 'display:none;' : 'display:flex;'">
                                 <span th:text="${#strings.toUpperCase(#strings.substring(comercio.nombre,0,1))}"></span>
                             </div>
                             <div class="mt-2">

@@ -209,6 +209,135 @@ public class ServicioPromocionImplTest {
     );
   }
 
+  @Test
+  public void crearPromocionIgnoraElIdQueVieneDelFormulario() {
+    Promocion promocion = crearPromocionValida();
+    promocion.setId(PROMOCION_ID);
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+    when(repositorioPromocionMock.guardar(promocion)).thenReturn(promocion);
+
+    servicioPromocion.crearPromocion(promocion, USUARIO_ID);
+
+    assertThat(promocion.getId() == null, equalTo(true));
+  }
+
+  @Test
+  public void crearPromocionRecortaEspaciosDelTituloYLaDescripcion() {
+    Promocion promocion = crearPromocionValida();
+    promocion.setTitulo("  Oferta  ");
+    promocion.setDescripcion("   ");
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+    when(repositorioPromocionMock.guardar(promocion)).thenReturn(promocion);
+
+    servicioPromocion.crearPromocion(promocion, USUARIO_ID);
+
+    assertThat(promocion.getTitulo(), equalTo("Oferta"));
+    assertThat(promocion.getDescripcion() == null, equalTo(true));
+  }
+
+  @Test
+  public void crearPromocionConTituloMuyLargoLanzaExcepcion() {
+    Promocion promocion = crearPromocionValida();
+    promocion.setTitulo("a".repeat(101));
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+    );
+    verify(repositorioPromocionMock, never()).guardar(promocion);
+  }
+
+  @Test
+  public void crearPromocionConDescripcionMuyLargaLanzaExcepcion() {
+    Promocion promocion = crearPromocionValida();
+    promocion.setDescripcion("a".repeat(501));
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  @Test
+  public void crearPromocionConPrecioNaNInfinitoONuloLanzaExcepcion() {
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    for (Double invalido : new Double[] { Double.NaN, Double.POSITIVE_INFINITY, null, -5.0 }) {
+      Promocion promocion = crearPromocionValida();
+      promocion.setPrecioPromocional(invalido);
+
+      assertThrows(
+        IllegalArgumentException.class,
+        () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+      );
+    }
+    verify(repositorioPromocionMock, never()).guardar(any());
+  }
+
+  @Test
+  public void crearPromocionConPrecioMayorAlMaximoLanzaExcepcion() {
+    Promocion promocion = crearPromocionValida();
+    promocion.setPrecioPromocional(10_000_000.01);
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  @Test
+  public void crearPromocionConMasDeDosDecimalesLanzaExcepcion() {
+    Promocion promocion = crearPromocionValida();
+    promocion.setPrecioPromocional(10.999);
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  @Test
+  public void crearPromocionConPrecioDeDosDecimalesYElMaximoEsValida() {
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    for (double valido : new double[] { 0.01, 1350.5, 10_000_000.0 }) {
+      Promocion promocion = crearPromocionValida();
+      promocion.setPrecioPromocional(valido);
+      when(repositorioPromocionMock.guardar(promocion)).thenReturn(promocion);
+
+      assertThat(servicioPromocion.crearPromocion(promocion, USUARIO_ID), equalTo(promocion));
+    }
+  }
+
+  @Test
+  public void actualizarPromocionConPrecioInvalidoNoModificaLaExistente() {
+    Promocion existente = crearPromocionValida();
+    existente.setId(PROMOCION_ID);
+    Promocion cambios = crearPromocionValida();
+    cambios.setId(PROMOCION_ID);
+    cambios.setPrecioPromocional(Double.NaN);
+
+    when(repositorioPromocionMock.buscarPorId(PROMOCION_ID)).thenReturn(existente);
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioPromocion.actualizarPromocion(cambios, USUARIO_ID)
+    );
+    assertThat(existente.getPrecioPromocional(), equalTo(PRECIO));
+    verify(repositorioPromocionMock, never()).actualizar(any());
+  }
+
   private Promocion crearPromocionValida() {
     Promocion promocion = new Promocion();
     promocion.setTitulo(TITULO);
