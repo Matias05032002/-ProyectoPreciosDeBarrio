@@ -65,6 +65,8 @@ public class ControladorComercio {
   @RequestMapping(path = "/{id}", method = RequestMethod.GET)
   public ModelAndView buscarPorId(@PathVariable("id") Long id) {
     Comercio comercio = servicioComercio.buscarComercio(id);
+    // Un comercio que quedó sin ubicación se vuelve a buscar cuando alguien lo mira
+    servicioComercio.ubicarSiFalta(comercio);
     List<Reporte> reportes = servicioReporte.buscarPorComercio(id);
     ModelAndView mav = new ModelAndView("comercio/comercios");
     mav.addObject(VISTA_COMERCIO, comercio);

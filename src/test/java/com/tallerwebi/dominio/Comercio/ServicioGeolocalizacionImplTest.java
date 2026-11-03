@@ -62,6 +62,7 @@ public class ServicioGeolocalizacionImplTest {
       primera.nomenclatura(),
       equalTo("DR IGNACIO ARIETA 3000, San Justo, La Matanza, Buenos Aires")
     );
+    assertThat(primera.direccion(), equalTo("Dr Ignacio Arieta 3000"));
     assertThat(primera.localidad(), equalTo("San Justo"));
     assertThat(primera.latitud(), equalTo(-34.68789160984074));
     assertThat(primera.longitud(), equalTo(-58.54824429666323));
@@ -177,5 +178,43 @@ public class ServicioGeolocalizacionImplTest {
     assertThat(servicio.buscar("  ", "La Matanza"), empty());
     assertThat(servicio.buscar(null, "La Matanza"), empty());
     assertThat(urlsConsultadas, empty());
+  }
+
+  @Test
+  public void laCalleSeFormateaConConectoresEnMinusculaYRomanosEnMayuscula() {
+    com.fasterxml.jackson.databind.node.JsonNodeFactory nodos =
+      com.fasterxml.jackson.databind.node.JsonNodeFactory.instance;
+
+    assertThat(
+      ServicioGeolocalizacionImpl.formatearDireccion("AV DE MAYO", nodos.numberNode(1500)),
+      equalTo("Av de Mayo 1500")
+    );
+    assertThat(
+      ServicioGeolocalizacionImpl.formatearDireccion("PIO XII", nodos.numberNode(250)),
+      equalTo("Pio XII 250")
+    );
+    assertThat(
+      ServicioGeolocalizacionImpl.formatearDireccion("CARHUE", nodos.numberNode(1526)),
+      equalTo("Carhue 1526")
+    );
+    assertThat(
+      ServicioGeolocalizacionImpl.formatearDireccion("LA RIOJA", nodos.nullNode()),
+      equalTo("La Rioja")
+    );
+    assertThat(
+      ServicioGeolocalizacionImpl.formatearDireccion(null, nodos.nullNode()) == null,
+      equalTo(true)
+    );
+  }
+
+  @Test
+  public void nominatimNoDaLaCalleSeparada() {
+    ServicioGeolocalizacionImpl servicio = servicioQueResponde(url ->
+      url.contains("nominatim") ? NOMINATIM_UN_LUGAR : SIN_RESULTADOS_GEOREF
+    );
+
+    List<UbicacionSugerida> sugerencias = servicio.buscar("arieta 3000", "La Matanza");
+
+    assertThat(sugerencias.get(0).direccion() == null, equalTo(true));
   }
 }

@@ -43,7 +43,33 @@ public class ServicioComercioImpl implements ServicioComercio {
       return existente;
     }
     ubicarSegunLaDireccion(comercio);
+    // Con la dirección corregida ("crhue 1526" -> "Carhue 1526") puede aparecer un comercio
+    // que ya estaba cargado: se usa ese en lugar de crear uno repetido
+    Comercio mismaDireccion = repositorioComercio.buscarComercioPorDireccionYLocalidad(
+      comercio.getDireccion(),
+      comercio.getLocalidad()
+    );
+    if (mismaDireccion != null) {
+      return completarExistente(mismaDireccion, comercio);
+    }
     return repositorioComercio.guardarComercio(comercio);
+  }
+
+  private Comercio completarExistente(Comercio existente, Comercio nuevo) {
+    boolean cambio = false;
+    if (existente.getUsuarioId() == null && nuevo.getUsuarioId() != null) {
+      existente.setUsuarioId(nuevo.getUsuarioId());
+      cambio = true;
+    }
+    if (existente.getLatitud() == null && nuevo.getLatitud() != null) {
+      existente.setLatitud(nuevo.getLatitud());
+      existente.setLongitud(nuevo.getLongitud());
+      cambio = true;
+    }
+    if (cambio) {
+      repositorioComercio.actualizarComercio(existente);
+    }
+    return existente;
   }
 
   @Override
@@ -130,6 +156,16 @@ public class ServicioComercioImpl implements ServicioComercio {
     return servicioGeolocalizacion.buscar(direccion, localidad);
   }
 
+  @Override
+  public void ubicarSiFalta(Comercio comercio) {
+    if (comercio == null || comercio.getLatitud() != null) return;
+    if (comercio.getDireccion() == null || comercio.getDireccion().isBlank()) return;
+    ubicarSegunLaDireccion(comercio);
+    if (comercio.getLatitud() != null) {
+      repositorioComercio.actualizarComercio(comercio);
+    }
+  }
+
   // Se queda con la opción más probable; sin opciones, el comercio queda sin ubicación
   // y el perfil le pide que lo marque en el mapa
   private void ubicarSegunLaDireccion(Comercio comercio) {
@@ -141,8 +177,13 @@ public class ServicioComercioImpl implements ServicioComercio {
       comercio.setLatitud(null);
       comercio.setLongitud(null);
     } else {
-      comercio.setLatitud(sugerencias.get(0).latitud());
-      comercio.setLongitud(sugerencias.get(0).longitud());
+      UbicacionSugerida elegida = sugerencias.get(0);
+      comercio.setLatitud(elegida.latitud());
+      comercio.setLongitud(elegida.longitud());
+      // Se guarda la calle con su nombre oficial: corrige errores de tipeo como "Crhue"
+      if (elegida.direccion() != null && !elegida.direccion().isBlank()) {
+        comercio.setDireccion(elegida.direccion());
+      }
     }
   }
 

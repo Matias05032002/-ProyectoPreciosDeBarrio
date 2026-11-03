@@ -50,7 +50,7 @@ public class ServicioReporteTest {
 
     when(servicioComercioMock.buscarComercioPorNombre("Almacen de matias"))
       .thenReturn(Arrays.asList(comercio));
-    when(servicioProductoMock.buscarProductoPorNombreExacto("Leche")).thenReturn(producto);
+    when(servicioProductoMock.buscarPorNombre("Leche")).thenReturn(List.of(producto));
     when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
 
     Reporte reporteResultado = servicioReporte.guardarReporte(reporte);
@@ -70,7 +70,7 @@ public class ServicioReporteTest {
     Reporte reporte = reporteConProductoYComercio(producto, comercio, 100.0);
     reporte.setUsuario(usuario);
 
-    when(servicioProductoMock.buscarProductoPorNombreExacto("Leche")).thenReturn(producto);
+    when(servicioProductoMock.buscarPorNombre("Leche")).thenReturn(List.of(producto));
     when(servicioComercioMock.buscarComercioPorNombre("Almacen"))
       .thenReturn(Arrays.asList(comercio));
     when(
@@ -109,7 +109,7 @@ public class ServicioReporteTest {
     Reporte reporte = reporteConProductoYComercio(producto, comercio, 2490.0);
 
     when(servicioComercioMock.buscarComercioPorNombre("Dia")).thenReturn(Arrays.asList(comercio));
-    when(servicioProductoMock.buscarProductoPorNombreExacto("Ajo")).thenReturn(producto);
+    when(servicioProductoMock.buscarPorNombre("Ajo")).thenReturn(List.of(producto));
     when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
 
     servicioReporte.guardarReporte(reporte);
@@ -148,7 +148,7 @@ public class ServicioReporteTest {
     comercioNuevo.setId(2L);
     Reporte reporte = reporteConProductoYComercio(producto, comercioNuevo, 100.0);
 
-    when(servicioProductoMock.buscarProductoPorNombreExacto("Leche")).thenReturn(producto);
+    when(servicioProductoMock.buscarPorNombre("Leche")).thenReturn(List.of(producto));
     when(servicioComercioMock.buscarComercioPorNombre("Supermercado Dia"))
       .thenReturn(Collections.singletonList(comercioExistente));
     when(servicioComercioMock.guardarComercio(comercioNuevo)).thenReturn(comercioNuevo);
@@ -170,7 +170,7 @@ public class ServicioReporteTest {
     comercioIngresado.setDireccion("Av. Rivadavia 100");
     Reporte reporte = reporteConProductoYComercio(producto, comercioIngresado, 100.0);
 
-    when(servicioProductoMock.buscarProductoPorNombreExacto("Leche")).thenReturn(producto);
+    when(servicioProductoMock.buscarPorNombre("Leche")).thenReturn(List.of(producto));
     when(servicioComercioMock.buscarComercioPorNombre("Supermercado Dia"))
       .thenReturn(Collections.singletonList(comercioExistente));
     when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
@@ -458,6 +458,135 @@ public class ServicioReporteTest {
 
     assertThat(resultado, equalTo(Collections.emptyList()));
     verify(repositorioReporteMock, times(1)).productosMasBuscadosPorLocalidad("Zona Sin Datos", 5);
+  }
+
+  // --- editar sin modificar comercio ni producto compartidos ---
+
+  private Reporte reporteDelVecino(Comercio comercio, Producto producto) {
+    Usuario usuario = new Usuario();
+    usuario.setId(1L);
+    Reporte reporte = reporteConProductoYComercio(producto, comercio, 100.0);
+    reporte.setUsuario(usuario);
+    reporte.setFechaDeReporte(LocalDateTime.now().minusHours(1));
+    return reporte;
+  }
+
+  @Test
+  public void editarElComercioDeUnReporteNoMudaAlComercioOriginal() throws Exception {
+    Comercio original = comercioConNombre("Mati");
+    original.setDireccion("Carhue 1526");
+    original.setLocalidad("Buenos Aires");
+    Reporte reporte = reporteDelVecino(original, productoValido("Leche", "1000ml"));
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+    Comercio otro = comercioConNombre("Mati");
+    otro.setDireccion("Vito Dumas 3923");
+    when(servicioComercioMock.guardarComercio(otro)).thenReturn(otro);
+    Reporte datos = reporteConProductoYComercio(productoValido("Leche", "1000ml"), otro, 1212.0);
+
+    servicioReporte.editarReporte(1L, datos, 1L);
+
+    assertThat(original.getDireccion(), equalTo("Carhue 1526"));
+    assertThat(original.getLocalidad(), equalTo("Buenos Aires"));
+    assertThat(reporte.getComercio(), equalTo(otro));
+    verify(servicioComercioMock).guardarComercio(otro);
+  }
+
+  @Test
+  public void editarConOtroNombreEnLaMismaDireccionNoLeCambiaElNombreAlComercio() throws Exception {
+    Comercio original = comercioConNombre("Almacen de Rosa");
+    Reporte reporte = reporteDelVecino(original, productoValido("Leche", "1000ml"));
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+    when(servicioComercioMock.buscarPorDireccionYLocalidad("Av. Siempreviva 123", "La Matanza"))
+      .thenReturn(original);
+    Reporte datos = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioConNombre("Nombre inventado"),
+      150.0
+    );
+
+    servicioReporte.editarReporte(1L, datos, 1L);
+
+    assertThat(original.getNombre(), equalTo("Almacen de Rosa"));
+    assertThat(reporte.getComercio(), equalTo(original));
+    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
+  }
+
+  @Test
+  public void editarElProductoDeUnReporteNoRenombraElProductoOriginal() throws Exception {
+    Producto leche = productoValido("Leche", "1000ml");
+    Reporte reporte = reporteDelVecino(comercioValido(), leche);
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+
+    servicioReporte.editarReporte(1L, datosEdicion("Aceite", "900ml", 2500.0), 1L);
+
+    assertThat(leche.getNombre(), equalTo("Leche"));
+    assertThat(leche.getUnidad(), equalTo("1000ml"));
+    assertThat(reporte.getProducto().getNombre(), equalTo("Aceite"));
+  }
+
+  @Test
+  public void editarReusaElProductoExistenteConMismoNombreMarcaYUnidad() throws Exception {
+    Reporte reporte = reporteDelVecino(comercioValido(), productoValido("Leche", "1000ml"));
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+    Producto manteca = productoValido("Manteca", "200g");
+    when(servicioProductoMock.buscarPorNombre("manteca")).thenReturn(List.of(manteca));
+
+    servicioReporte.editarReporte(1L, datosEdicion("manteca", "200G", 250.0), 1L);
+
+    assertThat(reporte.getProducto(), equalTo(manteca));
+    verify(servicioProductoMock, never()).guardarProducto(any(Producto.class));
+  }
+
+  @Test
+  public void guardarReporteEligeElProductoDeLaMismaMarcaYUnidad() throws Exception {
+    Producto serenisima = productoValido("Leche", "1000ml");
+    Producto otraUnidad = productoValido("Leche", "500ml");
+    Producto otraMarca = productoValido("Leche", "1000ml");
+    otraMarca.setMarca("Las tres niñas");
+    when(servicioProductoMock.buscarPorNombre("Leche"))
+      .thenReturn(List.of(otraMarca, otraUnidad, serenisima));
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      100.0
+    );
+
+    servicioReporte.guardarReporte(reporte);
+
+    assertThat(reporte.getProducto(), equalTo(serenisima));
+    verify(servicioProductoMock, never()).guardarProducto(any(Producto.class));
+  }
+
+  @Test
+  public void guardarReporteEnUnaDireccionYaCargadaConOtroNombreUsaEseComercio() throws Exception {
+    Comercio existente = comercioConNombre("Almacen de Rosa");
+    when(servicioComercioMock.buscarPorDireccionYLocalidad("Av. Siempreviva 123", "La Matanza"))
+      .thenReturn(existente);
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioConNombre("Lo de Rosa"),
+      100.0
+    );
+
+    servicioReporte.guardarReporte(reporte);
+
+    assertThat(reporte.getComercio(), equalTo(existente));
+    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
+  }
+
+  @Test
+  public void reportarEnUnComercioExistenteReintentaUbicarloSiNoTieneUbicacion() throws Exception {
+    Comercio existente = comercioValido();
+    when(servicioComercioMock.buscarComercioPorNombre("Almacen")).thenReturn(List.of(existente));
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      100.0
+    );
+
+    servicioReporte.guardarReporte(reporte);
+
+    verify(servicioComercioMock).ubicarSiFalta(existente);
   }
 
   // --- helpers ---

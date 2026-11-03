@@ -416,6 +416,14 @@
             });
         }
 
+        // Al elegir una opción, la dirección se reemplaza por el nombre oficial de la calle
+        // ("crhue 1526" -> "Carhue 1526"); el comerciante lo ve antes de guardar
+        function elegir(item, sugerencia) {
+            marcarElegida(item);
+            if (sugerencia.direccion) campoDireccion.value = sugerencia.direccion;
+            ponerMarcador(sugerencia.latitud, sugerencia.longitud, true);
+        }
+
         function mostrarSugerencias(sugerencias) {
             lista.replaceChildren();
             sugerencias.forEach(function (sugerencia, indice) {
@@ -426,15 +434,11 @@
                 // textContent y no innerHTML: el texto viene de un servicio externo
                 item.textContent = sugerencia.nomenclatura;
                 item.addEventListener('click', function () {
-                    marcarElegida(item);
-                    ponerMarcador(sugerencia.latitud, sugerencia.longitud, true);
+                    elegir(item, sugerencia);
                     estado.textContent = 'Elegiste: ' + sugerencia.nomenclatura + '. Guardá los cambios para confirmarla.';
                 });
                 lista.appendChild(item);
-                if (indice === 0) {
-                    marcarElegida(item);
-                    ponerMarcador(sugerencia.latitud, sugerencia.longitud, true);
-                }
+                if (indice === 0) elegir(item, sugerencia);
             });
         }
 

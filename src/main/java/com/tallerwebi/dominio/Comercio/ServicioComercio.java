@@ -17,6 +17,12 @@ public interface ServicioComercio {
     Double longitudConfirmada
   );
   List<UbicacionSugerida> sugerirUbicaciones(String direccion, String localidad);
+
+  /**
+   * Si el comercio no tiene ubicación, la vuelve a buscar y la guarda si aparece. Sirve para los
+   * comercios cargados antes de Georef o durante una falla de red, que si no quedarían sin mapa.
+   */
+  void ubicarSiFalta(Comercio comercio);
   Comercio buscarPorDireccionYLocalidad(String direccion, String localidad);
   void guardarHorarios(Long comercioId, List<HorarioComercio> horarios);
   List<HorarioComercio> obtenerHorarios(Long comercioId);

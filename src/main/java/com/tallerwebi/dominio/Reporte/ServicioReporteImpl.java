@@ -11,7 +11,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -45,60 +44,11 @@ public class ServicioReporteImpl implements ServicioReporte {
   public Reporte guardarReporte(Reporte reporte)
     throws ReporteExistente, CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto {
     validarCamposObligatorios(reporte);
-    reporte.getProducto().setNombre(reporte.getProducto().getNombre().trim());
-    reporte.getProducto().setMarca(reporte.getProducto().getMarca().trim());
-    reporte.getProducto().setCategoria(reporte.getProducto().getCategoria().trim());
-    reporte.getProducto().setUnidad(reporte.getProducto().getUnidad().trim());
-    reporte.getComercio().setNombre(reporte.getComercio().getNombre().trim());
-    reporte.getComercio().setDireccion(reporte.getComercio().getDireccion().trim());
-    reporte.getComercio().setLocalidad(reporte.getComercio().getLocalidad().trim());
+    normalizarTextos(reporte);
     validarUnidad(reporte.getProducto().getUnidad());
     validarPrecio(reporte.getPrecio());
-    Producto productoExistente = servicioProducto.buscarProductoPorNombreExacto(
-      reporte.getProducto().getNombre()
-    );
-    if (
-      productoExistente == null ||
-      !Objects.equals(productoExistente.getMarca(), reporte.getProducto().getMarca())
-    ) {
-      servicioProducto.guardarProducto(reporte.getProducto());
-    } else {
-      reporte.setProducto(productoExistente);
-    }
-
-    List<Comercio> comerciosExistentes = servicioComercio.buscarComercioPorNombre(
-      reporte.getComercio().getNombre()
-    );
-    Comercio comercioExistente = null;
-
-    if (comerciosExistentes != null) {
-      comercioExistente =
-        comerciosExistentes
-          .stream()
-          .filter(comercio ->
-            comercio.getDireccion() != null &&
-            reporte.getComercio().getDireccion() != null &&
-            comercio
-              .getDireccion()
-              .trim()
-              .equalsIgnoreCase(reporte.getComercio().getDireccion().trim()) &&
-            comercio.getLocalidad() != null &&
-            reporte.getComercio().getLocalidad() != null &&
-            comercio
-              .getLocalidad()
-              .trim()
-              .equalsIgnoreCase(reporte.getComercio().getLocalidad().trim())
-          )
-          .findFirst()
-          .orElse(null);
-    }
-
-    if (comercioExistente == null) {
-      Comercio comercioGuardado = servicioComercio.guardarComercio(reporte.getComercio());
-      reporte.setComercio(comercioGuardado);
-    } else {
-      reporte.setComercio(comercioExistente);
-    }
+    reporte.setProducto(resolverProducto(reporte.getProducto()));
+    reporte.setComercio(resolverComercio(reporte.getComercio()));
 
     reporte.setFechaDeReporte(LocalDateTime.now());
 
@@ -256,26 +206,89 @@ public class ServicioReporteImpl implements ServicioReporte {
     return reporte.getFechaDeReporte().isAfter(LocalDateTime.now().minusDays(DIAS_PLAZO_EDICION));
   }
 
+  // El producto y el comercio son compartidos por todos los reportes: editar un reporte nunca los
+  // modifica. Si el vecino cambia el producto o el comercio, el reporte pasa a apuntar al que
+  // corresponda (existente o nuevo) y los demás reportes quedan como estaban.
   @Override
   public void editarReporte(Long id, Reporte datos, Long usuarioId)
     throws CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto, FueraDePlazoDeEdicion {
     Reporte reporte = repositorioReporte.buscarReporte(id);
     validarPermisoEdicion(reporte, usuarioId);
     validarCamposObligatorios(datos);
+    normalizarTextos(datos);
     validarUnidad(datos.getProducto().getUnidad());
     validarPrecio(datos.getPrecio());
-    reporte.getProducto().setNombre(datos.getProducto().getNombre());
-    reporte.getProducto().setMarca(datos.getProducto().getMarca());
-    reporte.getProducto().setCategoria(datos.getProducto().getCategoria());
-    reporte.getProducto().setUnidad(datos.getProducto().getUnidad());
-    reporte.getComercio().setNombre(datos.getComercio().getNombre());
-    reporte.getComercio().setDireccion(datos.getComercio().getDireccion());
-    reporte.getComercio().setLocalidad(datos.getComercio().getLocalidad());
+    reporte.setProducto(resolverProducto(datos.getProducto()));
+    reporte.setComercio(resolverComercio(datos.getComercio()));
     reporte.setPrecio(datos.getPrecio());
     if (datos.getFoto() != null) {
       reporte.setFoto(datos.getFoto());
     }
     repositorioReporte.guardarReporte(reporte);
+  }
+
+  private void normalizarTextos(Reporte reporte) {
+    Producto producto = reporte.getProducto();
+    producto.setNombre(producto.getNombre().trim());
+    producto.setMarca(producto.getMarca().trim());
+    producto.setCategoria(producto.getCategoria().trim());
+    producto.setUnidad(producto.getUnidad().trim());
+    Comercio comercio = reporte.getComercio();
+    comercio.setNombre(comercio.getNombre().trim());
+    comercio.setDireccion(comercio.getDireccion().trim());
+    comercio.setLocalidad(comercio.getLocalidad().trim());
+  }
+
+  // Un producto es el mismo si coinciden nombre, marca y unidad (la clave única de la tabla).
+  // Antes se buscaba solo por nombre y se tomaba el primero: con dos "Leche" de distinta marca
+  // o tamaño podía elegir el equivocado o intentar crear uno repetido.
+  private Producto resolverProducto(Producto datos) {
+    List<Producto> mismoNombre = servicioProducto.buscarPorNombre(datos.getNombre());
+    if (mismoNombre != null) {
+      for (Producto existente : mismoNombre) {
+        if (
+          mismoTexto(existente.getNombre(), datos.getNombre()) &&
+          mismoTexto(existente.getMarca(), datos.getMarca()) &&
+          mismoTexto(existente.getUnidad(), datos.getUnidad())
+        ) {
+          return existente;
+        }
+      }
+    }
+    servicioProducto.guardarProducto(datos);
+    return datos;
+  }
+
+  // Un comercio es el mismo si coinciden dirección y localidad (la clave única de la tabla),
+  // aunque el vecino haya escrito el nombre distinto. Así nadie le cambia el nombre a un local.
+  private Comercio resolverComercio(Comercio datos) {
+    Comercio existente = buscarPorNombreYDireccion(datos);
+    if (existente == null) {
+      existente =
+        servicioComercio.buscarPorDireccionYLocalidad(datos.getDireccion(), datos.getLocalidad());
+    }
+    if (existente == null) {
+      return servicioComercio.guardarComercio(datos);
+    }
+    servicioComercio.ubicarSiFalta(existente);
+    return existente;
+  }
+
+  private Comercio buscarPorNombreYDireccion(Comercio datos) {
+    List<Comercio> mismoNombre = servicioComercio.buscarComercioPorNombre(datos.getNombre());
+    if (mismoNombre == null) return null;
+    return mismoNombre
+      .stream()
+      .filter(comercio ->
+        mismoTexto(comercio.getDireccion(), datos.getDireccion()) &&
+        mismoTexto(comercio.getLocalidad(), datos.getLocalidad())
+      )
+      .findFirst()
+      .orElse(null);
+  }
+
+  private static boolean mismoTexto(String uno, String otro) {
+    return uno != null && otro != null && uno.trim().equalsIgnoreCase(otro.trim());
   }
 
   private void validarPermisoEdicion(Reporte reporte, Long usuarioId) {

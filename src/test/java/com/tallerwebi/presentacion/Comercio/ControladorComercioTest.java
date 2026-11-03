@@ -229,6 +229,7 @@ public class ControladorComercioTest {
   public void sugerirUbicacionesComoComercioDevuelveLasOpciones() {
     UbicacionSugerida sanJusto = new UbicacionSugerida(
       "DR IGNACIO ARIETA 3000, San Justo, La Matanza, Buenos Aires",
+      "Dr Ignacio Arieta 3000",
       "San Justo",
       -34.6879,
       -58.5482,
@@ -503,5 +504,16 @@ public class ControladorComercioTest {
       equalToIgnoringCase("redirect:/comercio/perfil?fotoActualizada=true")
     );
     verify(servicioComercioMock, times(1)).guardarFoto(1L, bytes, "image/jpeg");
+  }
+
+  @Test
+  public void verElDetalleDeUnComercioReintentaUbicarloSiNoTieneUbicacion() {
+    Comercio comercio = new Comercio();
+    comercio.setId(5L);
+    when(servicioComercioMock.buscarComercio(5L)).thenReturn(comercio);
+
+    controladorComercio.buscarPorId(5L);
+
+    verify(servicioComercioMock).ubicarSiFalta(comercio);
   }
 }

@@ -53,6 +53,18 @@ public class ServicioGeolocalizacionImpl implements ServicioGeolocalizacion {
   private static final String UBICACION = "ubicacion";
   private static final String NOMBRE = "nombre";
   private static final int HTTP_OK = 200;
+  private static final java.util.Set<String> CONECTORES = java.util.Set.of(
+    "de",
+    "del",
+    "la",
+    "las",
+    "los",
+    "el",
+    "y"
+  );
+  private static final java.util.regex.Pattern NUMERO_ROMANO = java.util.regex.Pattern.compile(
+    "^(?=[ivxl]{1,4}$)x{0,3}(ix|iv|v?i{0,3})$"
+  );
   // Un solo cliente para toda la app: reutiliza las conexiones y vive mientras viva la app
   private static final HttpClient HTTP = HttpClient
     .newBuilder()
@@ -205,6 +217,10 @@ public class ServicioGeolocalizacionImpl implements ServicioGeolocalizacion {
         nomenclatura,
         new UbicacionSugerida(
           nomenclatura,
+          formatearDireccion(
+            textoONull(direccion.path("calle").path(NOMBRE)),
+            direccion.path("altura").path("valor")
+          ),
           textoONull(direccion.path("localidad").path(NOMBRE)),
           ubicacion.path("lat").asDouble(),
           ubicacion.path("lon").asDouble(),
@@ -224,10 +240,32 @@ public class ServicioGeolocalizacionImpl implements ServicioGeolocalizacion {
       String nombre = lugar.path("display_name").asText();
       sinRepetir.putIfAbsent(
         nombre,
-        new UbicacionSugerida(nombre, null, latitud, longitud, FUENTE_NOMINATIM)
+        new UbicacionSugerida(nombre, null, null, latitud, longitud, FUENTE_NOMINATIM)
       );
     }
     return new ArrayList<>(sinRepetir.values());
+  }
+
+  // Georef devuelve la calle en mayúsculas ("DR IGNACIO ARIETA"): se guarda como
+  // "Dr Ignacio Arieta 3000", con los conectores en minúscula y los números romanos en mayúscula
+  static String formatearDireccion(String calle, JsonNode altura) {
+    if (calle == null || calle.isBlank()) return null;
+    String[] palabras = calle.trim().toLowerCase(Locale.ROOT).split("\\s+");
+    StringBuilder direccion = new StringBuilder();
+    for (int i = 0; i < palabras.length; i++) {
+      if (i > 0) direccion.append(' ');
+      direccion.append(formatearPalabra(palabras[i], i == 0));
+    }
+    if (altura != null && altura.isNumber()) {
+      direccion.append(' ').append(altura.asLong());
+    }
+    return direccion.toString();
+  }
+
+  private static String formatearPalabra(String palabra, boolean esLaPrimera) {
+    if (!esLaPrimera && CONECTORES.contains(palabra)) return palabra;
+    if (NUMERO_ROMANO.matcher(palabra).matches()) return palabra.toUpperCase(Locale.ROOT);
+    return Character.toUpperCase(palabra.charAt(0)) + palabra.substring(1);
   }
 
   // Nominatim manda las coordenadas como texto ("-34.68")
