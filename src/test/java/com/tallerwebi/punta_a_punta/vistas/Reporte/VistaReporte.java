@@ -1,6 +1,7 @@
 package com.tallerwebi.punta_a_punta.vistas.Reporte;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Route;
 import com.microsoft.playwright.options.SelectOption;
 import com.tallerwebi.punta_a_punta.vistas.VistaWeb;
 
@@ -20,7 +21,7 @@ public class VistaReporte extends VistaWeb {
   }
 
   public String obtenerTitulo() {
-    return this.obtenerTextoDelElemento("h2");
+    return this.obtenerTextoDelElemento("#titulo-pagina");
   }
 
   public void escribirNombreProducto(String nombre) {
@@ -76,6 +77,34 @@ public class VistaReporte extends VistaWeb {
     }
   }
 
+  // El buscador de direcciones es un servicio externo: en los tests se reemplaza su respuesta
+  public void simularSugerenciasDeUbicacion(String json) {
+    page.route(
+      "**/reporte/ubicaciones/sugerencias**",
+      route ->
+        route.fulfill(
+          new Route.FulfillOptions().setStatus(200).setContentType("application/json").setBody(json)
+        )
+    );
+  }
+
+  public void darClickEnBuscarEnElMapa() {
+    page.locator("#btn-buscar-ubicacion-reporte").click();
+    page.waitForSelector("[id^='opcion-ubicacion-reporte-']");
+  }
+
+  public boolean hayOpcionesDeUbicacion() {
+    return page.locator("[id^='opcion-ubicacion-reporte-']").count() > 0;
+  }
+
+  public String obtenerDireccionDelComercio() {
+    return page.locator("#comercio-direccion").inputValue();
+  }
+
+  public String obtenerLatitudConfirmada() {
+    return page.locator("#comercio-latitud").inputValue();
+  }
+
   public void escribirLatitud(String latitud) {
     page.fill("#latitud", latitud);
   }
@@ -109,7 +138,10 @@ public class VistaReporte extends VistaWeb {
 
   public boolean hayMensajeGuardado() {
     try {
-      page.waitForSelector(".alert-success", new Page.WaitForSelectorOptions().setTimeout(5000));
+      page.waitForSelector(
+        "#alerta-reporte-guardado",
+        new Page.WaitForSelectorOptions().setTimeout(5000)
+      );
       return true;
     } catch (Exception e) {
       return false;

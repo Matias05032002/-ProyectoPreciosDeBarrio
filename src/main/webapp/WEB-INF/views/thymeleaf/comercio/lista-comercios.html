@@ -17,7 +17,7 @@
             <button type="submit" id="btn-buscar-comercio" class="btn btn-primary">Buscar</button>
         </div>
     </form>
-    <h2>Comercios del barrio</h2>
+    <h2 id="titulo-pagina">Comercios del barrio</h2>
     <p class="text-muted">Almacenes, verdulerías, carnicerías y más.</p>
 
     <div th:if="${#lists.isEmpty(comercios)}" class="alert alert-info mt-3">
@@ -39,7 +39,7 @@
                     <span th:text="${#strings.toUpperCase(#strings.substring(comercio.nombre,0,1))}"></span>
                 </div>
                 <div class="card-body">
-                    <h5 class="card-title" th:text="${comercio.nombre}"></h5>
+                    <h5 class="card-title" th:id="'nombre-comercio-' + ${comercio.id}" th:text="${comercio.nombre}"></h5>
                     <span class="badge bg-secondary mb-2" th:text="${comercio.tipo}"></span>
                     <p class="card-text mb-1">
                         <span class="text-muted">Dirección:</span>

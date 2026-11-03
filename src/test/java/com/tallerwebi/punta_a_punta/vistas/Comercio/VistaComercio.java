@@ -2,6 +2,7 @@ package com.tallerwebi.punta_a_punta.vistas.Comercio;
 
 import com.microsoft.playwright.Page;
 import com.tallerwebi.punta_a_punta.vistas.VistaWeb;
+import java.util.List;
 
 public class VistaComercio extends VistaWeb {
 
@@ -11,7 +12,7 @@ public class VistaComercio extends VistaWeb {
   }
 
   public String obtenerTituloDeLaPagina() {
-    return this.obtenerTextoDelElemento("h2");
+    return this.obtenerTextoDelElemento("#titulo-pagina");
   }
 
   public boolean hayComerciosEnLaPagina() {
@@ -31,7 +32,28 @@ public class VistaComercio extends VistaWeb {
   }
 
   public String obtenerNombreDelPrimerComercio() {
-    return page.locator(".card-title").first().textContent().trim();
+    return page.locator("[id^='nombre-comercio-']").first().textContent().trim();
+  }
+
+  public boolean hayMapaConMarcadorEnElDetalle() {
+    try {
+      page.waitForSelector(
+        ".leaflet-marker-icon",
+        new Page.WaitForSelectorOptions().setTimeout(8000)
+      );
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  public List<String> obtenerNombresDeLosComercios() {
+    return page
+      .locator("[id^='nombre-comercio-']")
+      .allTextContents()
+      .stream()
+      .map(String::trim)
+      .toList();
   }
 
   public void darClickEnVerDetalle() {

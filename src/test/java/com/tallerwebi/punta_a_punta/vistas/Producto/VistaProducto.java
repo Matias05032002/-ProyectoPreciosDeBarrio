@@ -12,7 +12,7 @@ public class VistaProducto extends VistaWeb {
   }
 
   public String obtenerTituloDeLaPagina() {
-    return this.obtenerTextoDelElemento("h2");
+    return this.obtenerTextoDelElemento("#titulo-pagina");
   }
 
   public void escribirNombreDelProductoABuscar(String nombre) {
@@ -46,12 +46,12 @@ public class VistaProducto extends VistaWeb {
   }
 
   public void darClickEnFotoDelProducto() {
-    page.locator("img.card-img-top").first().click();
+    page.locator("[id^='foto-producto-']").first().click();
   }
 
   public void darClickEnPlaceholderDeProducto() {
     page.waitForSelector(
-      ".card-img-placeholder[style*='flex']",
+      "[id^='placeholder-foto-'][style*='flex']",
       new Page.WaitForSelectorOptions().setTimeout(5000)
     );
     page.evaluate("new bootstrap.Modal(document.getElementById('modalFoto')).show()");
@@ -63,6 +63,6 @@ public class VistaProducto extends VistaWeb {
   }
 
   public boolean hayPlaceholderVisible() {
-    return page.locator(".card-img-placeholder").first().isVisible();
+    return page.locator("[id^='placeholder-foto-']").first().isVisible();
   }
 }

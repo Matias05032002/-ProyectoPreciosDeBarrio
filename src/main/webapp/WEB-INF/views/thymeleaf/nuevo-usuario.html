@@ -41,7 +41,7 @@
     <input type="hidden" name="rol" value="USER">
 
     <div class="card-body">
-      <p th:if="${error != null}" class="alert alert-danger" th:text="${error}"></p>
+      <p th:if="${error != null}" id="error-registro" class="alert alert-danger" th:text="${error}"></p>
 
       <div class="row-2">
         <div class="field">
@@ -137,7 +137,7 @@
   <form id="form-comercio" action="#" th:action="@{/registrarme-comercio}" method="POST" style="display:none;">
 
     <div class="card-body">
-      <div th:if="${errorComercio != null}" class="error-msg" th:text="${errorComercio}"></div>
+      <div th:if="${errorComercio != null}" id="error-comercio" class="error-msg" th:text="${errorComercio}"></div>
 
       <div class="field">
         <label for="nombre-comercio">Nombre del comercio</label>

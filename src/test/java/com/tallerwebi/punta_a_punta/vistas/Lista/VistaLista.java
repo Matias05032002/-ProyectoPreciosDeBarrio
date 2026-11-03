@@ -77,7 +77,7 @@ public class VistaLista {
   }
 
   public boolean elNombreDeLaListaEs(String nombre) {
-    return page.locator("h2").textContent().contains(nombre);
+    return page.locator("#titulo-lista").textContent().contains(nombre);
   }
 
   public void volverAMisListas() {
@@ -86,7 +86,11 @@ public class VistaLista {
   }
 
   public boolean laListaExiste(String nombre) {
-    return page.locator(".card-title").allTextContents().stream().anyMatch(t -> t.contains(nombre));
+    return page
+      .locator("[id^='nombre-lista-']")
+      .allTextContents()
+      .stream()
+      .anyMatch(t -> t.contains(nombre));
   }
 
   public boolean laListaEstaVacia() {
@@ -112,7 +116,7 @@ public class VistaLista {
 
   public boolean elItemEstaEnLaLista(String nombreProducto) {
     return page
-      .locator(".card-body h6")
+      .locator("[id^='nombre-item-']")
       .allTextContents()
       .stream()
       .anyMatch(t -> t.contains(nombreProducto));
@@ -178,8 +182,8 @@ public class VistaLista {
   }
 
   public String obtenerTotalDeLaLista() {
-    page.waitForSelector(".card.border-success h4");
-    return page.locator(".card.border-success h4").textContent().trim();
+    page.waitForSelector("#total-lista");
+    return page.locator("#total-lista").textContent().trim();
   }
 
   public void eliminarLista(long listaId) {

@@ -2,9 +2,11 @@ package com.tallerwebi.punta_a_punta;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 
 import com.microsoft.playwright.*;
+import com.tallerwebi.punta_a_punta.vistas.Comercio.VistaComercio;
 import com.tallerwebi.punta_a_punta.vistas.Reporte.VistaEditarReporte;
 import com.tallerwebi.punta_a_punta.vistas.Reporte.VistaMisReportes;
 import com.tallerwebi.punta_a_punta.vistas.Reporte.VistaReporte;
@@ -100,6 +102,34 @@ public class VistaMisReportesE2E {
 
     // No crear nueva VistaMisReportes — el navigate() del constructor pisaría ?editado=true
     assertThat(vistaEditar.urlActual(), containsString("editado=true"));
+  }
+
+  @Test
+  void alCambiarElComercioDeUnReporteNoDeberiaModificarseElComercioOriginal() {
+    // El seed deja un reporte del usuario 1 en el comercio "Almacen Test"
+    ReiniciarDB.sembrarProductoConReporte();
+    dadoQueElUsuarioEstaLogueado();
+    VistaMisReportes vistaMisReportes = new VistaMisReportes(context.pages().get(0));
+    vistaMisReportes.darClickEnPrimerBotonEditar();
+
+    VistaEditarReporte vistaEditar = new VistaEditarReporte(context.pages().get(0));
+    vistaEditar.escribirNombreProducto("Leche");
+    vistaEditar.escribirMarcaProducto("La Serenisima");
+    vistaEditar.seleccionarCategoriaProducto("Lacteos");
+    vistaEditar.escribirUnidadProducto("1L");
+    vistaEditar.escribirNombreComercio("Otro Local");
+    vistaEditar.escribirDireccionComercio("Av. Mitre 999");
+    vistaEditar.seleccionarLocalidadComercio("Lomas de Zamora");
+    vistaEditar.escribirPrecio("350");
+    vistaEditar.darClickEnGuardarCambios();
+    assertThat(vistaEditar.urlActual(), containsString("editado=true"));
+
+    // El comercio compartido sigue existiendo con su nombre, y el reporte apunta a uno nuevo
+    VistaComercio vistaComercio = new VistaComercio(context.pages().get(0));
+    assertThat(
+      vistaComercio.obtenerNombresDeLosComercios(),
+      hasItems("Almacen Test", "Otro Local")
+    );
   }
 
   private void dadoQueElUsuarioEstaLogueado() {

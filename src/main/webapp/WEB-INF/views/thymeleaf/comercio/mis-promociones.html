@@ -13,7 +13,7 @@
 <main class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="mb-1">Mis promociones</h1>
+            <h1 id="titulo-pagina" class="mb-1">Mis promociones</h1>
             <p class="text-muted mb-0">Creá y administrá las promociones de tu comercio.</p>
         </div>
         <a th:href="@{/comercio/dashboard}" class="btn btn-outline-primary">Volver al dashboard</a>
@@ -48,7 +48,7 @@
                     <input id="fechaFin" type="datetime-local" th:field="*{fechaFin}" class="form-control" required>
                 </div>
                 <div class="col-12">
-                    <button type="submit" class="btn btn-primary">Crear promoción</button>
+                    <button type="submit" id="btn-crear-promocion" class="btn btn-primary">Crear promoción</button>
                 </div>
             </form>
         </div>
@@ -56,17 +56,17 @@
 
     <section>
         <h2 class="h4 mb-3">Promociones registradas</h2>
-        <div th:if="${#lists.isEmpty(promociones)}" class="alert alert-info">
+        <div th:if="${#lists.isEmpty(promociones)}" id="mensaje-sin-promociones" class="alert alert-info">
             Todavía no tenés promociones registradas.
         </div>
 
         <div class="row g-3">
-            <article th:each="item : ${promociones}" class="col-md-6">
+            <article th:each="item : ${promociones}" th:id="'card-promocion-' + ${item.id}" class="col-md-6">
                 <div class="card h-100 shadow-sm border-0">
                     <div class="card-body">
                         <div class="d-flex justify-content-between gap-2 mb-2">
-                            <h3 class="h5 mb-0" th:text="${item.titulo}"></h3>
-                            <span class="badge" th:classappend="${item.activa ? ' text-bg-success' : ' text-bg-secondary'}"
+                            <h3 class="h5 mb-0" th:id="'titulo-promocion-' + ${item.id}" th:text="${item.titulo}"></h3>
+                            <span class="badge" th:id="'estado-promocion-' + ${item.id}" th:classappend="${item.activa ? ' text-bg-success' : ' text-bg-secondary'}"
                                   th:text="${item.activa ? 'Activa' : 'Inactiva'}"></span>
                         </div>
                         <p class="text-muted" th:text="${item.descripcion}"></p>
@@ -77,7 +77,7 @@
                             al <span th:text="${#temporals.format(item.fechaFin, 'dd/MM/yyyy HH:mm')}"></span>
                         </p>
                         <form th:if="${item.activa}" th:action="@{/promociones/{id}/desactivar(id=${item.id})}" method="post">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Desactivar promoción</button>
+                            <button type="submit" th:id="'btn-desactivar-promocion-' + ${item.id}" class="btn btn-outline-danger btn-sm">Desactivar promoción</button>
                         </form>
                     </div>
                 </div>

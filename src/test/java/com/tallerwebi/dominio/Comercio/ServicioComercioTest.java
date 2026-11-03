@@ -320,6 +320,48 @@ public class ServicioComercioTest {
   }
 
   @Test
+  public void guardarUnComercioConUbicacionConfirmadaNoLaBuscaDeNuevo() {
+    Comercio comercio = comercioEn("Carhue 1526", "Buenos Aires");
+    comercio.setLatitud(-34.6595);
+    comercio.setLongitud(-58.5003);
+
+    servicioComercio.guardarComercio(comercio);
+
+    assertThat(comercio.getLatitud(), equalTo(-34.6595));
+    assertThat(comercio.getLongitud(), equalTo(-58.5003));
+    assertThat(comercio.getDireccion(), equalTo("Carhue 1526"));
+    verifyNoInteractions(servicioGeolocalizacionMock);
+    verify(repositorioComercioMock).guardarComercio(comercio);
+  }
+
+  @Test
+  public void guardarUnComercioConCoordenadasFueraDeArgentinaLasDescartaYLoUbicaPorLaDireccion() {
+    Comercio comercio = comercioEn("arrieta 3000", "La Matanza");
+    comercio.setLatitud(40.7128);
+    comercio.setLongitud(-74.006);
+    when(servicioGeolocalizacionMock.buscar("arrieta 3000", "La Matanza"))
+      .thenReturn(List.of(SAN_JUSTO));
+
+    servicioComercio.guardarComercio(comercio);
+
+    assertThat(comercio.getLatitud(), equalTo(-34.6879));
+    assertThat(comercio.getLongitud(), equalTo(-58.5482));
+  }
+
+  @Test
+  public void guardarUnComercioConUnaSolaCoordenadaLaDescartaYLoUbicaPorLaDireccion() {
+    Comercio comercio = comercioEn("arrieta 3000", "La Matanza");
+    comercio.setLatitud(-34.6595);
+    when(servicioGeolocalizacionMock.buscar("arrieta 3000", "La Matanza"))
+      .thenReturn(List.of(SAN_JUSTO));
+
+    servicioComercio.guardarComercio(comercio);
+
+    assertThat(comercio.getLatitud(), equalTo(-34.6879));
+    assertThat(comercio.getLongitud(), equalTo(-58.5482));
+  }
+
+  @Test
   public void siLaDireccionNoSeEncuentraElComercioSeGuardaSinUbicacion() {
     Comercio comercio = comercioEn("calle que no existe 1", "La Matanza");
     when(servicioGeolocalizacionMock.buscar(any(), any())).thenReturn(Collections.emptyList());

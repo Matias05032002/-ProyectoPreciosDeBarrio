@@ -7,12 +7,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" th:href="@{/css/main.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
 <div class="container mt-4">
-    <h2>Reporta el precio del producto para ayudar a tus vecinos</h2>
+    <h2 id="titulo-pagina">Reporta el precio del producto para ayudar a tus vecinos</h2>
 
     <!-- Botones cargar solo para no-COMERCIO -->
     <div th:if="${comercioDelUsuario == null}" class="d-flex gap-2 mt-3 mb-4">
@@ -217,6 +218,20 @@
                     <option value="Zarate">Zárate</option>
                 </select>
             </div>
+            <div class="mb-3">
+                <button type="button" id="btn-buscar-ubicacion-reporte" class="btn btn-outline-primary btn-sm"
+                        th:attr="data-url=@{/reporte/ubicaciones/sugerencias}">
+                    <i class="bi bi-geo-alt"></i> Buscar en el mapa
+                </button>
+                <p id="estado-ubicacion-reporte" class="small text-muted mt-2 mb-2" role="status" aria-live="polite">
+                    Opcional: ubicá el local en el mapa para que otros vecinos lo encuentren.
+                </p>
+                <div id="sugerencias-ubicacion-reporte" class="list-group mb-2"></div>
+                <div id="mapa-ubicacion-reporte" class="rounded border d-none" style="height: 260px;"
+                     role="application" aria-label="Mapa para ubicar el comercio"></div>
+                <input type="hidden" name="comercio.latitud" id="comercio-latitud">
+                <input type="hidden" name="comercio.longitud" id="comercio-longitud">
+            </div>
         </div>
 
         <h6 class="text-muted mt-3">Precio</h6>
@@ -225,13 +240,14 @@
         </div>
         <button type="submit" id="btn-guardar-reporte" class="btn btn-primary">Guardar reporte</button>
     </form>
-    <div th:if="${guardado}" class="alert alert-success mt-3" role="alert">
+    <div th:if="${guardado}" id="alerta-reporte-guardado" class="alert alert-success mt-3" role="alert">
         ¡Reporte guardado con éxito!
     </div>
     <div th:if="${error}" id="error" class="alert alert-danger mt-3" th:text="${error}"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     var cropper = null;
     var modalCropper = new bootstrap.Modal(document.getElementById('modalCropper'));
@@ -363,6 +379,147 @@
         };
         lector.readAsDataURL(foto.files[0]);
     });
+</script>
+<script>
+    // "Buscar en el mapa": el vecino confirma dónde está el local antes de reportar.
+    // Es opcional: si no lo usa, el servidor ubica el comercio con la dirección escrita.
+    (function () {
+        const boton = document.getElementById('btn-buscar-ubicacion-reporte');
+        if (!boton || typeof L === 'undefined') return;
+
+        const contenedor = document.getElementById('mapa-ubicacion-reporte');
+        const estado = document.getElementById('estado-ubicacion-reporte');
+        const lista = document.getElementById('sugerencias-ubicacion-reporte');
+        const campoDireccion = document.getElementById('comercio-direccion');
+        const campoLocalidad = document.getElementById('comercio-localidad');
+        const campoLatitud = document.getElementById('comercio-latitud');
+        const campoLongitud = document.getElementById('comercio-longitud');
+        const centroAmba = [-34.6037, -58.3816];
+
+        let mapa = null;
+        let marcador = null;
+
+        function confirmar(latitud, longitud) {
+            campoLatitud.value = latitud.toFixed(7);
+            campoLongitud.value = longitud.toFixed(7);
+        }
+
+        // El mapa se crea recién al buscar: Leaflet necesita que su contenedor sea visible
+        function asegurarMapa() {
+            if (mapa) return;
+            contenedor.classList.remove('d-none');
+            mapa = L.map(contenedor).setView(centroAmba, 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; colaboradores de OpenStreetMap'
+            }).addTo(mapa);
+            mapa.on('click', function (evento) {
+                ponerMarcador(evento.latlng.lat, evento.latlng.lng, false);
+                estado.textContent = 'Marcaste la ubicación a mano.';
+            });
+        }
+
+        function ponerMarcador(latitud, longitud, acercar) {
+            asegurarMapa();
+            if (marcador) {
+                marcador.setLatLng([latitud, longitud]);
+            } else {
+                marcador = L.marker([latitud, longitud], { draggable: true, title: 'El local' }).addTo(mapa);
+                marcador.on('dragend', function () {
+                    const posicion = marcador.getLatLng();
+                    confirmar(posicion.lat, posicion.lng);
+                    estado.textContent = 'Ubicación ajustada.';
+                });
+            }
+            if (acercar) mapa.setView([latitud, longitud], 17);
+            confirmar(latitud, longitud);
+        }
+
+        function marcarElegida(elegido) {
+            lista.querySelectorAll('button').forEach(function (item) {
+                item.classList.toggle('active', item === elegido);
+                item.setAttribute('aria-pressed', item === elegido ? 'true' : 'false');
+            });
+        }
+
+        // Al elegir una opción, la dirección se reemplaza por el nombre oficial de la calle
+        function elegir(item, sugerencia) {
+            marcarElegida(item);
+            if (sugerencia.direccion) campoDireccion.value = sugerencia.direccion;
+            ponerMarcador(sugerencia.latitud, sugerencia.longitud, true);
+        }
+
+        function mostrarSugerencias(sugerencias) {
+            lista.replaceChildren();
+            sugerencias.forEach(function (sugerencia, indice) {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.id = 'opcion-ubicacion-reporte-' + indice;
+                item.className = 'list-group-item list-group-item-action';
+                item.setAttribute('aria-pressed', 'false');
+                // textContent y no innerHTML: el texto viene de un servicio externo
+                item.textContent = sugerencia.nomenclatura;
+                item.addEventListener('click', function () {
+                    elegir(item, sugerencia);
+                    estado.textContent = 'Elegiste: ' + sugerencia.nomenclatura + '.';
+                });
+                lista.appendChild(item);
+                if (indice === 0) elegir(item, sugerencia);
+            });
+        }
+
+        // La ubicación confirmada vale para la dirección escrita: si la cambian, se descarta
+        function descartarConfirmacion() {
+            if (!campoLatitud.value) return;
+            campoLatitud.value = '';
+            campoLongitud.value = '';
+            lista.replaceChildren();
+            if (marcador) {
+                mapa.removeLayer(marcador);
+                marcador = null;
+            }
+            estado.textContent = 'Cambiaste la dirección: tocá "Buscar en el mapa" para ubicarla de nuevo.';
+        }
+        campoDireccion.addEventListener('input', descartarConfirmacion);
+        campoLocalidad.addEventListener('change', descartarConfirmacion);
+
+        boton.addEventListener('click', function () {
+            const direccion = campoDireccion.value.trim();
+            if (!direccion) {
+                estado.textContent = 'Escribí la dirección del local antes de buscarla.';
+                campoDireccion.focus();
+                return;
+            }
+            const url = boton.dataset.url + '?direccion=' + encodeURIComponent(direccion)
+                + '&localidad=' + encodeURIComponent(campoLocalidad.value);
+            boton.disabled = true;
+            estado.textContent = 'Buscando la dirección...';
+            fetch(url, { headers: { 'Accept': 'application/json' } })
+                .then(function (respuesta) {
+                    if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+                    return respuesta.json();
+                })
+                .then(function (sugerencias) {
+                    if (sugerencias.length === 0) {
+                        lista.replaceChildren();
+                        asegurarMapa();
+                        estado.textContent = 'No encontramos esa dirección. Revisala, o tocá el mapa donde está el local.';
+                        return;
+                    }
+                    mostrarSugerencias(sugerencias);
+                    estado.textContent = sugerencias.length === 1
+                        ? 'Encontramos la dirección. Si el marcador no quedó justo, arrastralo.'
+                        : 'Encontramos ' + sugerencias.length + ' opciones: elegí la del local.';
+                })
+                .catch(function () {
+                    asegurarMapa();
+                    estado.textContent = 'No pudimos buscar la dirección ahora. Podés reportar igual o tocar el mapa donde está el local.';
+                })
+                .finally(function () {
+                    boton.disabled = false;
+                });
+        });
+    })();
 </script>
 </body>
 </html>

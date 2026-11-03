@@ -10,7 +10,7 @@ public class VistaEditarReporte extends VistaWeb {
   }
 
   public String obtenerTitulo() {
-    return this.obtenerTextoDelElemento("h2");
+    return this.obtenerTextoDelElemento("#titulo-pagina");
   }
 
   public void escribirNombreProducto(String nombre) {
@@ -46,7 +46,7 @@ public class VistaEditarReporte extends VistaWeb {
   }
 
   public void darClickEnGuardarCambios() {
-    this.page.locator("button[type='submit']").click();
+    this.page.locator("#btn-guardar-cambios").click();
   }
 
   public String urlActual() {

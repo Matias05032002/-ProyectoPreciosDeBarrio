@@ -1,6 +1,7 @@
 package com.tallerwebi.punta_a_punta;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 
@@ -8,6 +9,7 @@ import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.tallerwebi.punta_a_punta.vistas.Comercio.VistaComercio;
 import com.tallerwebi.punta_a_punta.vistas.Reporte.VistaReporte;
 import java.net.MalformedURLException;
 import org.junit.jupiter.api.AfterAll;
@@ -104,6 +106,59 @@ public class VistaReporteE2E {
     vistaReporte.escribirPrecio("1000");
     vistaReporte.darClickEnGuardarReporte();
     assertThat(vistaReporte.hayMensajeGuardado(), is(true));
+  }
+
+  private static final String SUGERENCIA_CARHUE =
+    "[{\"nomenclatura\":\"CARHUE 1526, Mataderos, Ciudad de Buenos Aires\"," +
+    "\"direccion\":\"Carhue 1526\",\"localidad\":\"Mataderos\"," +
+    "\"latitud\":-34.6595,\"longitud\":-58.5003,\"fuente\":\"georef\"}]";
+
+  @Test
+  void alBuscarEnElMapaDeberiaCorregirLaDireccionYConfirmarLaUbicacion() {
+    vistaReporte.simularSugerenciasDeUbicacion(SUGERENCIA_CARHUE);
+    dadoQueElUsuarioCompletaUnReporteConDireccionMalEscrita();
+
+    vistaReporte.darClickEnBuscarEnElMapa();
+
+    assertThat(vistaReporte.hayOpcionesDeUbicacion(), is(true));
+    assertThat(vistaReporte.obtenerDireccionDelComercio(), is("Carhue 1526"));
+    assertThat(vistaReporte.obtenerLatitudConfirmada(), is("-34.6595000"));
+  }
+
+  @Test
+  void alCambiarLaDireccionDeberiaDescartarseLaUbicacionConfirmada() {
+    vistaReporte.simularSugerenciasDeUbicacion(SUGERENCIA_CARHUE);
+    dadoQueElUsuarioCompletaUnReporteConDireccionMalEscrita();
+    vistaReporte.darClickEnBuscarEnElMapa();
+
+    vistaReporte.escribirDireccionComercio(" bis");
+
+    assertThat(vistaReporte.obtenerLatitudConfirmada(), emptyString());
+  }
+
+  @Test
+  void deberiaGuardarElReporteConLaUbicacionConfirmadaYVerElComercioEnElMapa() {
+    vistaReporte.simularSugerenciasDeUbicacion(SUGERENCIA_CARHUE);
+    dadoQueElUsuarioCompletaUnReporteConDireccionMalEscrita();
+    vistaReporte.darClickEnBuscarEnElMapa();
+
+    vistaReporte.darClickEnGuardarReporte();
+    assertThat(vistaReporte.hayMensajeGuardado(), is(true));
+
+    VistaComercio vistaComercio = new VistaComercio(context.pages().get(0));
+    vistaComercio.darClickEnVerDetalle();
+    assertThat(vistaComercio.hayMapaConMarcadorEnElDetalle(), is(true));
+  }
+
+  private void dadoQueElUsuarioCompletaUnReporteConDireccionMalEscrita() {
+    vistaReporte.escribirNombreProducto("Leche");
+    vistaReporte.escribirMarcaProducto("La Serenisima");
+    vistaReporte.escribirCategoriaProducto("Lacteos");
+    vistaReporte.escribirUnidadProducto("1L");
+    vistaReporte.escribirNombreComercio("Almacen Carhue");
+    vistaReporte.escribirDireccionComercio("crhue 1526");
+    vistaReporte.escribirLocalidadComercio("Buenos Aires");
+    vistaReporte.escribirPrecio("250");
   }
 
   private void dadoQueElUsuarioCargaUnReporte(

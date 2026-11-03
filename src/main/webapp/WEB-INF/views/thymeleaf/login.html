@@ -39,7 +39,7 @@
        th:text="${contrasenaRestablecida}"></p>
     <p th:if="${registroExitoso != null}" id="registro-exitoso" class="alert alert-success"
        th:text="${registroExitoso}"></p>
-    <p th:if="${error != null}" class="alert alert-danger" th:text="${error}"></p>
+    <p th:if="${error != null}" id="error-login" class="alert alert-danger" th:text="${error}"></p>
 
     <form th:action="@{/validar-login}" th:object="${datosLogin}" method="post">
         <div class="field">

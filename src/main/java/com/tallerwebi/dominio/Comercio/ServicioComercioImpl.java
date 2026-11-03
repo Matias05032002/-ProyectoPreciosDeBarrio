@@ -42,7 +42,10 @@ public class ServicioComercioImpl implements ServicioComercio {
     if (existente != null && existente.getUsuarioId() != null) {
       return existente;
     }
-    ubicarSegunLaDireccion(comercio);
+    // Si el vecino ya confirmó el lugar en el mapa se respeta; si no, se busca por la dirección
+    if (!esCoordenadaValida(comercio.getLatitud(), comercio.getLongitud())) {
+      ubicarSegunLaDireccion(comercio);
+    }
     // Con la dirección corregida ("crhue 1526" -> "Carhue 1526") puede aparecer un comercio
     // que ya estaba cargado: se usa ese en lugar de crear uno repetido
     Comercio mismaDireccion = repositorioComercio.buscarComercioPorDireccionYLocalidad(

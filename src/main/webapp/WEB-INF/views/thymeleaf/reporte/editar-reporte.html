@@ -11,7 +11,7 @@
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
 <div class="container mt-4">
-    <h2>Editar reporte</h2>
+    <h2 id="titulo-pagina">Editar reporte</h2>
     <p class="text-muted">Podés modificar este reporte porque fue cargado hace menos de 2 días.</p>
 
     <form th:action="@{/reporte/{id}/editar(id=${reporte.id})}" method="post" class="mt-3">
@@ -134,7 +134,7 @@
         </div>
 
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" id="btn-guardar-cambios" class="btn btn-primary">
                 <i class="bi bi-check-lg"></i> Guardar cambios
             </button>
             <a th:href="@{/reporte/mis-reportes}" class="btn btn-outline-secondary">Cancelar</a>

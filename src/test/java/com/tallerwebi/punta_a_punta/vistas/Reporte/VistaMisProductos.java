@@ -13,10 +13,10 @@ public class VistaMisProductos extends VistaWeb {
   }
 
   public boolean muestraMensajeSinProductos() {
-    return this.page.locator("text=Todavía no cargaste productos en tu comercio").isVisible();
+    return this.page.locator("#mensaje-sin-productos").isVisible();
   }
 
   public boolean muestraProductos() {
-    return this.page.locator(".card").count() > 0;
+    return this.page.locator("[id^='card-mi-producto-']").count() > 0;
   }
 }

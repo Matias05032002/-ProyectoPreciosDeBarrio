@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Comercio.UbicacionSugerida;
 import com.tallerwebi.dominio.Paginador.ServicioPaginador;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
@@ -30,6 +31,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
@@ -618,5 +620,43 @@ public class ControladorReporteTest {
 
     assertThat(mav.getViewName(), equalToIgnoringCase("reporte/editar-reporte"));
     assertThat(mav.getModel().containsKey("error"), is(true));
+  }
+
+  @Test
+  public void sugerirUbicacionesDevuelveLasOpcionesDelServicioSiHaySesion() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    UbicacionSugerida opcion = new UbicacionSugerida(
+      "CARHUE 1526, Mataderos, Buenos Aires",
+      "Carhue 1526",
+      "Mataderos",
+      -34.6595,
+      -58.5003,
+      "georef"
+    );
+    when(servicioComercioMock.sugerirUbicaciones("crhue 1526", "Buenos Aires"))
+      .thenReturn(List.of(opcion));
+
+    ResponseEntity<List<UbicacionSugerida>> respuesta = controladorReporte.sugerirUbicaciones(
+      "crhue 1526",
+      "Buenos Aires",
+      requestMock
+    );
+
+    assertThat(respuesta.getStatusCode().value(), is(200));
+    assertThat(respuesta.getBody(), contains(opcion));
+  }
+
+  @Test
+  public void sugerirUbicacionesSinSesionDevuelveNoAutorizadoYNoConsultaNada() {
+    when(sessionMock.getAttribute("ROL")).thenReturn(null);
+
+    ResponseEntity<List<UbicacionSugerida>> respuesta = controladorReporte.sugerirUbicaciones(
+      "crhue 1526",
+      "Buenos Aires",
+      requestMock
+    );
+
+    assertThat(respuesta.getStatusCode().value(), is(401));
+    verify(servicioComercioMock, never()).sugerirUbicaciones(any(), any());
   }
 }

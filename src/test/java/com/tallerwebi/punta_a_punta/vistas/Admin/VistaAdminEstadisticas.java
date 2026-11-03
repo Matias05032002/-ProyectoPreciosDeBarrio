@@ -21,15 +21,15 @@ public class VistaAdminEstadisticas extends VistaWeb {
   }
 
   public boolean mostrarTotalUsuarios() {
-    return page.locator(".card.bg-primary .fs-2").isVisible();
+    return page.locator("#total-usuarios").isVisible();
   }
 
   public boolean mostrarTotalReportes() {
-    return page.locator(".card.bg-success .fs-2").isVisible();
+    return page.locator("#total-reportes").isVisible();
   }
 
   public String obtenerTitulo() {
-    return obtenerTextoDelElemento("h2");
+    return obtenerTextoDelElemento("#titulo-pagina");
   }
 
   public String obtenerURLActualPath() {

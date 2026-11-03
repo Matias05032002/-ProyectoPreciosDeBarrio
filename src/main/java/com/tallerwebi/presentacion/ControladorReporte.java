@@ -2,6 +2,7 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Comercio.UbicacionSugerida;
 import com.tallerwebi.dominio.Paginador.ServicioPaginador;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
@@ -23,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -196,6 +199,22 @@ public class ControladorReporte {
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
     mav.addObject("busqueda", nombre);
     return mav;
+  }
+
+  // Lo usa el botón "Buscar en el mapa" del formulario de reporte: devuelve las opciones en JSON.
+  // Cualquier cuenta con sesión puede ubicar un local; el resultado solo se guarda si el
+  // vecino confirma una opción y envía el reporte.
+  @RequestMapping(path = "/ubicaciones/sugerencias", method = RequestMethod.GET)
+  @ResponseBody
+  public ResponseEntity<List<UbicacionSugerida>> sugerirUbicaciones(
+    @RequestParam(value = "direccion", required = false) String direccion,
+    @RequestParam(value = "localidad", required = false) String localidad,
+    HttpServletRequest request
+  ) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    return ResponseEntity.ok(servicioComercio.sugerirUbicaciones(direccion, localidad));
   }
 
   @RequestMapping(path = "/mis-reportes", method = RequestMethod.GET)

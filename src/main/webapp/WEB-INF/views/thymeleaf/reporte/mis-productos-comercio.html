@@ -26,7 +26,7 @@
     <div th:if="${reportes == null or #lists.isEmpty(reportes)}"
          class="text-center mt-5 py-5">
         <i class="bi bi-inbox display-4 text-muted"></i>
-        <p class="text-muted mt-3">Todavía no cargaste productos en tu comercio.</p>
+        <p id="mensaje-sin-productos" class="text-muted mt-3">Todavía no cargaste productos en tu comercio.</p>
         <a th:href="@{/reporte}" class="btn btn-primary mt-2">
             <i class="bi bi-plus-lg me-1"></i> Cargar primer producto
         </a>
@@ -34,7 +34,7 @@
 
     <div class="row row-cols-1 row-cols-md-3 g-4" th:if="${reportes != null and !#lists.isEmpty(reportes)}">
         <div class="col" th:each="reporte : ${reportes}">
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100 shadow-sm" th:id="'card-mi-producto-' + ${reporte.id}">
 
                 <!-- Foto del producto -->
                 <img th:if="${reporte.foto != null}"

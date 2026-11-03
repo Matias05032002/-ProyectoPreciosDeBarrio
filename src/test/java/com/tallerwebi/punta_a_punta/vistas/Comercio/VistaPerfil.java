@@ -29,7 +29,8 @@ public class VistaPerfil extends VistaWeb {
   }
 
   public void darClickEnGuardar() {
-    this.page.locator("form button[type='submit']").first().click();
+    // Alta de comercio nuevo (#btn-guardar-comercio) o edición de uno existente (#btn-guardar-perfil)
+    this.page.locator("#btn-guardar-comercio, #btn-guardar-perfil").first().click();
   }
 
   public boolean muestraFormularioDeRegistro() {

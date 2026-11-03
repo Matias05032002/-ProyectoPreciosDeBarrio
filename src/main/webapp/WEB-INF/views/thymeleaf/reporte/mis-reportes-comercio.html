@@ -15,11 +15,11 @@
     <p class="text-muted">Los precios que publicaste en tu comercio.</p>
     <hr>
 
-    <div th:if="${param.editado}" class="alert alert-success">
+    <div th:if="${param.editado}" id="alerta-reporte-editado" class="alert alert-success">
         Reporte editado con éxito.
     </div>
 
-    <div th:if="${#lists.isEmpty(reportes)}" class="alert alert-info mt-3">
+    <div th:if="${#lists.isEmpty(reportes)}" id="mensaje-sin-reportes" class="alert alert-info mt-3">
         Todavía no publicaste ningún reporte.
     </div>
 
@@ -41,6 +41,7 @@
                     <div class="mt-2"
                          th:if="${reporte.fechaDeReporte != null and reporte.fechaDeReporte.isAfter(#temporals.createNow().minusDays(2))}">
                         <a th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
+                           th:id="'btn-editar-reporte-' + ${reporte.id}"
                            class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i> Editar
                         </a>
