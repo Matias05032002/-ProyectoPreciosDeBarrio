@@ -74,6 +74,7 @@ public class ServicioComercioImpl implements ServicioComercio {
 
   @Override
   public Comercio vincularComercioAUsuario(Comercio comercio, Long usuarioId) {
+    // Cada cuenta de comercio administra un solo local: no puede reclamar otro
     Comercio propio = repositorioComercio.buscarComercioPorUsuarioId(usuarioId);
     if (propio != null) {
       return propio;
@@ -146,8 +147,9 @@ public class ServicioComercioImpl implements ServicioComercio {
   public Boolean estaAbierto(Long comercioId) {
     List<HorarioComercio> horarios = repositorioHorario.buscarPorComercioId(comercioId);
 
+    // Sin horarios cargados no se sabe si está abierto: la vista muestra "Sin horario cargado"
     if (horarios.isEmpty()) {
-      return false;
+      return null;
     }
 
     int diaHoy = java.time.LocalDate.now().getDayOfWeek().getValue();

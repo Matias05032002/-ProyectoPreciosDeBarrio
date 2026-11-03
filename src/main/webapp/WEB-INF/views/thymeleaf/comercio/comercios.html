@@ -39,7 +39,7 @@
                             <span th:text="${reporte.producto.unidad}"></span>
                         </p>
                         <p class="card-text fw-bold text-success">
-                            $<span th:text="${reporte.precio}"></span>
+                            <span th:text="${'$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')}"></span>
                         </p>
                         <p class="card-text text-muted small"
                            th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy')}">

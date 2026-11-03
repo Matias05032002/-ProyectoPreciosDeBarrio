@@ -38,10 +38,11 @@ public class ServicioLoginImpl implements ServicioLogin {
 
   @Override
   public Usuario consultarUsuario(String email, String password) {
-    String emailNorm = (email == null) ? null : email.trim().toLowerCase(java.util.Locale.ROOT);
-    // Verificar bloqueo por IP/email
-    Instant bloqueo = bloqueadoHasta.get(emailNorm);
-    if (bloqueo != null && Instant.now().isBefore(bloqueo)) {
+    if (email == null) {
+      return null;
+    }
+    String emailNorm = email.trim().toLowerCase(java.util.Locale.ROOT);
+    if (estaBloqueado(emailNorm)) {
       return null; // bloqueado temporalmente
     }
     Usuario usuario = repositorioUsuario.buscar(emailNorm);
@@ -57,6 +58,15 @@ public class ServicioLoginImpl implements ServicioLogin {
     intentosFallidos.remove(emailNorm);
     bloqueadoHasta.remove(emailNorm);
     return usuario;
+  }
+
+  @Override
+  public boolean estaBloqueado(String email) {
+    if (email == null) {
+      return false;
+    }
+    Instant bloqueo = bloqueadoHasta.get(email.trim().toLowerCase(java.util.Locale.ROOT));
+    return bloqueo != null && Instant.now().isBefore(bloqueo);
   }
 
   private void registrarIntentoFallido(String emailNorm) {
@@ -154,6 +164,7 @@ public class ServicioLoginImpl implements ServicioLogin {
     return true;
   }
 
+  // El comercio se registra con el nombre del local: solo el vecino necesita apellido y localidad
   private void validarDatosDeRegistro(Usuario usuario, boolean esComercio) {
     validarNombreOApellido(usuario.getNombre(), "El nombre");
     if (esComercio) return;
@@ -209,6 +220,7 @@ public class ServicioLoginImpl implements ServicioLogin {
     Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
     if (usuario == null) return;
 
+    // Primero se valida todo: si algo falla no se cambia nada
     if (nombre != null) validarNombreOApellido(nombre, "El nombre");
     if (apellido != null) validarNombreOApellido(apellido, "El apellido");
     validarFechaDeNacimiento(fechaNacimiento);

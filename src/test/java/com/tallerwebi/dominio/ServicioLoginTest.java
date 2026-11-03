@@ -478,4 +478,35 @@ public class ServicioLoginTest {
     assertThat(usuario.getFechaNacimiento(), equalTo(null));
     verify(this.repositorioUsuarioMock).modificar(usuario);
   }
+
+  // --- bloqueo por intentos fallidos ---
+
+  @Test
+  public void despuesDeCincoIntentosFallidosElEmailQuedaBloqueado() {
+    when(this.repositorioUsuarioMock.buscar("bloqueo@test.com")).thenReturn(null);
+
+    for (int intento = 0; intento < 5; intento++) {
+      assertThat(this.servicioLogin.estaBloqueado("bloqueo@test.com"), equalTo(false));
+      this.servicioLogin.consultarUsuario("bloqueo@test.com", "mal");
+    }
+
+    assertThat(this.servicioLogin.estaBloqueado("bloqueo@test.com"), equalTo(true));
+    assertThat(this.servicioLogin.estaBloqueado("  BLOQUEO@test.com "), equalTo(true));
+  }
+
+  @Test
+  public void unEmailSinIntentosFallidosNoEstaBloqueado() {
+    assertThat(this.servicioLogin.estaBloqueado("limpio@test.com"), equalTo(false));
+  }
+
+  @Test
+  public void estaBloqueadoConEmailNuloDeberiaDevolverFalse() {
+    assertThat(this.servicioLogin.estaBloqueado(null), equalTo(false));
+  }
+
+  @Test
+  public void consultarUsuarioConEmailNuloDeberiaDevolverNullSinErrorInterno() {
+    assertThat(this.servicioLogin.consultarUsuario(null, "Contrasena1"), equalTo(null));
+    verifyNoInteractions(this.repositorioUsuarioMock);
+  }
 }

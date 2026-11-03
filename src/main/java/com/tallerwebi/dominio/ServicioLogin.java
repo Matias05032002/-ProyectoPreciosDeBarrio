@@ -6,6 +6,10 @@ import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 
 public interface ServicioLogin {
   Usuario consultarUsuario(String email, String password);
+
+  /** Indica si el email está bloqueado temporalmente por demasiados intentos fallidos. */
+  boolean estaBloqueado(String email);
+
   void registrar(Usuario usuario) throws UsuarioExistente, EmailInvalido, ContrasenaInvalida;
   Usuario buscarPorEmail(String email);
 

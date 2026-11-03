@@ -27,6 +27,10 @@ public class ControladorLogin {
   private static final String ATTR_ERROR = "error";
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String ATTR_USUARIO = "usuario";
+  private static final String ATTR_REGISTRO_EXITOSO = "registroExitoso";
+  private static final String MENSAJE_REGISTRO_EXITOSO = "¡Tu cuenta se creó! Ya podés ingresar.";
+  private static final String MENSAJE_CUENTA_BLOQUEADA =
+    "Demasiados intentos fallidos. Esperá unos minutos antes de volver a intentar.";
   private static final int LARGO_MAXIMO_NOMBRE_COMERCIO = 150;
   private static final int LARGO_MAXIMO_DIRECCION = 200;
   private static final int LARGO_MAXIMO_TIPO = 50;
@@ -60,7 +64,12 @@ public class ControladorLogin {
       return new ModelAndView("redirect:/home");
     } else {
       Map<String, Object> model = new ModelMap();
-      model.put(ATTR_ERROR, "Usuario o clave incorrecta");
+      model.put(
+        ATTR_ERROR,
+        servicioLogin.estaBloqueado(datosLogin.getEmail())
+          ? MENSAJE_CUENTA_BLOQUEADA
+          : "Usuario o clave incorrecta"
+      );
       return new ModelAndView("login", model);
     }
   }
@@ -85,6 +94,7 @@ public class ControladorLogin {
 
     try {
       servicioLogin.registrar(usuario);
+      redirectAttrs.addFlashAttribute(ATTR_REGISTRO_EXITOSO, MENSAJE_REGISTRO_EXITOSO);
       return new ModelAndView(REDIRECT_LOGIN);
     } catch (Exception e) {
       redirectAttrs.addFlashAttribute("error", e.getMessage());
@@ -165,6 +175,7 @@ public class ControladorLogin {
         servicioComercio.guardarComercio(comercio);
       }
     }
+    redirectAttrs.addFlashAttribute(ATTR_REGISTRO_EXITOSO, MENSAJE_REGISTRO_EXITOSO);
     return new ModelAndView(REDIRECT_LOGIN);
   }
 

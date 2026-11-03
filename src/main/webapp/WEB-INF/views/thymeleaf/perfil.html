@@ -181,7 +181,7 @@
                                     Comercio
                                 </td>
                                 <td th:text="${reporte.precio != null
-        ? '$ ' + #numbers.formatDecimal(reporte.precio, 1, 2)
+        ? '$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')
         : 'Sin precio'}">
                                     $ 0,00
                                 </td>

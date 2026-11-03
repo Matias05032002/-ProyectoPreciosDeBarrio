@@ -106,7 +106,7 @@
                     <p class="card-text fw-bold text-success"
                        th:if="${producto.precioMinimo != null}">
                         Desde
-                        <span th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'COMMA', 2, 'POINT')}"></span>
+                        <span th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'POINT', 2, 'COMMA')}"></span>
                     </p>
 
                     <p class="mb-1" th:if="${producto.esMasBarato}">
@@ -118,14 +118,14 @@
                     <p class="mb-1 small text-danger"
                        th:if="${producto.diferenciaConElMasBarato != null}"
                        th:id="'diferencia-' + ${producto.reporteId}">
-                        +<span th:text="${'$' + #numbers.formatDecimal(producto.diferenciaConElMasBarato, 1, 'COMMA', 2, 'POINT')}"></span>
+                        +<span th:text="${'$' + #numbers.formatDecimal(producto.diferenciaConElMasBarato, 1, 'POINT', 2, 'COMMA')}"></span>
                         que el más barato
                     </p>
 
                     <p class="card-text text-muted small" th:if="${producto.comercio != null}">
                         en <span th:text="${producto.comercio}"></span>
                         <span th:if="${producto.distanciaKm != null}">
-                            · <span th:text="${#numbers.formatDecimal(producto.distanciaKm, 1, 2) + ' km'}"></span>
+                            · <span th:text="${#numbers.formatDecimal(producto.distanciaKm, 1, 'POINT', 2, 'COMMA') + ' km'}"></span>
                         </span>
                     </p>
 

@@ -15,37 +15,37 @@
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
     <div class="table-responsive">
         <table class="table table-bordered mt-2">
-        <thead class="table-dark">
-        <tr>
-            <th>Producto</th>
-            <th>Comercio</th>
-            <th>Precio</th>
-            <th>Fecha</th>
-            <th>Foto</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="reporte : ${reportes}">
-            <td th:text="${reporte.producto.nombre}"></td>
-            <td th:text="${reporte.comercio.nombre}"></td>
-            <td th:text="${reporte.precio}"></td>
-            <td th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')}"></td>
-            <td>
-                <img th:if="${reporte.foto != null}"
-                     th:src="@{/reporte/{id}/foto(id=${reporte.id})}"
-                     alt="Foto del producto"
-                     style="width: 100px; height: 100px; object-fit: cover;">
-            </td>
-            <td>
-                <form th:action="@{/reporte/{id}/dudoso(id=${reporte.id})}" method="post">
-                    <input type="hidden" name="nombreProducto" th:value="${reporte.producto.nombre}">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Marcar dudoso</button>
-                </form>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            <thead class="table-dark">
+            <tr>
+                <th>Producto</th>
+                <th>Comercio</th>
+                <th>Precio</th>
+                <th>Fecha</th>
+                <th>Foto</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="reporte : ${reportes}">
+                <td th:text="${reporte.producto.nombre}"></td>
+                <td th:text="${reporte.comercio.nombre}"></td>
+                <td th:text="${'$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')}"></td>
+                <td th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')}"></td>
+                <td>
+                    <img th:if="${reporte.foto != null}"
+                         th:src="@{/reporte/{id}/foto(id=${reporte.id})}"
+                         alt="Foto del producto"
+                         style="width: 100px; height: 100px; object-fit: cover;">
+                </td>
+                <td>
+                    <form th:action="@{/reporte/{id}/dudoso(id=${reporte.id})}" method="post">
+                        <input type="hidden" name="nombreProducto" th:value="${reporte.producto.nombre}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Marcar dudoso</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

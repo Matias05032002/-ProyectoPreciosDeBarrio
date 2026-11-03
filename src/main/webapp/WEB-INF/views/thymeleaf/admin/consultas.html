@@ -36,7 +36,7 @@
                 <td th:text="${consulta.email}"></td>
                 <td th:text="${consulta.asunto}"></td>
                 <td th:text="${consulta.mensaje}"></td>
-                <td th:text="${consulta.fecha}"></td>
+                <td th:text="${#temporals.format(consulta.fecha, 'dd/MM/yyyy HH:mm')}"></td>
                 <td th:text="${consulta.estado}"></td>
             </tr>
             </tbody>

@@ -328,4 +328,88 @@ public class ControladorLoginTest {
     );
     verify(servicioLoginMock, never()).registrar(any(Usuario.class));
   }
+
+  @Test
+  public void loginFallidoConEmailBloqueadoDeberiaAvisarQueEsperePorLosIntentos() {
+    when(servicioLoginMock.consultarUsuario(any(), any())).thenReturn(null);
+    when(servicioLoginMock.estaBloqueado("dami@unlam.com")).thenReturn(true);
+
+    ModelAndView modelAndView = controladorLogin.validarLogin(datosLoginMock, requestMock);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("login"));
+    assertThat(
+      modelAndView.getModel().get("error").toString(),
+      org.hamcrest.Matchers.containsString("Demasiados intentos")
+    );
+  }
+
+  @Test
+  public void loginFallidoSinBloqueoDeberiaSeguirDiciendoUsuarioOClaveIncorrecta() {
+    when(servicioLoginMock.consultarUsuario(any(), any())).thenReturn(null);
+    when(servicioLoginMock.estaBloqueado("dami@unlam.com")).thenReturn(false);
+
+    ModelAndView modelAndView = controladorLogin.validarLogin(datosLoginMock, requestMock);
+
+    assertThat(
+      modelAndView.getModel().get("error").toString(),
+      equalToIgnoringCase("Usuario o clave incorrecta")
+    );
+  }
+
+  @Test
+  public void registrarmeExitosoDeberiaAvisarQueLaCuentaSeCreo() {
+    controladorLogin.registrarme(
+      "dami@unlam.com",
+      "Password1",
+      "Dami",
+      "Lopez",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(
+      redirectAttrs.getFlashAttributes().get("registroExitoso"),
+      equalTo("¡Tu cuenta se creó! Ya podés ingresar.")
+    );
+  }
+
+  @Test
+  public void registrarmeFallidoNoDeberiaAvisarQueLaCuentaSeCreo() throws Exception {
+    doThrow(new UsuarioExistente()).when(servicioLoginMock).registrar(any(Usuario.class));
+
+    controladorLogin.registrarme(
+      "dami@unlam.com",
+      "Password1",
+      "Dami",
+      "Lopez",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(redirectAttrs.getFlashAttributes().containsKey("registroExitoso"), equalTo(false));
+  }
+
+  @Test
+  public void registrarmeComercioExitosoDeberiaAvisarQueLaCuentaSeCreo() {
+    when(servicioComercioMock.buscarPorDireccionYLocalidad(anyString(), anyString()))
+      .thenReturn(null);
+
+    controladorLogin.registrarmeComercio(
+      "comercio@unlam.com",
+      "Password1",
+      "Almacén Don José",
+      "Almacen",
+      "Rivadavia 1234",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(
+      redirectAttrs.getFlashAttributes().get("registroExitoso"),
+      equalTo("¡Tu cuenta se creó! Ya podés ingresar.")
+    );
+  }
 }

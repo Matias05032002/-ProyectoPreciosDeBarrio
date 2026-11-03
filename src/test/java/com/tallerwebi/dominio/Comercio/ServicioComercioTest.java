@@ -231,14 +231,14 @@ public class ServicioComercioTest {
   }
 
   @Test
-  public void estaAbiertoDeberiaRetornarFalseSiNoHayHorariosCargados() {
+  public void estaAbiertoDeberiaRetornarNullSiNoHayHorariosCargados() {
     Long comercioId = 3L;
     when(repositorioHorarioMock.buscarPorComercioId(comercioId))
       .thenReturn(Collections.emptyList());
 
-    boolean resultado = servicioComercio.estaAbierto(comercioId);
+    Boolean resultado = servicioComercio.estaAbierto(comercioId);
 
-    assertThat(resultado, equalTo(false));
+    assertThat(resultado, equalTo(null));
   }
 
   @Test
