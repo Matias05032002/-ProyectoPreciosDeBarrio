@@ -5,16 +5,25 @@ import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service("servicioProducto")
 @Transactional
 public class ServicioProductoImpl implements ServicioProducto {
+
+  private static final int MINIMO_DE_LOCALES_PARA_COMPARAR = 2;
 
   private RepositorioProducto repositorioProducto;
   private RepositorioReporte repositorioReporte;
@@ -64,50 +73,156 @@ public class ServicioProductoImpl implements ServicioProducto {
     List<Reporte> reportes = repositorioReporte.buscarPorNombre(nombre);
     if (reportes == null) reportes = Collections.emptyList();
 
-    List<ProductoConPrecio> resultado = new ArrayList<>();
-    for (Reporte reporte : reportes) {
+    Map<Object, List<ProductoConPrecio>> gruposPorProducto = new LinkedHashMap<>();
+    for (Reporte reporte : quedarseConElUltimoDeCadaLocal(reportes)) {
       Producto producto = reporte.getProducto();
       if (producto == null) continue;
 
-      String nombreComercio = reporte.getComercio() != null
-        ? reporte.getComercio().getNombre()
-        : null;
-      ProductoConPrecio dto = new ProductoConPrecio(
-        producto.getNombre(),
-        producto.getMarca(),
-        producto.getUnidad(),
-        producto.getCategoria(),
-        reporte.getPrecio(),
-        nombreComercio,
-        reporte.getId(),
-        reporte.getFechaDeReporte(),
-        reporte.getPuntuacion()
-      );
-      if (usuario != null) {
-        dto.setYaMarcoDudoso(reporte.getUsuariosQueMarcaron().contains(usuario));
-      }
+      ProductoConPrecio dto = crearProductoConPrecio(reporte, producto, usuario);
       asignarDistancia(dto, reporte, latUsuario, lngUsuario);
-      resultado.add(dto);
+      gruposPorProducto
+        .computeIfAbsent(claveDelProducto(producto), clave -> new ArrayList<>())
+        .add(dto);
     }
 
+    gruposPorProducto.values().forEach(this::marcarElMasBaratoDelGrupo);
+    return ordenar(gruposPorProducto, orden);
+  }
+
+  private ProductoConPrecio crearProductoConPrecio(
+    Reporte reporte,
+    Producto producto,
+    Usuario usuario
+  ) {
+    String nombreComercio = reporte.getComercio() != null
+      ? reporte.getComercio().getNombre()
+      : null;
+    ProductoConPrecio dto = new ProductoConPrecio(
+      producto.getNombre(),
+      producto.getMarca(),
+      producto.getUnidad(),
+      producto.getCategoria(),
+      reporte.getPrecio(),
+      nombreComercio,
+      reporte.getId(),
+      reporte.getFechaDeReporte(),
+      reporte.getPuntuacion()
+    );
+    if (usuario != null) {
+      dto.setYaMarcoDudoso(reporte.getUsuariosQueMarcaron().contains(usuario));
+    }
+    return dto;
+  }
+
+  // Un mismo producto en un mismo local puede tener varios reportes de distintas fechas:
+  // solo vale el último, si no un precio viejo y barato le ganaría al precio actual.
+  private List<Reporte> quedarseConElUltimoDeCadaLocal(List<Reporte> reportes) {
+    Map<String, Reporte> ultimoPorLocal = new HashMap<>();
+    for (Reporte reporte : reportes) {
+      String clave = claveDelLocal(reporte);
+      if (clave != null) ultimoPorLocal.merge(clave, reporte, this::elMasReciente);
+    }
+
+    // Identidad y no equals(): lo que se compara es "este mismo reporte", no uno igual
+    Set<Reporte> ultimos = Collections.newSetFromMap(new IdentityHashMap<>());
+    ultimos.addAll(ultimoPorLocal.values());
+
+    List<Reporte> resultado = new ArrayList<>();
+    for (Reporte reporte : reportes) {
+      if (claveDelLocal(reporte) == null || ultimos.contains(reporte)) resultado.add(reporte);
+    }
+    return resultado;
+  }
+
+  private String claveDelLocal(Reporte reporte) {
+    if (reporte.getProducto() == null || reporte.getComercio() == null) return null;
+    Long productoId = reporte.getProducto().getId();
+    Long comercioId = reporte.getComercio().getId();
+    if (productoId == null || comercioId == null) return null;
+    return productoId + "-" + comercioId;
+  }
+
+  private Reporte elMasReciente(Reporte uno, Reporte otro) {
+    LocalDateTime fechaUno = uno.getFechaDeReporte();
+    LocalDateTime fechaOtro = otro.getFechaDeReporte();
+    if (fechaUno == null) return otro;
+    if (fechaOtro == null) return uno;
+    return fechaOtro.isAfter(fechaUno) ? otro : uno;
+  }
+
+  // Los productos con id se agrupan por id; los que todavía no tienen id, cada uno por su cuenta
+  private Object claveDelProducto(Producto producto) {
+    return producto.getId() != null ? producto.getId() : producto;
+  }
+
+  private void marcarElMasBaratoDelGrupo(List<ProductoConPrecio> grupo) {
+    if (grupo.size() < MINIMO_DE_LOCALES_PARA_COMPARAR) return;
+
+    // Un reporte dudoso no puede ser "el más barato": podría ser un precio mal cargado
+    OptionalDouble minimo = grupo
+      .stream()
+      .filter(dto -> !dto.isEsDudoso())
+      .mapToDouble(ProductoConPrecio::getPrecioMinimo)
+      .min();
+
+    for (ProductoConPrecio dto : grupo) {
+      dto.setLocalesComparados(grupo.size());
+      if (minimo.isEmpty() || dto.isEsDudoso()) continue;
+      double diferencia = dto.getPrecioMinimo() - minimo.getAsDouble();
+      if (diferencia > 0) {
+        dto.setDiferenciaConElMasBarato(diferencia);
+      } else {
+        dto.setEsMasBarato(true);
+      }
+    }
+  }
+
+  private List<ProductoConPrecio> ordenar(
+    Map<Object, List<ProductoConPrecio>> gruposPorProducto,
+    OrdenProducto orden
+  ) {
     if (OrdenProducto.CERCANIA.equals(orden)) {
+      List<ProductoConPrecio> resultado = aplanar(gruposPorProducto);
       resultado.sort(
         Comparator.comparing(
           ProductoConPrecio::getDistanciaKm,
           Comparator.nullsLast(Comparator.naturalOrder())
         )
       );
-    } else if (OrdenProducto.RECIENTE.equals(orden)) {
+      return resultado;
+    }
+    if (OrdenProducto.RECIENTE.equals(orden)) {
+      List<ProductoConPrecio> resultado = aplanar(gruposPorProducto);
       resultado.sort(
         Comparator.comparing(
           ProductoConPrecio::getFechaDeReporte,
           Comparator.nullsLast(Comparator.reverseOrder())
         )
       );
-    } else {
-      resultado.sort(Comparator.comparingDouble(ProductoConPrecio::getPrecioMinimo));
+      return resultado;
     }
+    return ordenarPorPrecioAgrupandoPorProducto(gruposPorProducto);
+  }
 
+  // Cada producto queda junto, con sus locales de más barato a más caro,
+  // y los productos se ordenan por su precio más bajo.
+  private List<ProductoConPrecio> ordenarPorPrecioAgrupandoPorProducto(
+    Map<Object, List<ProductoConPrecio>> gruposPorProducto
+  ) {
+    List<List<ProductoConPrecio>> grupos = new ArrayList<>(gruposPorProducto.values());
+    for (List<ProductoConPrecio> grupo : grupos) {
+      grupo.sort(Comparator.comparingDouble(ProductoConPrecio::getPrecioMinimo));
+    }
+    grupos.sort(Comparator.comparingDouble(grupo -> grupo.get(0).getPrecioMinimo()));
+
+    List<ProductoConPrecio> resultado = new ArrayList<>();
+    grupos.forEach(resultado::addAll);
+    return resultado;
+  }
+
+  private List<ProductoConPrecio> aplanar(Map<Object, List<ProductoConPrecio>> gruposPorProducto) {
+    List<ProductoConPrecio> resultado = new ArrayList<>();
+    gruposPorProducto.values().forEach(resultado::addAll);
     return resultado;
   }
 

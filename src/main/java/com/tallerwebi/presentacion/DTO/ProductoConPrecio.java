@@ -22,6 +22,9 @@ public class ProductoConPrecio {
   private boolean yaMarcoDudoso;
   private Integer puntuacion;
   private Double distanciaKm;
+  private boolean esMasBarato;
+  private int localesComparados;
+  private Double diferenciaConElMasBarato;
 
   public ProductoConPrecio(
     String nombre,
@@ -127,5 +130,29 @@ public class ProductoConPrecio {
 
   public void setDistanciaKm(Double distanciaKm) {
     this.distanciaKm = distanciaKm;
+  }
+
+  public boolean isEsMasBarato() {
+    return esMasBarato;
+  }
+
+  public void setEsMasBarato(boolean esMasBarato) {
+    this.esMasBarato = esMasBarato;
+  }
+
+  public int getLocalesComparados() {
+    return localesComparados;
+  }
+
+  public void setLocalesComparados(int localesComparados) {
+    this.localesComparados = localesComparados;
+  }
+
+  public Double getDiferenciaConElMasBarato() {
+    return diferenciaConElMasBarato;
+  }
+
+  public void setDiferenciaConElMasBarato(Double diferenciaConElMasBarato) {
+    this.diferenciaConElMasBarato = diferenciaConElMasBarato;
   }
 }

@@ -54,6 +54,7 @@
     <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
         <div class="col" th:each="producto : ${productos}">
             <div class="card h-100 shadow-sm"
+                 th:classappend="${producto.esMasBarato} ? 'border-success border-2'"
                  th:id="'card-producto-' + ${producto.reporteId}">
 
                 <!-- Foto asociada al reporte del producto -->
@@ -106,6 +107,19 @@
                        th:if="${producto.precioMinimo != null}">
                         Desde
                         <span th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'COMMA', 2, 'POINT')}"></span>
+                    </p>
+
+                    <p class="mb-1" th:if="${producto.esMasBarato}">
+                        <span class="badge bg-success"
+                              th:id="'badge-mas-barato-' + ${producto.reporteId}">
+                            Más barato de los <span th:text="${producto.localesComparados}"></span> locales
+                        </span>
+                    </p>
+                    <p class="mb-1 small text-danger"
+                       th:if="${producto.diferenciaConElMasBarato != null}"
+                       th:id="'diferencia-' + ${producto.reporteId}">
+                        +<span th:text="${'$' + #numbers.formatDecimal(producto.diferenciaConElMasBarato, 1, 'COMMA', 2, 'POINT')}"></span>
+                        que el más barato
                     </p>
 
                     <p class="card-text text-muted small" th:if="${producto.comercio != null}">
