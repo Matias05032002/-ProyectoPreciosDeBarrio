@@ -31,6 +31,7 @@
     <div th:if="${param.errorContrasena}" class="alert alert-danger">
         No se pudo cambiar la contraseña. Verificá la contraseña actual y los requisitos de la nueva.
     </div>
+    <div th:if="${errorDatos}" id="error-datos" class="alert alert-danger" th:text="${errorDatos}"></div>
     <div th:if="${param.datosActualizados}" class="alert alert-success">
         Datos personales actualizados correctamente.
     </div>
@@ -122,20 +123,22 @@
                             <input type="text" id="nombre" name="nombre"
                                    class="form-control"
                                    th:value="${usuario.nombre}"
-                                   maxlength="100">
+                                   maxlength="100" required>
                         </div>
                         <div class="mb-3">
                             <label for="apellido" class="form-label">Apellido</label>
                             <input type="text" id="apellido" name="apellido"
                                    class="form-control"
                                    th:value="${usuario.apellido}"
-                                   maxlength="100">
+                                   maxlength="100" required>
                         </div>
                         <div class="mb-3">
                             <label for="fechaNacimiento" class="form-label">Fecha de nacimiento</label>
                             <input type="date" id="fechaNacimiento" name="fechaNacimiento"
                                    class="form-control"
-                                   th:value="${usuario.fechaNacimiento}">
+                                   th:value="${usuario.fechaNacimiento}"
+                                   min="1900-01-01"
+                                   th:max="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
                         </div>
                         <button type="submit" class="btn btn-primary w-100">
                             Guardar datos
@@ -159,7 +162,7 @@
 
                     <div th:unless="${#lists.isEmpty(reportes)}"
                          class="table-responsive">
-                            <table class="table table-hover align-middle">
+                        <table class="table table-hover align-middle">
                             <thead>
                             <tr>
                                 <th>Producto</th>

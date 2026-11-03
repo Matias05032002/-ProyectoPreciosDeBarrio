@@ -10,8 +10,10 @@
 <body>
 
 <main class="container text-center mt-5 mb-5">
-  <h1>Algo salió mal</h1>
-  <p class="lead">Ocurrió un error inesperado. Probá de nuevo en unos minutos.</p>
+  <h1 th:text="${titulo} ?: 'Algo salió mal'">Algo salió mal</h1>
+  <p class="lead" th:text="${mensaje} ?: 'Ocurrió un error inesperado. Probá de nuevo en unos minutos.'">
+    Ocurrió un error inesperado. Probá de nuevo en unos minutos.
+  </p>
   <a class="btn btn-success" th:href="@{/home}">Volver al inicio</a>
 </main>
 

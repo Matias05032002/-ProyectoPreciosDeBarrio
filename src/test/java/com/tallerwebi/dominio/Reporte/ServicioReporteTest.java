@@ -507,4 +507,45 @@ public class ServicioReporteTest {
   private Reporte datosEdicion(String nombre, String unidad, double precio) {
     return reporteConProductoYComercio(productoValido(nombre, unidad), comercioValido(), precio);
   }
+
+  @Test
+  public void guardarReporteConNombreDeProductoMuyLargoDeberiaLanzarCamposObligatoriosVacios() {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("a".repeat(151), "1000ml"),
+      comercioValido(),
+      100.0
+    );
+
+    CamposObligatoriosVacios error = assertThrows(
+      CamposObligatoriosVacios.class,
+      () -> servicioReporte.guardarReporte(reporte)
+    );
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+      "El nombre del producto no puede superar los 150 caracteres",
+      error.getMessage()
+    );
+    verify(repositorioReporteMock, never()).guardarReporte(any(Reporte.class));
+  }
+
+  @Test
+  public void guardarReporteConDireccionMuyLargaDeberiaLanzarCamposObligatoriosVacios() {
+    Comercio comercio = comercioValido();
+    comercio.setDireccion("a".repeat(201));
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercio,
+      100.0
+    );
+
+    CamposObligatoriosVacios error = assertThrows(
+      CamposObligatoriosVacios.class,
+      () -> servicioReporte.guardarReporte(reporte)
+    );
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+      "La dirección no puede superar los 200 caracteres",
+      error.getMessage()
+    );
+  }
 }

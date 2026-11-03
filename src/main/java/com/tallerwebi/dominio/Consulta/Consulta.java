@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.Consulta;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,7 +19,10 @@ public class Consulta {
   private String nombre;
   private String email;
   private String asunto;
+
+  @Column(length = 2000)
   private String mensaje;
+
   private LocalDateTime fecha;
   private String estado = "Pendiente";
 

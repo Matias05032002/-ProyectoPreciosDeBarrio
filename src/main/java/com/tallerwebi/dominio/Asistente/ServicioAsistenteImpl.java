@@ -65,7 +65,7 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
 
     if (historial != null && !historial.isEmpty()) {
       sb.append("Conversación anterior:\n");
-      int desde = Math.max(0, historial.size() - 6); // últimos 3 turnos (user + assistant)
+      int desde = Math.max(0, historial.size() - 6);
       for (int i = desde; i < historial.size(); i++) {
         Map<String, String> turno = historial.get(i);
         String rol = "user".equals(turno.get("role")) ? "Vecino" : "Don Peso";

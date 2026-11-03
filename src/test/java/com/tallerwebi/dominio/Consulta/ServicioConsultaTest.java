@@ -3,10 +3,14 @@ package com.tallerwebi.dominio.Consulta;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -58,5 +62,103 @@ public class ServicioConsultaTest {
     assertSame(consultasEsperadas, resultado);
     assertEquals(2, resultado.size());
     verify(repositorioConsultaMock).listarTodas();
+  }
+
+  private Consulta consultaValida() {
+    Consulta consulta = new Consulta();
+    consulta.setNombre("Juan");
+    consulta.setEmail("juan@email.com");
+    consulta.setAsunto("Consulta");
+    consulta.setMensaje("Hola, tengo una duda.");
+    return consulta;
+  }
+
+  private void assertInvalida(Consulta consulta, String mensajeEsperado) {
+    DatosInvalidos error = assertThrows(
+      DatosInvalidos.class,
+      () -> servicioConsulta.guardar(consulta)
+    );
+    assertEquals(mensajeEsperado, error.getMessage());
+    verify(repositorioConsultaMock, never()).guardar(any(Consulta.class));
+  }
+
+  @Test
+  public void guardarConsultaSinNombreLanzaDatosInvalidos() {
+    Consulta consulta = consultaValida();
+    consulta.setNombre("   ");
+
+    assertInvalida(consulta, "El nombre es obligatorio");
+  }
+
+  @Test
+  public void guardarConsultaConEmailInvalidoLanzaDatosInvalidos() {
+    Consulta consulta = consultaValida();
+    consulta.setEmail("esto-no-es-un-mail");
+
+    assertInvalida(consulta, "El correo electrónico no es válido");
+  }
+
+  @Test
+  public void guardarConsultaSinEmailLanzaDatosInvalidos() {
+    Consulta consulta = consultaValida();
+    consulta.setEmail(null);
+
+    assertInvalida(consulta, "El correo electrónico es obligatorio");
+  }
+
+  @Test
+  public void guardarConsultaConAsuntoInventadoLanzaDatosInvalidos() {
+    Consulta consulta = consultaValida();
+    consulta.setAsunto("Hackeo");
+
+    assertInvalida(consulta, "Elegí un asunto de la lista");
+  }
+
+  @Test
+  public void guardarConsultaSinAsuntoLanzaDatosInvalidos() {
+    Consulta consulta = consultaValida();
+    consulta.setAsunto("");
+
+    assertInvalida(consulta, "Elegí un asunto de la lista");
+  }
+
+  @Test
+  public void guardarConsultaSinMensajeLanzaDatosInvalidos() {
+    Consulta consulta = consultaValida();
+    consulta.setMensaje("");
+
+    assertInvalida(consulta, "El mensaje es obligatorio");
+  }
+
+  @Test
+  public void guardarConsultaConMensajeMuyLargoLanzaDatosInvalidos() {
+    Consulta consulta = consultaValida();
+    consulta.setMensaje("a".repeat(2001));
+
+    assertInvalida(consulta, "El mensaje no puede superar los 2000 caracteres");
+  }
+
+  @Test
+  public void guardarConsultaConMensajeDeLargoMaximoLoAcepta() {
+    Consulta consulta = consultaValida();
+    consulta.setMensaje("a".repeat(2000));
+
+    servicioConsulta.guardar(consulta);
+
+    verify(repositorioConsultaMock).guardar(consulta);
+  }
+
+  @Test
+  public void guardarConsultaQuitaLosEspaciosDeLosBordes() {
+    Consulta consulta = consultaValida();
+    consulta.setNombre("  Juan ");
+    consulta.setEmail(" juan@email.com ");
+    consulta.setMensaje("  Hola  ");
+
+    servicioConsulta.guardar(consulta);
+
+    assertEquals("Juan", consulta.getNombre());
+    assertEquals("juan@email.com", consulta.getEmail());
+    assertEquals("Hola", consulta.getMensaje());
   }
 }

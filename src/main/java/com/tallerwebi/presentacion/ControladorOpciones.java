@@ -2,6 +2,7 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Consulta.Consulta;
 import com.tallerwebi.dominio.Consulta.ServicioConsulta;
+import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -35,10 +36,15 @@ public class ControladorOpciones {
     @ModelAttribute Consulta consulta,
     HttpServletRequest request
   ) {
-    servicioConsulta.guardar(consulta);
-
     ModelAndView mav = new ModelAndView("feedback");
-    mav.addObject("mensajeExito", "Tu mensaje fue enviado correctamente.");
+    try {
+      servicioConsulta.guardar(consulta);
+      mav.addObject("mensajeExito", "Tu mensaje fue enviado correctamente.");
+      mav.addObject("consulta", new Consulta());
+    } catch (DatosInvalidos e) {
+      mav.addObject("error", e.getMessage());
+      mav.addObject("consulta", consulta);
+    }
     return mav;
   }
 }

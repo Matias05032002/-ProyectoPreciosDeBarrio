@@ -14,6 +14,7 @@ public class ServicioListaImpl implements ServicioLista {
 
   private static final String LISTA_AJENA = "La lista no pertenece al usuario";
   private static final int CANTIDAD_MINIMA = 1;
+  private static final int LARGO_MAXIMO_NOMBRE = 100;
 
   private final RepositorioLista repositorioLista;
   private final RepositorioReporte repositorioReporte;
@@ -32,7 +33,12 @@ public class ServicioListaImpl implements ServicioLista {
     if (nombre == null || nombre.isBlank()) {
       throw new IllegalArgumentException("El nombre de la lista no puede estar vacío");
     }
-    Lista lista = new Lista(nombre, usuarioId);
+    if (nombre.trim().length() > LARGO_MAXIMO_NOMBRE) {
+      throw new IllegalArgumentException(
+        "El nombre de la lista no puede superar los " + LARGO_MAXIMO_NOMBRE + " caracteres"
+      );
+    }
+    Lista lista = new Lista(nombre.trim(), usuarioId);
     repositorioLista.guardar(lista);
     return lista;
   }

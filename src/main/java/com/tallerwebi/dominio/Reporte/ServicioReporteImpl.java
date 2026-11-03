@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ServicioReporteImpl implements ServicioReporte {
 
+  // Número + unidad de medida. "u" es para productos que se venden por unidad (1u, 6u).
+  // Lo usa también ServicioOcr para normalizar lo que lee de los tickets.
   static final String FORMATO_UNIDAD = "^[0-9]+(\\.[0-9]+)?(?i)(g|kg|gr|ml|l|u)$";
 
   private RepositorioReporte repositorioReporte;
@@ -26,6 +28,7 @@ public class ServicioReporteImpl implements ServicioReporte {
   private ServicioProducto servicioProducto;
   private static final int DIAS_PLAZO_EDICION = 2;
   private static final double PRECIO_MAXIMO = 10_000_000.0;
+  private static final int LARGO_MAXIMO_CORTO = 100;
 
   @Autowired
   public ServicioReporteImpl(
@@ -193,6 +196,24 @@ public class ServicioReporteImpl implements ServicioReporte {
     if (campos.stream().anyMatch(v -> v == null || v.trim().isEmpty())) {
       throw new CamposObligatoriosVacios("Todos los campos son obligatorios");
     }
+    validarLargos(reporte);
+  }
+
+  // Coinciden con el largo de las columnas: si se pasan, la base falla con un error 500
+  private void validarLargos(Reporte reporte) throws CamposObligatoriosVacios {
+    validarLargo(reporte.getProducto().getNombre(), "El nombre del producto", 150);
+    validarLargo(reporte.getProducto().getMarca(), "La marca", LARGO_MAXIMO_CORTO);
+    validarLargo(reporte.getProducto().getCategoria(), "La categoría", LARGO_MAXIMO_CORTO);
+    validarLargo(reporte.getComercio().getNombre(), "El nombre del comercio", 150);
+    validarLargo(reporte.getComercio().getDireccion(), "La dirección", 200);
+    validarLargo(reporte.getComercio().getLocalidad(), "La localidad", LARGO_MAXIMO_CORTO);
+  }
+
+  private void validarLargo(String valor, String campo, int maximo)
+    throws CamposObligatoriosVacios {
+    if (valor.trim().length() > maximo) {
+      throw new CamposObligatoriosVacios(campo + " no puede superar los " + maximo + " caracteres");
+    }
   }
 
   @Override
@@ -221,6 +242,7 @@ public class ServicioReporteImpl implements ServicioReporte {
     }
   }
 
+  // NaN e infinito no son <= 0 pero tampoco son precios: se rechazan junto con el nulo
   private boolean esPrecioPositivo(Double precio) {
     return precio != null && !precio.isNaN() && !precio.isInfinite() && precio > 0;
   }

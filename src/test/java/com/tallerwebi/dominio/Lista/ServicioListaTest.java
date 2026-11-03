@@ -188,4 +188,29 @@ public class ServicioListaTest {
     lista.setItems(new java.util.ArrayList<>(java.util.List.of(item)));
     return item;
   }
+
+  @Test
+  void deberiaLanzarExcepcionSiElNombreSuperaLosCienCaracteres() {
+    IllegalArgumentException error = assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioLista.crearLista("a".repeat(101), 1L)
+    );
+
+    assertThat(error.getMessage(), is("El nombre de la lista no puede superar los 100 caracteres"));
+    verify(repositorioLista, never()).guardar(any(Lista.class));
+  }
+
+  @Test
+  void deberiaAceptarUnNombreDeExactamenteCienCaracteres() {
+    Lista lista = servicioLista.crearLista("a".repeat(100), 1L);
+
+    assertThat(lista.getNombre().length(), is(100));
+  }
+
+  @Test
+  void deberiaGuardarElNombreSinEspaciosEnLosBordes() {
+    Lista lista = servicioLista.crearLista("  Super del jueves  ", 1L);
+
+    assertThat(lista.getNombre(), is("Super del jueves"));
+  }
 }

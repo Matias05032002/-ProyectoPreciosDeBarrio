@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ControladorLista {
@@ -38,13 +39,18 @@ public class ControladorLista {
   }
 
   @PostMapping("/mis-listas/crear")
-  public ModelAndView crearLista(@RequestParam("nombre") String nombre, HttpSession session) {
+  public ModelAndView crearLista(
+    @RequestParam("nombre") String nombre,
+    HttpSession session,
+    RedirectAttributes redirectAttrs
+  ) {
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
     try {
       Lista lista = servicioLista.crearLista(nombre, usuarioId);
       return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + lista.getId());
     } catch (IllegalArgumentException e) {
+      redirectAttrs.addFlashAttribute("error", e.getMessage());
       return new ModelAndView(REDIRECT_MIS_LISTAS);
     }
   }

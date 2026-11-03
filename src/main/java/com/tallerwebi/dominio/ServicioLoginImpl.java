@@ -1,11 +1,13 @@
 package com.tallerwebi.dominio;
 
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,8 @@ public class ServicioLoginImpl implements ServicioLogin {
 
   private static final String ROL_COMERCIO = "COMERCIO";
   private static final String ROL_USUARIO = "USER";
+  private static final int LARGO_MAXIMO_NOMBRE = 100;
+  private static final LocalDate FECHA_NACIMIENTO_MINIMA = LocalDate.of(1900, 1, 1);
 
   private RepositorioUsuario repositorioUsuario;
   private BCryptPasswordEncoder passwordEncoder;
@@ -79,9 +83,13 @@ public class ServicioLoginImpl implements ServicioLogin {
     if (usuarioEncontrado != null) {
       throw new UsuarioExistente();
     }
-    if (ROL_COMERCIO.equals(usuario.getRol())) {
+    boolean esComercio = ROL_COMERCIO.equals(usuario.getRol());
+    validarDatosDeRegistro(usuario, esComercio);
+    usuario.setNombre(usuario.getNombre().trim());
+    if (esComercio) {
       usuario.setRol(ROL_COMERCIO);
     } else {
+      usuario.setApellido(usuario.getApellido().trim());
       usuario.setRol(ROL_USUARIO);
     }
     usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
@@ -146,6 +154,36 @@ public class ServicioLoginImpl implements ServicioLogin {
     return true;
   }
 
+  private void validarDatosDeRegistro(Usuario usuario, boolean esComercio) {
+    validarNombreOApellido(usuario.getNombre(), "El nombre");
+    if (esComercio) return;
+    validarNombreOApellido(usuario.getApellido(), "El apellido");
+    if (!Localidades.esValida(usuario.getLocalidad())) {
+      throw new DatosInvalidos("Elegí una localidad de la lista");
+    }
+  }
+
+  private void validarNombreOApellido(String valor, String campo) {
+    if (valor == null || valor.isBlank()) {
+      throw new DatosInvalidos(campo + " es obligatorio");
+    }
+    if (valor.trim().length() > LARGO_MAXIMO_NOMBRE) {
+      throw new DatosInvalidos(
+        campo + " no puede superar los " + LARGO_MAXIMO_NOMBRE + " caracteres"
+      );
+    }
+  }
+
+  private void validarFechaDeNacimiento(LocalDate fecha) {
+    if (fecha == null) return;
+    if (fecha.isAfter(LocalDate.now())) {
+      throw new DatosInvalidos("La fecha de nacimiento no puede ser futura");
+    }
+    if (fecha.isBefore(FECHA_NACIMIENTO_MINIMA)) {
+      throw new DatosInvalidos("La fecha de nacimiento no es válida");
+    }
+  }
+
   private void validarEmail(String email) throws EmailInvalido {
     if (email == null || !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
       throw new EmailInvalido("El email ingresado no es válido");
@@ -166,10 +204,14 @@ public class ServicioLoginImpl implements ServicioLogin {
     Long usuarioId,
     String nombre,
     String apellido,
-    java.time.LocalDate fechaNacimiento
+    LocalDate fechaNacimiento
   ) {
     Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
     if (usuario == null) return;
+
+    if (nombre != null) validarNombreOApellido(nombre, "El nombre");
+    if (apellido != null) validarNombreOApellido(apellido, "El apellido");
+    validarFechaDeNacimiento(fechaNacimiento);
 
     if (nombre != null) usuario.setNombre(nombre.trim());
     if (apellido != null) usuario.setApellido(apellido.trim());

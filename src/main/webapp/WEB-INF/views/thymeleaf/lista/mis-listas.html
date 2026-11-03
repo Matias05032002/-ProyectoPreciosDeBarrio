@@ -18,6 +18,9 @@
         </button>
     </div>
 
+    <div th:if="${error}" id="error-lista" class="alert alert-danger" role="alert"
+         th:text="${error}"></div>
+
     <div th:if="${#lists.isEmpty(listas)}" class="text-center mt-5">
         <p class="text-muted">Todavía no tenés listas creadas.</p>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearLista">
@@ -70,7 +73,7 @@
                     <div class="mb-3">
                         <label for="nombreLista" class="form-label">Nombre de la lista</label>
                         <input type="text" class="form-control" id="nombreLista"
-                               name="nombre" placeholder="Ej: Super del jueves" required>
+                               name="nombre" placeholder="Ej: Super del jueves" required maxlength="100">
                     </div>
                 </div>
                 <div class="modal-footer">

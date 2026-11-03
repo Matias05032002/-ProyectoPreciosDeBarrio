@@ -4,8 +4,10 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ControladorPerfil {
@@ -108,7 +111,8 @@ public class ControladorPerfil {
     @RequestParam(value = "nombre", required = false) String nombre,
     @RequestParam(value = "apellido", required = false) String apellido,
     @RequestParam(value = "fechaNacimiento", required = false) String fechaNacimiento,
-    HttpServletRequest request
+    HttpServletRequest request,
+    RedirectAttributes redirectAttrs
   ) {
     HttpSession sesion = request.getSession(false);
 
@@ -118,12 +122,19 @@ public class ControladorPerfil {
 
     Long usuarioId = Long.valueOf(sesion.getAttribute("ID").toString());
 
-    java.time.LocalDate fecha = null;
-    if (fechaNacimiento != null && !fechaNacimiento.isBlank()) {
-      fecha = java.time.LocalDate.parse(fechaNacimiento);
+    try {
+      java.time.LocalDate fecha = null;
+      if (fechaNacimiento != null && !fechaNacimiento.isBlank()) {
+        fecha = java.time.LocalDate.parse(fechaNacimiento);
+      }
+      servicioLogin.actualizarDatosPersonales(usuarioId, nombre, apellido, fecha);
+    } catch (DatosInvalidos e) {
+      redirectAttrs.addFlashAttribute("errorDatos", e.getMessage());
+      return new ModelAndView("redirect:/perfil");
+    } catch (DateTimeParseException e) {
+      redirectAttrs.addFlashAttribute("errorDatos", "La fecha de nacimiento no es válida");
+      return new ModelAndView("redirect:/perfil");
     }
-
-    servicioLogin.actualizarDatosPersonales(usuarioId, nombre, apellido, fecha);
 
     return new ModelAndView("redirect:/perfil?datosActualizados");
   }

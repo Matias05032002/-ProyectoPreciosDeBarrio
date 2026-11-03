@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Consulta.Consulta;
 import com.tallerwebi.dominio.Consulta.ServicioConsulta;
+import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,5 +67,33 @@ public class ControladorOpcionesTest {
     controladorOpciones.guardarFeedback(consulta, requestMock);
 
     verify(servicioConsultaMock).guardar(consulta);
+  }
+
+  @Test
+  public void guardarFeedbackInvalidoDeberiaVolverAlFormularioConElErrorYLoQueEscribio() {
+    Consulta consulta = new Consulta();
+    consulta.setNombre("Ana");
+    consulta.setEmail("no-es-un-mail");
+    doThrow(new DatosInvalidos("El correo electrónico no es válido"))
+      .when(servicioConsultaMock)
+      .guardar(consulta);
+
+    ModelAndView mav = controladorOpciones.guardarFeedback(consulta, requestMock);
+
+    assertThat(mav.getViewName(), equalTo("feedback"));
+    assertThat(mav.getModel().get("error"), equalTo("El correo electrónico no es válido"));
+    assertThat(mav.getModel().get("consulta"), equalTo(consulta));
+    assertThat(mav.getModel().get("mensajeExito"), equalTo(null));
+  }
+
+  @Test
+  public void guardarFeedbackExitosoDeberiaDejarElFormularioVacio() {
+    Consulta consulta = new Consulta();
+    consulta.setNombre("Ana");
+
+    ModelAndView mav = controladorOpciones.guardarFeedback(consulta, requestMock);
+
+    Consulta paraElFormulario = (Consulta) mav.getModel().get("consulta");
+    assertThat(paraElFormulario.getNombre(), equalTo(null));
   }
 }

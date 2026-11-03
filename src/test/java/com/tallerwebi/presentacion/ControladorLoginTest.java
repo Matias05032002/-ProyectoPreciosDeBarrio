@@ -264,4 +264,68 @@ public class ControladorLoginTest {
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
     verify(sessionMock, times(1)).invalidate();
   }
+
+  @Test
+  public void registrarmeComercioConLocalidadInventadaNoDeberiaCrearNada()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
+      "comercio@unlam.com",
+      "Password1",
+      "Almacén Don José",
+      "Almacen",
+      "Rivadavia 1234",
+      "Narnia",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(
+      modelAndView.getViewName(),
+      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario?errorComercio=")
+    );
+    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
+    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
+  }
+
+  @Test
+  public void registrarmeComercioSinDireccionNoDeberiaCrearUnaCuentaSinComercio()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
+      "comercio@unlam.com",
+      "Password1",
+      "Almacén Don José",
+      "Almacen",
+      "   ",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(
+      modelAndView.getViewName(),
+      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario?errorComercio=")
+    );
+    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
+  }
+
+  @Test
+  public void registrarmeComercioConNombreMuyLargoNoDeberiaCrearNada()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
+      "comercio@unlam.com",
+      "Password1",
+      "a".repeat(151),
+      "Almacen",
+      "Rivadavia 1234",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(
+      modelAndView.getViewName(),
+      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario?errorComercio=")
+    );
+    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
+  }
 }

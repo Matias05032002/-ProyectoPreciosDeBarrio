@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -55,6 +57,9 @@ public class ServicioLoginTest {
     usuario.setEmail("nuevo@test.com");
     usuario.setPassword("Contrasena1");
     usuario.setRol("USER");
+    usuario.setNombre("Matias");
+    usuario.setApellido("Llanos");
+    usuario.setLocalidad("Pilar");
     when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
 
     // ejecucion
@@ -116,6 +121,7 @@ public class ServicioLoginTest {
     usuario.setEmail("comercio@test.com");
     usuario.setPassword("Contrasena1");
     usuario.setRol("COMERCIO");
+    usuario.setNombre("Almacen Don Pepe");
     when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
 
     // ejecucion
@@ -291,5 +297,185 @@ public class ServicioLoginTest {
     // Validación
     assertThat(resultado, equalTo(false));
     verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
+  }
+
+  // --- validaciones del registro ---
+
+  private Usuario vecinoValido() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("vecino@test.com");
+    usuario.setPassword("Contrasena1");
+    usuario.setRol("USER");
+    usuario.setNombre("Matias");
+    usuario.setApellido("Llanos");
+    usuario.setLocalidad("Pilar");
+    return usuario;
+  }
+
+  private DatosInvalidos registrarYEsperarError(Usuario usuario) {
+    when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
+    DatosInvalidos error = assertThrows(
+      DatosInvalidos.class,
+      () -> this.servicioLogin.registrar(usuario)
+    );
+    verify(this.repositorioUsuarioMock, never()).guardar(any(Usuario.class));
+    return error;
+  }
+
+  @Test
+  public void registrarVecinoSinNombreDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = vecinoValido();
+    usuario.setNombre("   ");
+
+    assertThat(registrarYEsperarError(usuario).getMessage(), equalTo("El nombre es obligatorio"));
+  }
+
+  @Test
+  public void registrarVecinoSinApellidoDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = vecinoValido();
+    usuario.setApellido(null);
+
+    assertThat(registrarYEsperarError(usuario).getMessage(), equalTo("El apellido es obligatorio"));
+  }
+
+  @Test
+  public void registrarVecinoConNombreMuyLargoDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = vecinoValido();
+    usuario.setNombre("a".repeat(101));
+
+    assertThat(
+      registrarYEsperarError(usuario).getMessage(),
+      equalTo("El nombre no puede superar los 100 caracteres")
+    );
+  }
+
+  @Test
+  public void registrarVecinoConLocalidadInventadaDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = vecinoValido();
+    usuario.setLocalidad("Narnia");
+
+    assertThat(
+      registrarYEsperarError(usuario).getMessage(),
+      equalTo("Elegí una localidad de la lista")
+    );
+  }
+
+  @Test
+  public void registrarVecinoSinLocalidadDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = vecinoValido();
+    usuario.setLocalidad(null);
+
+    assertThat(
+      registrarYEsperarError(usuario).getMessage(),
+      equalTo("Elegí una localidad de la lista")
+    );
+  }
+
+  @Test
+  public void registrarComercioSinNombreDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("comercio@test.com");
+    usuario.setPassword("Contrasena1");
+    usuario.setRol("COMERCIO");
+    usuario.setNombre("");
+
+    assertThat(registrarYEsperarError(usuario).getMessage(), equalTo("El nombre es obligatorio"));
+  }
+
+  @Test
+  public void registrarVecinoDeberiaGuardarNombreYApellidoSinEspacios() throws Exception {
+    Usuario usuario = vecinoValido();
+    usuario.setNombre("  Matias ");
+    usuario.setApellido(" Llanos  ");
+    when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
+
+    this.servicioLogin.registrar(usuario);
+
+    assertThat(usuario.getNombre(), equalTo("Matias"));
+    assertThat(usuario.getApellido(), equalTo("Llanos"));
+    verify(this.repositorioUsuarioMock).guardar(usuario);
+  }
+
+  // --- validaciones del perfil ---
+
+  private Usuario usuarioExistente() {
+    Usuario usuario = new Usuario();
+    usuario.setNombre("Matias");
+    usuario.setApellido("Llanos");
+    usuario.setFechaNacimiento(LocalDate.of(2002, 3, 5));
+    when(this.repositorioUsuarioMock.buscarPorId(1L)).thenReturn(usuario);
+    return usuario;
+  }
+
+  @Test
+  public void actualizarDatosPersonalesConNombreVacioDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = usuarioExistente();
+
+    assertThrows(
+      DatosInvalidos.class,
+      () -> this.servicioLogin.actualizarDatosPersonales(1L, "  ", "Llanos", null)
+    );
+
+    assertThat(usuario.getNombre(), equalTo("Matias"));
+    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
+  }
+
+  @Test
+  public void actualizarDatosPersonalesConApellidoVacioDeberiaLanzarDatosInvalidos() {
+    usuarioExistente();
+
+    assertThrows(
+      DatosInvalidos.class,
+      () -> this.servicioLogin.actualizarDatosPersonales(1L, "Matias", "", null)
+    );
+    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
+  }
+
+  @Test
+  public void actualizarDatosPersonalesConFechaFuturaDeberiaLanzarDatosInvalidos() {
+    usuarioExistente();
+    LocalDate futura = LocalDate.of(2099, 1, 1);
+
+    DatosInvalidos error = assertThrows(
+      DatosInvalidos.class,
+      () -> this.servicioLogin.actualizarDatosPersonales(1L, "Matias", "Llanos", futura)
+    );
+
+    assertThat(error.getMessage(), equalTo("La fecha de nacimiento no puede ser futura"));
+    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
+  }
+
+  @Test
+  public void actualizarDatosPersonalesConFechaMuyAntiguaDeberiaLanzarDatosInvalidos() {
+    usuarioExistente();
+    LocalDate antigua = LocalDate.of(1850, 1, 1);
+
+    assertThrows(
+      DatosInvalidos.class,
+      () -> this.servicioLogin.actualizarDatosPersonales(1L, "Matias", "Llanos", antigua)
+    );
+  }
+
+  @Test
+  public void actualizarDatosPersonalesValidosDeberiaGuardarlos() {
+    Usuario usuario = usuarioExistente();
+    LocalDate fecha = LocalDate.of(1990, 6, 15);
+
+    this.servicioLogin.actualizarDatosPersonales(1L, " Ana ", " Perez ", fecha);
+
+    assertThat(usuario.getNombre(), equalTo("Ana"));
+    assertThat(usuario.getApellido(), equalTo("Perez"));
+    assertThat(usuario.getFechaNacimiento(), equalTo(fecha));
+    verify(this.repositorioUsuarioMock).modificar(usuario);
+  }
+
+  @Test
+  public void actualizarDatosPersonalesSinFechaDeberiaPermitirseYBorrarla() {
+    Usuario usuario = usuarioExistente();
+
+    this.servicioLogin.actualizarDatosPersonales(1L, "Matias", "Llanos", null);
+
+    assertThat(usuario.getFechaNacimiento(), equalTo(null));
+    verify(this.repositorioUsuarioMock).modificar(usuario);
   }
 }

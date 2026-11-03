@@ -14,6 +14,7 @@ import org.springframework.http.HttpInputMessage;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -66,33 +67,55 @@ public class ManejadorDeErroresTest {
   }
 
   @Test
-  public void unParametroConTipoIncorrectoDeberiaSeguirSiendoUnErrorDelCliente() {
-    Exception error = new TypeMismatchException("abc", Long.class);
+  public void unParametroConTipoIncorrectoDeberiaMostrarUnErrorAmableConStatus400()
+    throws Exception {
+    Exception error = new TypeMismatchException("abc", Double.class);
 
-    assertThrows(
-      TypeMismatchException.class,
-      () -> manejador.manejarErrorInesperado(error, requestMock, responseMock)
-    );
+    ModelAndView mav = manejador.manejarErrorInesperado(error, requestMock, responseMock);
+
+    assertThat(mav.getViewName(), equalTo("error"));
+    verify(responseMock).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    assertThat(mav.getModel().get("titulo"), equalTo("Los datos enviados no son válidos"));
   }
 
   @Test
-  public void unJsonMalFormadoDeberiaSeguirSiendoUnErrorDelCliente() {
+  public void unParametroQueFaltaDeberiaMostrarUnErrorAmableConStatus400() throws Exception {
+    Exception error = new MissingServletRequestParameterException("precio", "double");
+
+    ModelAndView mav = manejador.manejarErrorInesperado(error, requestMock, responseMock);
+
+    assertThat(mav.getViewName(), equalTo("error"));
+    verify(responseMock).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void unJsonMalFormadoDeberiaMostrarUnErrorAmableConStatus400() throws Exception {
     Exception error = new HttpMessageNotReadableException("JSON roto", (HttpInputMessage) null);
 
-    assertThrows(
-      HttpMessageNotReadableException.class,
-      () -> manejador.manejarErrorInesperado(error, requestMock, responseMock)
-    );
+    ModelAndView mav = manejador.manejarErrorInesperado(error, requestMock, responseMock);
+
+    assertThat(mav.getViewName(), equalTo("error"));
+    verify(responseMock).setStatus(HttpServletResponse.SC_BAD_REQUEST);
   }
 
   @Test
-  public void unErrorDeBindingDeberiaSeguirSiendoUnErrorDelCliente() {
+  public void unErrorDeBindingDeberiaMostrarUnErrorAmableConStatus400() throws Exception {
     Exception error = new BindException(new Object(), "objeto");
 
-    assertThrows(
-      BindException.class,
-      () -> manejador.manejarErrorInesperado(error, requestMock, responseMock)
-    );
+    ModelAndView mav = manejador.manejarErrorInesperado(error, requestMock, responseMock);
+
+    assertThat(mav.getViewName(), equalTo("error"));
+    verify(responseMock).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void elMensajeDelErrorAmableNoDeberiaExponerDetallesTecnicos() throws Exception {
+    Exception error = new TypeMismatchException("abc", Double.class);
+
+    ModelAndView mav = manejador.manejarErrorInesperado(error, requestMock, responseMock);
+
+    assertThat(mav.getModel().toString(), not(containsString("abc")));
+    assertThat(mav.getModel().toString(), not(containsString("Double")));
   }
 
   @Test

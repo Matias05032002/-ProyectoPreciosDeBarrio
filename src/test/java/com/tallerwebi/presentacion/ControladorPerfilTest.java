@@ -7,12 +7,15 @@ import static org.mockito.Mockito.*;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 public class ControladorPerfilTest {
 
@@ -21,6 +24,7 @@ public class ControladorPerfilTest {
   private ServicioReporte servicioReporteMock;
   private HttpServletRequest requestMock;
   private HttpSession sesionMock;
+  private RedirectAttributes redirectAttrs;
 
   @BeforeEach
   public void init() {
@@ -28,6 +32,7 @@ public class ControladorPerfilTest {
     servicioReporteMock = mock(ServicioReporte.class);
     requestMock = mock(HttpServletRequest.class);
     sesionMock = mock(HttpSession.class);
+    redirectAttrs = new RedirectAttributesModelMap();
 
     controladorPerfil = new ControladorPerfil(servicioLoginMock, servicioReporteMock);
   }
@@ -171,7 +176,8 @@ public class ControladorPerfilTest {
       "Matias",
       "Llanos",
       null,
-      requestMock
+      requestMock,
+      redirectAttrs
     );
 
     assertThat(resultado.getViewName(), equalTo("redirect:/login"));
@@ -187,7 +193,8 @@ public class ControladorPerfilTest {
       "Matias",
       "Llanos",
       "2002-03-05",
-      requestMock
+      requestMock,
+      redirectAttrs
     );
 
     assertThat(resultado.getViewName(), equalTo("redirect:/perfil?datosActualizados"));
@@ -209,11 +216,56 @@ public class ControladorPerfilTest {
       "Matias",
       "Llanos",
       null,
-      requestMock
+      requestMock,
+      redirectAttrs
     );
 
     assertThat(resultado.getViewName(), equalTo("redirect:/perfil?datosActualizados"));
     verify(servicioLoginMock)
       .actualizarDatosPersonales(eq(1L), eq("Matias"), eq("Llanos"), eq(null));
+  }
+
+  @Test
+  public void actualizarDatosConDatosInvalidosDeberiaVolverAlPerfilConElMensaje() {
+    when(requestMock.getSession(false)).thenReturn(sesionMock);
+    when(sesionMock.getAttribute("ID")).thenReturn(1L);
+    doThrow(new DatosInvalidos("El nombre es obligatorio"))
+      .when(servicioLoginMock)
+      .actualizarDatosPersonales(eq(1L), eq(""), eq("Llanos"), eq(null));
+
+    ModelAndView resultado = controladorPerfil.actualizarDatos(
+      "",
+      "Llanos",
+      null,
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(resultado.getViewName(), equalTo("redirect:/perfil"));
+    assertThat(
+      redirectAttrs.getFlashAttributes().get("errorDatos"),
+      equalTo("El nombre es obligatorio")
+    );
+  }
+
+  @Test
+  public void actualizarDatosConUnaFechaConFormatoRotoNoDeberiaDarError500() {
+    when(requestMock.getSession(false)).thenReturn(sesionMock);
+    when(sesionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView resultado = controladorPerfil.actualizarDatos(
+      "Matias",
+      "Llanos",
+      "no-es-una-fecha",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(resultado.getViewName(), equalTo("redirect:/perfil"));
+    assertThat(
+      redirectAttrs.getFlashAttributes().get("errorDatos"),
+      equalTo("La fecha de nacimiento no es válida")
+    );
+    verify(servicioLoginMock, never()).actualizarDatosPersonales(any(), any(), any(), any());
   }
 }

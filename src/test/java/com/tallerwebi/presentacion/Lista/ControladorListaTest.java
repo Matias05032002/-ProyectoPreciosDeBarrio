@@ -15,17 +15,21 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 public class ControladorListaTest {
 
   private ControladorLista controladorLista;
   private ServicioLista servicioListaMock;
   private HttpSession sessionMock;
+  private RedirectAttributes redirectAttrs;
 
   @BeforeEach
   public void init() {
     servicioListaMock = mock(ServicioLista.class);
     sessionMock = mock(HttpSession.class);
+    redirectAttrs = new RedirectAttributesModelMap();
     controladorLista = new ControladorLista(servicioListaMock);
   }
 
@@ -76,7 +80,7 @@ public class ControladorListaTest {
   public void crearListaSinSesionDeberiaRedirigirAlLogin() {
     when(sessionMock.getAttribute("ID")).thenReturn(null);
 
-    ModelAndView mav = controladorLista.crearLista("Mi lista", sessionMock);
+    ModelAndView mav = controladorLista.crearLista("Mi lista", sessionMock, redirectAttrs);
 
     assertThat(mav.getViewName(), equalTo("redirect:/login"));
     verifyNoInteractions(servicioListaMock);
@@ -89,7 +93,11 @@ public class ControladorListaTest {
     listaCreada.setId(7L);
     when(servicioListaMock.crearLista("Mi lista del super", 1L)).thenReturn(listaCreada);
 
-    ModelAndView mav = controladorLista.crearLista("Mi lista del super", sessionMock);
+    ModelAndView mav = controladorLista.crearLista(
+      "Mi lista del super",
+      sessionMock,
+      redirectAttrs
+    );
 
     assertThat(mav.getViewName(), equalTo("redirect:/mis-listas/7"));
     verify(servicioListaMock, times(1)).crearLista("Mi lista del super", 1L);
@@ -301,8 +309,22 @@ public class ControladorListaTest {
     when(servicioListaMock.crearLista("", 1L))
       .thenThrow(new IllegalArgumentException("El nombre de la lista no puede estar vacío"));
 
-    ModelAndView mav = controladorLista.crearLista("", sessionMock);
+    ModelAndView mav = controladorLista.crearLista("", sessionMock, redirectAttrs);
 
     assertThat(mav.getViewName(), equalTo("redirect:/mis-listas"));
+  }
+
+  @Test
+  public void crearListaInvalidaDeberiaGuardarElMensajeParaMostrarloEnLaVista() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(servicioListaMock.crearLista("", 1L))
+      .thenThrow(new IllegalArgumentException("El nombre de la lista no puede estar vacío"));
+
+    controladorLista.crearLista("", sessionMock, redirectAttrs);
+
+    assertThat(
+      redirectAttrs.getFlashAttributes().get("error"),
+      equalTo("El nombre de la lista no puede estar vacío")
+    );
   }
 }
