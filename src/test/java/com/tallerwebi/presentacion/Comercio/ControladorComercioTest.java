@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Comercio.UbicacionSugerida;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
@@ -19,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.ModelAndView;
 
 public class ControladorComercioTest {
@@ -173,7 +175,7 @@ public class ControladorComercioTest {
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
 
-    ModelAndView mav = controladorComercio.editarPerfil(new Comercio(), requestMock);
+    ModelAndView mav = controladorComercio.editarPerfil(new Comercio(), null, null, requestMock);
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/home"));
     verify(servicioComercioMock, never()).actualizarComercio(any());
@@ -185,7 +187,7 @@ public class ControladorComercioTest {
   public void editarPerfilSinSesionRedireccionaALogin() {
     when(sessionMock.getAttribute("ID")).thenReturn(null);
 
-    ModelAndView mav = controladorComercio.editarPerfil(new Comercio(), requestMock);
+    ModelAndView mav = controladorComercio.editarPerfil(new Comercio(), null, null, requestMock);
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
   }
@@ -195,7 +197,7 @@ public class ControladorComercioTest {
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
     when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(null);
 
-    ModelAndView mav = controladorComercio.editarPerfil(new Comercio(), requestMock);
+    ModelAndView mav = controladorComercio.editarPerfil(new Comercio(), null, null, requestMock);
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/comercio/perfil"));
   }
@@ -214,10 +216,49 @@ public class ControladorComercioTest {
     datos.setLocalidad("La Plata");
     datos.setDescripcion("Desc");
 
-    ModelAndView mav = controladorComercio.editarPerfil(datos, requestMock);
+    ModelAndView mav = controladorComercio.editarPerfil(datos, -34.68, -58.54, requestMock);
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/comercio/perfil?editado=true"));
-    verify(servicioComercioMock, times(1)).actualizarComercio(existente);
+    verify(servicioComercioMock, times(1))
+      .actualizarDatosDelComercio(existente, datos, -34.68, -58.54);
+  }
+
+  // ── sugerencias de ubicación ──────────────────────────────────────────────
+
+  @Test
+  public void sugerirUbicacionesComoComercioDevuelveLasOpciones() {
+    UbicacionSugerida sanJusto = new UbicacionSugerida(
+      "DR IGNACIO ARIETA 3000, San Justo, La Matanza, Buenos Aires",
+      "San Justo",
+      -34.6879,
+      -58.5482,
+      "georef"
+    );
+    when(servicioComercioMock.sugerirUbicaciones("arrieta 3000", "La Matanza"))
+      .thenReturn(List.of(sanJusto));
+
+    ResponseEntity<List<UbicacionSugerida>> respuesta = controladorComercio.sugerirUbicaciones(
+      "arrieta 3000",
+      "La Matanza",
+      requestMock
+    );
+
+    assertThat(respuesta.getStatusCode().value(), is(200));
+    assertThat(respuesta.getBody(), is(List.of(sanJusto)));
+  }
+
+  @Test
+  public void sugerirUbicacionesComoVecinoEstaProhibido() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+
+    ResponseEntity<List<UbicacionSugerida>> respuesta = controladorComercio.sugerirUbicaciones(
+      "arrieta 3000",
+      "La Matanza",
+      requestMock
+    );
+
+    assertThat(respuesta.getStatusCode().value(), is(403));
+    verify(servicioComercioMock, never()).sugerirUbicaciones(any(), any());
   }
 
   // ── cambiarContrasena ─────────────────────────────────────────────────────

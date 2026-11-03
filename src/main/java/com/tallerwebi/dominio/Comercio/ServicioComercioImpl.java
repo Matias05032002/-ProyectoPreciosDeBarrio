@@ -1,11 +1,10 @@
 package com.tallerwebi.dominio.Comercio;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,17 +12,25 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ServicioComercioImpl implements ServicioComercio {
 
+  // Rectángulo que contiene a la Argentina continental: una coordenada afuera es un error
+  private static final double LATITUD_MINIMA = -55.1;
+  private static final double LATITUD_MAXIMA = -21.7;
+  private static final double LONGITUD_MINIMA = -73.6;
+  private static final double LONGITUD_MAXIMA = -53.5;
+
   private RepositorioComercio repositorioComercio;
   private final RepositorioHorario repositorioHorario;
-  private ObjectMapper objectMapper = new ObjectMapper();
+  private final ServicioGeolocalizacion servicioGeolocalizacion;
 
   @Autowired
   public ServicioComercioImpl(
     RepositorioComercio repositorioComercio,
-    RepositorioHorario repositorioHorario
+    RepositorioHorario repositorioHorario,
+    ServicioGeolocalizacion servicioGeolocalizacion
   ) {
     this.repositorioComercio = repositorioComercio;
     this.repositorioHorario = repositorioHorario;
+    this.servicioGeolocalizacion = servicioGeolocalizacion;
   }
 
   @Override
@@ -35,40 +42,7 @@ public class ServicioComercioImpl implements ServicioComercio {
     if (existente != null && existente.getUsuarioId() != null) {
       return existente;
     }
-    try {
-      String direccionCompleta =
-        comercio.getDireccion() + ", " + comercio.getLocalidad() + ", Buenos Aires, Argentina";
-      String url =
-        "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
-        java.net.URLEncoder.encode(direccionCompleta, "UTF-8");
-
-      java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url)
-        .openConnection();
-      conn.setRequestProperty("User-Agent", "TallerWebi/1.0");
-
-      String response;
-      try (
-        java.util.Scanner scanner = new java.util.Scanner(
-          conn.getInputStream(),
-          java.nio.charset.StandardCharsets.UTF_8
-        )
-      ) {
-        response = scanner.useDelimiter("\\A").next();
-      }
-
-      JsonNode results = objectMapper.readTree(response);
-      if (results.isArray() && results.size() > 0) {
-        JsonNode primero = results.get(0);
-        comercio.setLatitud(primero.get("lat").asDouble());
-        comercio.setLongitud(primero.get("lon").asDouble());
-      } else {
-        comercio.setLatitud(null);
-        comercio.setLongitud(null);
-      }
-    } catch (Exception e) {
-      comercio.setLatitud(null);
-      comercio.setLongitud(null);
-    }
+    ubicarSegunLaDireccion(comercio);
     return repositorioComercio.guardarComercio(comercio);
   }
 
@@ -122,6 +96,73 @@ public class ServicioComercioImpl implements ServicioComercio {
   @Override
   public void actualizarComercio(Comercio comercio) {
     repositorioComercio.actualizarComercio(comercio);
+  }
+
+  @Override
+  public void actualizarDatosDelComercio(
+    Comercio existente,
+    Comercio datos,
+    Double latitudConfirmada,
+    Double longitudConfirmada
+  ) {
+    boolean cambioLaDireccion =
+      !mismoTexto(existente.getDireccion(), datos.getDireccion()) ||
+      !mismoTexto(existente.getLocalidad(), datos.getLocalidad());
+
+    existente.setNombre(datos.getNombre());
+    existente.setTipo(datos.getTipo());
+    existente.setDireccion(datos.getDireccion());
+    existente.setLocalidad(datos.getLocalidad());
+    existente.setDescripcion(datos.getDescripcion());
+
+    if (esCoordenadaValida(latitudConfirmada, longitudConfirmada)) {
+      existente.setLatitud(latitudConfirmada);
+      existente.setLongitud(longitudConfirmada);
+    } else if (cambioLaDireccion || existente.getLatitud() == null) {
+      ubicarSegunLaDireccion(existente);
+    }
+    repositorioComercio.actualizarComercio(existente);
+  }
+
+  @Override
+  public List<UbicacionSugerida> sugerirUbicaciones(String direccion, String localidad) {
+    if (direccion == null || direccion.isBlank()) return Collections.emptyList();
+    return servicioGeolocalizacion.buscar(direccion, localidad);
+  }
+
+  // Se queda con la opción más probable; sin opciones, el comercio queda sin ubicación
+  // y el perfil le pide que lo marque en el mapa
+  private void ubicarSegunLaDireccion(Comercio comercio) {
+    List<UbicacionSugerida> sugerencias = servicioGeolocalizacion.buscar(
+      comercio.getDireccion(),
+      comercio.getLocalidad()
+    );
+    if (sugerencias.isEmpty()) {
+      comercio.setLatitud(null);
+      comercio.setLongitud(null);
+    } else {
+      comercio.setLatitud(sugerencias.get(0).latitud());
+      comercio.setLongitud(sugerencias.get(0).longitud());
+    }
+  }
+
+  static boolean esCoordenadaValida(Double latitud, Double longitud) {
+    return (
+      latitud != null &&
+      longitud != null &&
+      latitud >= LATITUD_MINIMA &&
+      latitud <= LATITUD_MAXIMA &&
+      longitud >= LONGITUD_MINIMA &&
+      longitud <= LONGITUD_MAXIMA
+    );
+  }
+
+  private static boolean mismoTexto(String uno, String otro) {
+    return Objects.equals(normalizar(uno), normalizar(otro));
+  }
+
+  private static String normalizar(String texto) {
+    return texto == null ? null : texto.trim().toLowerCase(Locale.ROOT);
   }
 
   @Override

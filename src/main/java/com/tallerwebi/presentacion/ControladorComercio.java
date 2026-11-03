@@ -3,6 +3,7 @@ package com.tallerwebi.presentacion;
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.HorarioComercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Comercio.UbicacionSugerida;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
@@ -112,20 +113,41 @@ public class ControladorComercio {
     return new ModelAndView(REDIRECT_PERFIL);
   }
 
+  // latitudConfirmada/longitudConfirmada llegan cuando el comerciante eligió o ajustó su local
+  // en el mapa; si no vienen, el servicio ubica el local a partir de la dirección
   @RequestMapping(path = "/perfil/editar", method = RequestMethod.POST)
-  public ModelAndView editarPerfil(@ModelAttribute Comercio comercio, HttpServletRequest request) {
+  public ModelAndView editarPerfil(
+    @ModelAttribute Comercio comercio,
+    @RequestParam(value = "latitudConfirmada", required = false) Double latitudConfirmada,
+    @RequestParam(value = "longitudConfirmada", required = false) Double longitudConfirmada,
+    HttpServletRequest request
+  ) {
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
     if (!esComercio(request)) return new ModelAndView(REDIRECT_HOME);
     Comercio existente = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
     if (existente == null) return new ModelAndView(REDIRECT_PERFIL);
-    existente.setNombre(comercio.getNombre());
-    existente.setTipo(comercio.getTipo());
-    existente.setDireccion(comercio.getDireccion());
-    existente.setLocalidad(comercio.getLocalidad());
-    existente.setDescripcion(comercio.getDescripcion());
-    servicioComercio.actualizarComercio(existente);
+    servicioComercio.actualizarDatosDelComercio(
+      existente,
+      comercio,
+      latitudConfirmada,
+      longitudConfirmada
+    );
     return new ModelAndView(REDIRECT_PERFIL + "?editado=true");
+  }
+
+  // Lo usa el botón "Buscar en el mapa" del perfil: devuelve las opciones en JSON
+  @RequestMapping(path = "/ubicaciones/sugerencias", method = RequestMethod.GET)
+  @ResponseBody
+  public ResponseEntity<List<UbicacionSugerida>> sugerirUbicaciones(
+    @RequestParam(value = "direccion", required = false) String direccion,
+    @RequestParam(value = "localidad", required = false) String localidad,
+    HttpServletRequest request
+  ) {
+    if (!esComercio(request)) {
+      return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+    }
+    return ResponseEntity.ok(servicioComercio.sugerirUbicaciones(direccion, localidad));
   }
 
   @RequestMapping(path = "/perfil/cambiar-contrasena", method = RequestMethod.POST)

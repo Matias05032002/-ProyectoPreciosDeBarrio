@@ -6,7 +6,15 @@
     <title>Mi Comercio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <style>
+        /* Opción elegida en verde de la app (contraste 5.5:1 con texto blanco) */
+        #sugerencias-ubicacion .list-group-item.active {
+            background-color: #047857;
+            border-color: #047857;
+        }
+    </style>
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
@@ -109,6 +117,10 @@
         <div th:if="${param.editado}" class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle me-1"></i> Datos del comercio actualizados correctamente.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${comercio.latitud == null}" id="alerta-sin-ubicacion" class="alert alert-warning" role="alert">
+            <i class="bi bi-geo-alt me-1"></i> Tu local todavía no aparece en el mapa: no pudimos ubicar la dirección.
+            Revisala en <strong>Datos del comercio</strong>, tocá <strong>Buscar en el mapa</strong> y elegí la ubicación correcta.
         </div>
         <div th:if="${param.contrasenaCambiada}" class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle me-1"></i> Contraseña cambiada correctamente.
@@ -235,13 +247,13 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Dirección</label>
-                                    <input type="text" name="direccion" class="form-control"
-                                           th:value="${comercio.direccion}" required>
+                                    <label class="form-label" for="direccion-comercio">Dirección</label>
+                                    <input type="text" name="direccion" id="direccion-comercio" class="form-control"
+                                           th:value="${comercio.direccion}" maxlength="200" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Localidad</label>
-                                    <select name="localidad" class="form-select" required>
+                                    <label class="form-label" for="localidad-comercio">Localidad</label>
+                                    <select name="localidad" id="localidad-comercio" class="form-select" required>
                                         <option value="">Seleccionar...</option>
                                         <option value="Almirante Brown"      th:selected="${comercio.localidad == 'Almirante Brown'}">Almirante Brown</option>
                                         <option value="Avellaneda"           th:selected="${comercio.localidad == 'Avellaneda'}">Avellaneda</option>
@@ -295,6 +307,26 @@
                                     </select>
                                 </div>
                                 <div class="col-12">
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                        <span class="form-label mb-0">Ubicación en el mapa</span>
+                                        <button type="button" id="btn-buscar-ubicacion" class="btn btn-outline-primary btn-sm"
+                                                th:attr="data-url=@{/comercio/ubicaciones/sugerencias}">
+                                            <i class="bi bi-search me-1"></i> Buscar en el mapa
+                                        </button>
+                                    </div>
+                                    <p id="estado-ubicacion" class="small text-muted mb-2" role="status" aria-live="polite">
+                                        Si cambiás la dirección, buscala para confirmar dónde queda tu local.
+                                    </p>
+                                    <div id="sugerencias-ubicacion" class="list-group mb-2"></div>
+                                    <div id="mapa-ubicacion" class="rounded border" style="height: 280px;"
+                                         th:attr="data-lat=${comercio.latitud},data-lon=${comercio.longitud}"></div>
+                                    <p class="small text-muted mt-1 mb-0">
+                                        Si el marcador no quedó justo en tu local, arrastralo o tocá el mapa donde está la puerta.
+                                    </p>
+                                    <input type="hidden" name="latitudConfirmada" id="latitud-confirmada">
+                                    <input type="hidden" name="longitudConfirmada" id="longitud-confirmada">
+                                </div>
+                                <div class="col-12">
                                     <label class="form-label">Descripción</label>
                                     <textarea name="descripcion" class="form-control" rows="3"
                                               th:text="${comercio.descripcion}"
@@ -317,6 +349,142 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:if="${comercio != null}">
+    (function () {
+        const contenedor = document.getElementById('mapa-ubicacion');
+        if (!contenedor || typeof L === 'undefined') return;
+
+        const boton = document.getElementById('btn-buscar-ubicacion');
+        const estado = document.getElementById('estado-ubicacion');
+        const lista = document.getElementById('sugerencias-ubicacion');
+        const campoDireccion = document.getElementById('direccion-comercio');
+        const campoLocalidad = document.getElementById('localidad-comercio');
+        const latitudConfirmada = document.getElementById('latitud-confirmada');
+        const longitudConfirmada = document.getElementById('longitud-confirmada');
+
+        const lat = parseFloat(contenedor.dataset.lat);
+        const lon = parseFloat(contenedor.dataset.lon);
+        const tieneUbicacion = !isNaN(lat) && !isNaN(lon);
+        const centroAmba = [-34.6037, -58.3816];
+
+        const mapa = L.map(contenedor).setView(tieneUbicacion ? [lat, lon] : centroAmba, tieneUbicacion ? 17 : 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; colaboradores de OpenStreetMap'
+        }).addTo(mapa);
+
+        let marcador = null;
+
+        function confirmar(latitud, longitud) {
+            latitudConfirmada.value = latitud.toFixed(7);
+            longitudConfirmada.value = longitud.toFixed(7);
+        }
+
+        function crearMarcador(latitud, longitud) {
+            marcador = L.marker([latitud, longitud], { draggable: true, title: 'Tu local' }).addTo(mapa);
+            marcador.on('dragend', function () {
+                const posicion = marcador.getLatLng();
+                confirmar(posicion.lat, posicion.lng);
+                estado.textContent = 'Ubicación ajustada. Guardá los cambios para confirmarla.';
+            });
+        }
+
+        function ponerMarcador(latitud, longitud, acercar) {
+            if (marcador) {
+                marcador.setLatLng([latitud, longitud]);
+            } else {
+                crearMarcador(latitud, longitud);
+            }
+            if (acercar) mapa.setView([latitud, longitud], 17);
+            confirmar(latitud, longitud);
+        }
+
+        // El marcador de la ubicación guardada no completa los campos ocultos: si el comerciante
+        // no lo toca, el servidor decide según si cambió la dirección
+        if (tieneUbicacion) crearMarcador(lat, lon);
+
+        mapa.on('click', function (evento) {
+            ponerMarcador(evento.latlng.lat, evento.latlng.lng, false);
+            estado.textContent = 'Marcaste la ubicación a mano. Guardá los cambios para confirmarla.';
+        });
+
+        function marcarElegida(elegido) {
+            lista.querySelectorAll('.list-group-item').forEach(function (item) {
+                item.classList.toggle('active', item === elegido);
+                item.setAttribute('aria-pressed', item === elegido ? 'true' : 'false');
+            });
+        }
+
+        function mostrarSugerencias(sugerencias) {
+            lista.replaceChildren();
+            sugerencias.forEach(function (sugerencia, indice) {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action';
+                item.setAttribute('aria-pressed', 'false');
+                // textContent y no innerHTML: el texto viene de un servicio externo
+                item.textContent = sugerencia.nomenclatura;
+                item.addEventListener('click', function () {
+                    marcarElegida(item);
+                    ponerMarcador(sugerencia.latitud, sugerencia.longitud, true);
+                    estado.textContent = 'Elegiste: ' + sugerencia.nomenclatura + '. Guardá los cambios para confirmarla.';
+                });
+                lista.appendChild(item);
+                if (indice === 0) {
+                    marcarElegida(item);
+                    ponerMarcador(sugerencia.latitud, sugerencia.longitud, true);
+                }
+            });
+        }
+
+        // Una ubicación confirmada vale para la dirección que estaba escrita: si la cambian, se descarta
+        function descartarConfirmacion() {
+            if (!latitudConfirmada.value) return;
+            latitudConfirmada.value = '';
+            longitudConfirmada.value = '';
+            lista.replaceChildren();
+            estado.textContent = 'Cambiaste la dirección: tocá "Buscar en el mapa" para ubicarla de nuevo.';
+        }
+        campoDireccion.addEventListener('input', descartarConfirmacion);
+        campoLocalidad.addEventListener('change', descartarConfirmacion);
+
+        boton.addEventListener('click', function () {
+            const direccion = campoDireccion.value.trim();
+            if (!direccion) {
+                estado.textContent = 'Escribí la dirección del local antes de buscarla.';
+                campoDireccion.focus();
+                return;
+            }
+            const url = boton.dataset.url + '?direccion=' + encodeURIComponent(direccion)
+                + '&localidad=' + encodeURIComponent(campoLocalidad.value);
+            boton.disabled = true;
+            estado.textContent = 'Buscando la dirección...';
+            fetch(url, { headers: { 'Accept': 'application/json' } })
+                .then(function (respuesta) {
+                    if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+                    return respuesta.json();
+                })
+                .then(function (sugerencias) {
+                    if (sugerencias.length === 0) {
+                        lista.replaceChildren();
+                        estado.textContent = 'No encontramos esa dirección. Revisala, o tocá el mapa donde está tu local.';
+                        return;
+                    }
+                    mostrarSugerencias(sugerencias);
+                    estado.textContent = sugerencias.length === 1
+                        ? 'Encontramos tu dirección. Si el marcador no quedó justo, arrastralo.'
+                        : 'Encontramos ' + sugerencias.length + ' opciones: elegí la de tu local.';
+                })
+                .catch(function () {
+                    estado.textContent = 'No pudimos buscar la dirección ahora. Probá de nuevo en un rato, o tocá el mapa donde está tu local.';
+                })
+                .finally(function () {
+                    boton.disabled = false;
+                });
+        });
+    })();
+</script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>
