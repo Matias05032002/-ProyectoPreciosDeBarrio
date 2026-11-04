@@ -15,4 +15,5 @@ public interface RepositorioComercio {
   );
   void actualizarComercio(Comercio comercio);
   Comercio buscarComercioPorDireccionYLocalidad(String direccion, String localidad);
+  List<Comercio> listarSolicitudesVerificacion();
 }

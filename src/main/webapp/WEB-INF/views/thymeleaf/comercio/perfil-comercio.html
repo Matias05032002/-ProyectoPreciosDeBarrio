@@ -7,9 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
     <style>
-        /* Opción elegida en verde de la app (contraste 5.5:1 con texto blanco) */
         #sugerencias-ubicacion .list-group-item.active {
             background-color: #047857;
             border-color: #047857;
@@ -29,7 +28,7 @@
         <form th:action="@{/comercio/perfil}" method="POST">
             <div class="mb-3">
                 <label class="form-label">Nombre del comercio</label>
-                <input type="text" name="nombre" class="form-control" required />
+                <input type="text" name="nombre" class="form-control" required/>
             </div>
             <div class="mb-3">
                 <label class="form-label">Tipo</label>
@@ -45,7 +44,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Dirección</label>
-                <input type="text" name="direccion" class="form-control" required />
+                <input type="text" name="direccion" class="form-control" required/>
             </div>
             <div class="mb-3">
                 <label class="form-label">Localidad</label>
@@ -104,7 +103,8 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Descripción (opcional)</label>
-                <textarea name="descripcion" class="form-control" rows="3" placeholder="Contá algo sobre tu comercio..."></textarea>
+                <textarea name="descripcion" class="form-control" rows="3"
+                          placeholder="Contá algo sobre tu comercio..."></textarea>
             </div>
             <button type="submit" id="btn-guardar-comercio" class="btn btn-primary">Guardar comercio</button>
         </form>
@@ -118,23 +118,91 @@
             <i class="bi bi-check-circle me-1"></i> Datos del comercio actualizados correctamente.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+
         <div th:if="${comercio.latitud == null}" id="alerta-sin-ubicacion" class="alert alert-warning" role="alert">
             <i class="bi bi-geo-alt me-1"></i> Tu local todavía no aparece en el mapa: no pudimos ubicar la dirección.
-            Revisala en <strong>Datos del comercio</strong>, tocá <strong>Buscar en el mapa</strong> y elegí la ubicación correcta.
+            Revisala en <strong>Datos del comercio</strong>, tocá <strong>Buscar en el mapa</strong> y elegí la
+            ubicación correcta.
         </div>
+
         <div th:if="${param.contrasenaCambiada}" class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle me-1"></i> Contraseña cambiada correctamente.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <div th:if="${param.errorContrasena == 'incorrecta'}" class="alert alert-danger alert-dismissible fade show" role="alert">
+
+        <div th:if="${param.errorContrasena == 'incorrecta'}" class="alert alert-danger alert-dismissible fade show"
+             role="alert">
             <i class="bi bi-x-circle me-1"></i> La contraseña actual es incorrecta.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <div th:if="${param.errorContrasena == 'noCoinciden'}" class="alert alert-danger alert-dismissible fade show" role="alert">
+
+        <div th:if="${param.errorContrasena == 'noCoinciden'}" class="alert alert-danger alert-dismissible fade show"
+             role="alert">
             <i class="bi bi-x-circle me-1"></i> Las contraseñas nuevas no coinciden.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
 
+        <!-- Feedback de solicitud de verificación -->
+        <div th:if="${param.verificacionSolicitada}"
+             class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-1"></i>
+            Solicitud de verificación enviada correctamente.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Verificación del comercio -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-patch-check me-2"></i>
+                    Verificación del comercio
+                </h5>
+                <hr>
+
+                <!-- Comercio verificado -->
+                <div th:if="${comercio.verificado}">
+                    <span class="badge bg-success">
+                        <i class="bi bi-patch-check-fill me-1"></i>
+                        Comercio verificado
+                    </span>
+                    <p class="mt-2 mb-0">
+                        Tu comercio cuenta con la insignia de verificación.
+                    </p>
+                </div>
+
+                <!-- Comercio sin verificar -->
+                <div th:unless="${comercio.verificado}">
+
+                    <!-- Solicitud pendiente -->
+                    <div th:if="${comercio.solicitudVerificacion}">
+                        <span class="badge bg-warning text-dark">
+                            Solicitud pendiente
+                        </span>
+                        <p class="mt-2 mb-0">
+                            Tu solicitud de verificación está pendiente de revisión.
+                        </p>
+                    </div>
+
+                    <!-- Todavía no solicitó verificación -->
+                    <div th:unless="${comercio.solicitudVerificacion}">
+                        <span class="badge bg-secondary">
+                            Comercio sin verificar
+                        </span>
+                        <p class="mt-2">
+                            Obtené la insignia de verificación para destacar tu comercio.
+                        </p>
+                        <form th:action="@{/comercio/perfil/solicitar-verificacion}"
+                              method="post">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-patch-check me-1"></i>
+                                Solicitar verificación
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
         <div class="row g-4">
 
             <!-- COLUMNA IZQUIERDA: info de cuenta + cambiar contraseña -->
@@ -163,15 +231,18 @@
                         <form th:action="@{/comercio/perfil/cambiar-contrasena}" method="POST">
                             <div class="mb-3">
                                 <label class="form-label small">Contraseña actual</label>
-                                <input type="password" name="contrasenaActual" class="form-control form-control-sm" required>
+                                <input type="password" name="contrasenaActual" class="form-control form-control-sm"
+                                       required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small">Nueva contraseña</label>
-                                <input type="password" name="contrasenaNueva" id="nuevaContrasena" class="form-control form-control-sm" required>
+                                <input type="password" name="contrasenaNueva" id="nuevaContrasena"
+                                       class="form-control form-control-sm" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small">Confirmar nueva contraseña</label>
-                                <input type="password" name="confirmarContrasena" id="confirmarContrasena" class="form-control form-control-sm" required>
+                                <input type="password" name="confirmarContrasena" id="confirmarContrasena"
+                                       class="form-control form-control-sm" required>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm w-100">
                                 <i class="bi bi-shield-lock me-1"></i> Cambiar contraseña
@@ -208,8 +279,12 @@
                                                style="display:none" onchange="this.form.submit()">
                                     </label>
                                 </form>
-                                <div th:if="${param.fotoActualizada}" class="alert alert-success py-1 px-2 small mt-1">Foto actualizada.</div>
-                                <div th:if="${param.errorFoto}" class="alert alert-danger py-1 px-2 small mt-1">Solo JPG/PNG/WEBP hasta 5 MB.</div>
+                                <div th:if="${param.fotoActualizada}" class="alert alert-success py-1 px-2 small mt-1">
+                                    Foto actualizada.
+                                </div>
+                                <div th:if="${param.errorFoto}" class="alert alert-danger py-1 px-2 small mt-1">Solo
+                                    JPG/PNG/WEBP hasta 5 MB.
+                                </div>
                             </div>
                         </div>
 
@@ -217,7 +292,8 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="card-title mb-0"><i class="bi bi-shop me-2"></i>Datos del comercio</h5>
                             <div>
-                                <a th:href="@{/comercio/{id}(id=${comercio.id})}" class="btn btn-outline-secondary btn-sm">
+                                <a th:href="@{/comercio/{id}(id=${comercio.id})}"
+                                   class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-eye me-1"></i> Ver página pública
                                 </a>
                                 <a th:href="@{/comercio/perfil/horarios}" class="btn btn-outline-secondary btn-sm ms-2">
@@ -238,12 +314,20 @@
                                     <label class="form-label">Tipo</label>
                                     <select name="tipo" class="form-select" required>
                                         <option value="">Seleccioná un tipo...</option>
-                                        <option value="Almacen"      th:selected="${comercio.tipo == 'Almacen'}">Almacen</option>
-                                        <option value="Verduleria"   th:selected="${comercio.tipo == 'Verduleria'}">Verduleria</option>
-                                        <option value="Carniceria"   th:selected="${comercio.tipo == 'Carniceria'}">Carniceria</option>
-                                        <option value="Kiosco"       th:selected="${comercio.tipo == 'Kiosco'}">Kiosco</option>
-                                        <option value="Supermercado" th:selected="${comercio.tipo == 'Supermercado'}">Supermercado</option>
-                                        <option value="Otro"         th:selected="${comercio.tipo == 'Otro'}">Otro</option>
+                                        <option value="Almacen" th:selected="${comercio.tipo == 'Almacen'}">Almacen
+                                        </option>
+                                        <option value="Verduleria" th:selected="${comercio.tipo == 'Verduleria'}">
+                                            Verduleria
+                                        </option>
+                                        <option value="Carniceria" th:selected="${comercio.tipo == 'Carniceria'}">
+                                            Carniceria
+                                        </option>
+                                        <option value="Kiosco" th:selected="${comercio.tipo == 'Kiosco'}">Kiosco
+                                        </option>
+                                        <option value="Supermercado" th:selected="${comercio.tipo == 'Supermercado'}">
+                                            Supermercado
+                                        </option>
+                                        <option value="Otro" th:selected="${comercio.tipo == 'Otro'}">Otro</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -255,73 +339,172 @@
                                     <label class="form-label" for="localidad-comercio">Localidad</label>
                                     <select name="localidad" id="localidad-comercio" class="form-select" required>
                                         <option value="">Seleccionar...</option>
-                                        <option value="Almirante Brown"      th:selected="${comercio.localidad == 'Almirante Brown'}">Almirante Brown</option>
-                                        <option value="Avellaneda"           th:selected="${comercio.localidad == 'Avellaneda'}">Avellaneda</option>
-                                        <option value="Bahia Blanca"         th:selected="${comercio.localidad == 'Bahia Blanca'}">Bahía Blanca</option>
-                                        <option value="Berazategui"          th:selected="${comercio.localidad == 'Berazategui'}">Berazategui</option>
-                                        <option value="Berisso"              th:selected="${comercio.localidad == 'Berisso'}">Berisso</option>
-                                        <option value="Brandsen"             th:selected="${comercio.localidad == 'Brandsen'}">Brandsen</option>
-                                        <option value="Buenos Aires"         th:selected="${comercio.localidad == 'Buenos Aires'}">Buenos Aires (CABA)</option>
-                                        <option value="Campana"              th:selected="${comercio.localidad == 'Campana'}">Campana</option>
-                                        <option value="Canuelas"             th:selected="${comercio.localidad == 'Canuelas'}">Cañuelas</option>
-                                        <option value="Ensenada"             th:selected="${comercio.localidad == 'Ensenada'}">Ensenada</option>
-                                        <option value="Escobar"              th:selected="${comercio.localidad == 'Escobar'}">Escobar</option>
-                                        <option value="Esteban Echeverria"   th:selected="${comercio.localidad == 'Esteban Echeverria'}">Esteban Echeverría</option>
-                                        <option value="Exaltacion de la Cruz" th:selected="${comercio.localidad == 'Exaltacion de la Cruz'}">Exaltación de la Cruz</option>
-                                        <option value="Ezeiza"               th:selected="${comercio.localidad == 'Ezeiza'}">Ezeiza</option>
-                                        <option value="Florencio Varela"     th:selected="${comercio.localidad == 'Florencio Varela'}">Florencio Varela</option>
-                                        <option value="General Las Heras"    th:selected="${comercio.localidad == 'General Las Heras'}">General Las Heras</option>
-                                        <option value="General Rodriguez"    th:selected="${comercio.localidad == 'General Rodriguez'}">General Rodríguez</option>
-                                        <option value="Hurlingham"           th:selected="${comercio.localidad == 'Hurlingham'}">Hurlingham</option>
-                                        <option value="Ituzaingo"            th:selected="${comercio.localidad == 'Ituzaingo'}">Ituzaingó</option>
-                                        <option value="Jose C. Paz"          th:selected="${comercio.localidad == 'Jose C. Paz'}">José C. Paz</option>
-                                        <option value="La Matanza"           th:selected="${comercio.localidad == 'La Matanza'}">La Matanza</option>
-                                        <option value="La Plata"             th:selected="${comercio.localidad == 'La Plata'}">La Plata</option>
-                                        <option value="Lanus"                th:selected="${comercio.localidad == 'Lanus'}">Lanús</option>
-                                        <option value="Lobos"                th:selected="${comercio.localidad == 'Lobos'}">Lobos</option>
-                                        <option value="Lomas de Zamora"      th:selected="${comercio.localidad == 'Lomas de Zamora'}">Lomas de Zamora</option>
-                                        <option value="Lujan"                th:selected="${comercio.localidad == 'Lujan'}">Luján</option>
-                                        <option value="Magdalena"            th:selected="${comercio.localidad == 'Magdalena'}">Magdalena</option>
-                                        <option value="Malvinas Argentinas"  th:selected="${comercio.localidad == 'Malvinas Argentinas'}">Malvinas Argentinas</option>
-                                        <option value="Mar del Plata"        th:selected="${comercio.localidad == 'Mar del Plata'}">Mar del Plata</option>
-                                        <option value="Marcos Paz"           th:selected="${comercio.localidad == 'Marcos Paz'}">Marcos Paz</option>
-                                        <option value="Merlo"                th:selected="${comercio.localidad == 'Merlo'}">Merlo</option>
-                                        <option value="Moreno"               th:selected="${comercio.localidad == 'Moreno'}">Moreno</option>
-                                        <option value="Moron"                th:selected="${comercio.localidad == 'Moron'}">Morón</option>
-                                        <option value="Navarro"              th:selected="${comercio.localidad == 'Navarro'}">Navarro</option>
-                                        <option value="Pilar"                th:selected="${comercio.localidad == 'Pilar'}">Pilar</option>
-                                        <option value="Presidente Peron"     th:selected="${comercio.localidad == 'Presidente Peron'}">Presidente Perón</option>
-                                        <option value="Punta Indio"          th:selected="${comercio.localidad == 'Punta Indio'}">Punta Indio</option>
-                                        <option value="Quilmes"              th:selected="${comercio.localidad == 'Quilmes'}">Quilmes</option>
-                                        <option value="Ramallo"              th:selected="${comercio.localidad == 'Ramallo'}">Ramallo</option>
-                                        <option value="San Fernando"         th:selected="${comercio.localidad == 'San Fernando'}">San Fernando</option>
-                                        <option value="San Isidro"           th:selected="${comercio.localidad == 'San Isidro'}">San Isidro</option>
-                                        <option value="San Martin"           th:selected="${comercio.localidad == 'San Martin'}">San Martín</option>
-                                        <option value="San Miguel"           th:selected="${comercio.localidad == 'San Miguel'}">San Miguel</option>
-                                        <option value="San Nicolas"          th:selected="${comercio.localidad == 'San Nicolas'}">San Nicolás</option>
-                                        <option value="San Vicente"          th:selected="${comercio.localidad == 'San Vicente'}">San Vicente</option>
-                                        <option value="Tigre"                th:selected="${comercio.localidad == 'Tigre'}">Tigre</option>
-                                        <option value="Tres de Febrero"      th:selected="${comercio.localidad == 'Tres de Febrero'}">Tres de Febrero</option>
-                                        <option value="Vicente Lopez"        th:selected="${comercio.localidad == 'Vicente Lopez'}">Vicente López</option>
-                                        <option value="Zarate"               th:selected="${comercio.localidad == 'Zarate'}">Zárate</option>
+                                        <option value="Almirante Brown"
+                                                th:selected="${comercio.localidad == 'Almirante Brown'}">Almirante Brown
+                                        </option>
+                                        <option value="Avellaneda" th:selected="${comercio.localidad == 'Avellaneda'}">
+                                            Avellaneda
+                                        </option>
+                                        <option value="Bahia Blanca"
+                                                th:selected="${comercio.localidad == 'Bahia Blanca'}">Bahía Blanca
+                                        </option>
+                                        <option value="Berazategui"
+                                                th:selected="${comercio.localidad == 'Berazategui'}">Berazategui
+                                        </option>
+                                        <option value="Berisso" th:selected="${comercio.localidad == 'Berisso'}">
+                                            Berisso
+                                        </option>
+                                        <option value="Brandsen" th:selected="${comercio.localidad == 'Brandsen'}">
+                                            Brandsen
+                                        </option>
+                                        <option value="Buenos Aires"
+                                                th:selected="${comercio.localidad == 'Buenos Aires'}">Buenos Aires
+                                            (CABA)
+                                        </option>
+                                        <option value="Campana" th:selected="${comercio.localidad == 'Campana'}">
+                                            Campana
+                                        </option>
+                                        <option value="Canuelas" th:selected="${comercio.localidad == 'Canuelas'}">
+                                            Cañuelas
+                                        </option>
+                                        <option value="Ensenada" th:selected="${comercio.localidad == 'Ensenada'}">
+                                            Ensenada
+                                        </option>
+                                        <option value="Escobar" th:selected="${comercio.localidad == 'Escobar'}">
+                                            Escobar
+                                        </option>
+                                        <option value="Esteban Echeverria"
+                                                th:selected="${comercio.localidad == 'Esteban Echeverria'}">Esteban
+                                            Echeverría
+                                        </option>
+                                        <option value="Exaltacion de la Cruz"
+                                                th:selected="${comercio.localidad == 'Exaltacion de la Cruz'}">
+                                            Exaltación de la Cruz
+                                        </option>
+                                        <option value="Ezeiza" th:selected="${comercio.localidad == 'Ezeiza'}">Ezeiza
+                                        </option>
+                                        <option value="Florencio Varela"
+                                                th:selected="${comercio.localidad == 'Florencio Varela'}">Florencio
+                                            Varela
+                                        </option>
+                                        <option value="General Las Heras"
+                                                th:selected="${comercio.localidad == 'General Las Heras'}">General Las
+                                            Heras
+                                        </option>
+                                        <option value="General Rodriguez"
+                                                th:selected="${comercio.localidad == 'General Rodriguez'}">General
+                                            Rodríguez
+                                        </option>
+                                        <option value="Hurlingham" th:selected="${comercio.localidad == 'Hurlingham'}">
+                                            Hurlingham
+                                        </option>
+                                        <option value="Ituzaingo" th:selected="${comercio.localidad == 'Ituzaingo'}">
+                                            Ituzaingó
+                                        </option>
+                                        <option value="Jose C. Paz"
+                                                th:selected="${comercio.localidad == 'Jose C. Paz'}">José C. Paz
+                                        </option>
+                                        <option value="La Matanza" th:selected="${comercio.localidad == 'La Matanza'}">
+                                            La Matanza
+                                        </option>
+                                        <option value="La Plata" th:selected="${comercio.localidad == 'La Plata'}">La
+                                            Plata
+                                        </option>
+                                        <option value="Lanus" th:selected="${comercio.localidad == 'Lanus'}">Lanús
+                                        </option>
+                                        <option value="Lobos" th:selected="${comercio.localidad == 'Lobos'}">Lobos
+                                        </option>
+                                        <option value="Lomas de Zamora"
+                                                th:selected="${comercio.localidad == 'Lomas de Zamora'}">Lomas de Zamora
+                                        </option>
+                                        <option value="Lujan" th:selected="${comercio.localidad == 'Lujan'}">Luján
+                                        </option>
+                                        <option value="Magdalena" th:selected="${comercio.localidad == 'Magdalena'}">
+                                            Magdalena
+                                        </option>
+                                        <option value="Malvinas Argentinas"
+                                                th:selected="${comercio.localidad == 'Malvinas Argentinas'}">Malvinas
+                                            Argentinas
+                                        </option>
+                                        <option value="Mar del Plata"
+                                                th:selected="${comercio.localidad == 'Mar del Plata'}">Mar del Plata
+                                        </option>
+                                        <option value="Marcos Paz" th:selected="${comercio.localidad == 'Marcos Paz'}">
+                                            Marcos Paz
+                                        </option>
+                                        <option value="Merlo" th:selected="${comercio.localidad == 'Merlo'}">Merlo
+                                        </option>
+                                        <option value="Moreno" th:selected="${comercio.localidad == 'Moreno'}">Moreno
+                                        </option>
+                                        <option value="Moron" th:selected="${comercio.localidad == 'Moron'}">Morón
+                                        </option>
+                                        <option value="Navarro" th:selected="${comercio.localidad == 'Navarro'}">
+                                            Navarro
+                                        </option>
+                                        <option value="Pilar" th:selected="${comercio.localidad == 'Pilar'}">Pilar
+                                        </option>
+                                        <option value="Presidente Peron"
+                                                th:selected="${comercio.localidad == 'Presidente Peron'}">Presidente
+                                            Perón
+                                        </option>
+                                        <option value="Punta Indio"
+                                                th:selected="${comercio.localidad == 'Punta Indio'}">Punta Indio
+                                        </option>
+                                        <option value="Quilmes" th:selected="${comercio.localidad == 'Quilmes'}">
+                                            Quilmes
+                                        </option>
+                                        <option value="Ramallo" th:selected="${comercio.localidad == 'Ramallo'}">
+                                            Ramallo
+                                        </option>
+                                        <option value="San Fernando"
+                                                th:selected="${comercio.localidad == 'San Fernando'}">San Fernando
+                                        </option>
+                                        <option value="San Isidro" th:selected="${comercio.localidad == 'San Isidro'}">
+                                            San Isidro
+                                        </option>
+                                        <option value="San Martin" th:selected="${comercio.localidad == 'San Martin'}">
+                                            San Martín
+                                        </option>
+                                        <option value="San Miguel" th:selected="${comercio.localidad == 'San Miguel'}">
+                                            San Miguel
+                                        </option>
+                                        <option value="San Nicolas"
+                                                th:selected="${comercio.localidad == 'San Nicolas'}">San Nicolás
+                                        </option>
+                                        <option value="San Vicente"
+                                                th:selected="${comercio.localidad == 'San Vicente'}">San Vicente
+                                        </option>
+                                        <option value="Tigre" th:selected="${comercio.localidad == 'Tigre'}">Tigre
+                                        </option>
+                                        <option value="Tres de Febrero"
+                                                th:selected="${comercio.localidad == 'Tres de Febrero'}">Tres de Febrero
+                                        </option>
+                                        <option value="Vicente Lopez"
+                                                th:selected="${comercio.localidad == 'Vicente Lopez'}">Vicente López
+                                        </option>
+                                        <option value="Zarate" th:selected="${comercio.localidad == 'Zarate'}">Zárate
+                                        </option>
                                     </select>
                                 </div>
                                 <div class="col-12">
                                     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                                         <span class="form-label mb-0">Ubicación en el mapa</span>
-                                        <button type="button" id="btn-buscar-ubicacion" class="btn btn-outline-primary btn-sm"
+                                        <button type="button" id="btn-buscar-ubicacion"
+                                                class="btn btn-outline-primary btn-sm"
                                                 th:attr="data-url=@{/comercio/ubicaciones/sugerencias}">
                                             <i class="bi bi-search me-1"></i> Buscar en el mapa
                                         </button>
                                     </div>
-                                    <p id="estado-ubicacion" class="small text-muted mb-2" role="status" aria-live="polite">
+                                    <p id="estado-ubicacion" class="small text-muted mb-2" role="status"
+                                       aria-live="polite">
                                         Si cambiás la dirección, buscala para confirmar dónde queda tu local.
                                     </p>
                                     <div id="sugerencias-ubicacion" class="list-group mb-2"></div>
                                     <div id="mapa-ubicacion" class="rounded border" style="height: 280px;"
                                          th:attr="data-lat=${comercio.latitud},data-lon=${comercio.longitud}"></div>
                                     <p class="small text-muted mt-1 mb-0">
-                                        Si el marcador no quedó justo en tu local, arrastralo o tocá el mapa donde está la puerta.
+                                        Si el marcador no quedó justo en tu local, arrastralo o tocá el mapa donde está
+                                        la puerta.
                                     </p>
                                     <input type="hidden" name="latitudConfirmada" id="latitud-confirmada">
                                     <input type="hidden" name="longitudConfirmada" id="longitud-confirmada">
@@ -382,7 +565,7 @@
         }
 
         function crearMarcador(latitud, longitud) {
-            marcador = L.marker([latitud, longitud], { draggable: true, title: 'Tu local' }).addTo(mapa);
+            marcador = L.marker([latitud, longitud], {draggable: true, title: 'Tu local'}).addTo(mapa);
             marcador.on('dragend', function () {
                 const posicion = marcador.getLatLng();
                 confirmar(posicion.lat, posicion.lng);
@@ -400,8 +583,8 @@
             confirmar(latitud, longitud);
         }
 
-        // El marcador de la ubicación guardada no completa los campos ocultos: si el comerciante
-        // no lo toca, el servidor decide según si cambió la dirección
+        // El marcador de la ubicación guardada no completa los campos ocultos:
+        // si el comerciante no lo toca, el servidor decide según si cambió la dirección
         if (tieneUbicacion) crearMarcador(lat, lon);
 
         mapa.on('click', function (evento) {
@@ -431,40 +614,50 @@
                 item.type = 'button';
                 item.className = 'list-group-item list-group-item-action';
                 item.setAttribute('aria-pressed', 'false');
+
                 // textContent y no innerHTML: el texto viene de un servicio externo
                 item.textContent = sugerencia.nomenclatura;
                 item.addEventListener('click', function () {
                     elegir(item, sugerencia);
                     estado.textContent = 'Elegiste: ' + sugerencia.nomenclatura + '. Guardá los cambios para confirmarla.';
                 });
+
                 lista.appendChild(item);
                 if (indice === 0) elegir(item, sugerencia);
             });
         }
 
-        // Una ubicación confirmada vale para la dirección que estaba escrita: si la cambian, se descarta
+        // Una ubicación confirmada vale para la dirección que estaba escrita:
+        // si la cambian, se descarta
         function descartarConfirmacion() {
             if (!latitudConfirmada.value) return;
+
             latitudConfirmada.value = '';
             longitudConfirmada.value = '';
             lista.replaceChildren();
+
             estado.textContent = 'Cambiaste la dirección: tocá "Buscar en el mapa" para ubicarla de nuevo.';
         }
+
         campoDireccion.addEventListener('input', descartarConfirmacion);
         campoLocalidad.addEventListener('change', descartarConfirmacion);
 
         boton.addEventListener('click', function () {
             const direccion = campoDireccion.value.trim();
+
             if (!direccion) {
                 estado.textContent = 'Escribí la dirección del local antes de buscarla.';
                 campoDireccion.focus();
                 return;
             }
+
             const url = boton.dataset.url + '?direccion=' + encodeURIComponent(direccion)
                 + '&localidad=' + encodeURIComponent(campoLocalidad.value);
+
             boton.disabled = true;
             estado.textContent = 'Buscando la dirección...';
-            fetch(url, { headers: { 'Accept': 'application/json' } })
+
+            fetch(url, {headers: {'Accept': 'application/json'}})
                 .then(function (respuesta) {
                     if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
                     return respuesta.json();
@@ -475,7 +668,9 @@
                         estado.textContent = 'No encontramos esa dirección. Revisala, o tocá el mapa donde está tu local.';
                         return;
                     }
+
                     mostrarSugerencias(sugerencias);
+
                     estado.textContent = sugerencias.length === 1
                         ? 'Encontramos tu dirección. Si el marcador no quedó justo, arrastralo.'
                         : 'Encontramos ' + sugerencias.length + ' opciones: elegí la de tu local.';
@@ -489,6 +684,7 @@
         });
     })();
 </script>
+
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>

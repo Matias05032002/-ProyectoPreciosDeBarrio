@@ -22,6 +22,9 @@ public class Usuario {
   @Column(name = "activo", nullable = false)
   private Boolean activo;
 
+  @Column(name = "verificado", nullable = false)
+  private Boolean verificado = false;
+
   @Column(name = "nombre", nullable = false, length = 100)
   private String nombre;
 
@@ -70,6 +73,14 @@ public class Usuario {
 
   public void setActivo(Boolean activo) {
     this.activo = activo;
+  }
+
+  public Boolean getVerificado() {
+    return verificado;
+  }
+
+  public void setVerificado(Boolean verificado) {
+    this.verificado = verificado;
   }
 
   public void activar() {

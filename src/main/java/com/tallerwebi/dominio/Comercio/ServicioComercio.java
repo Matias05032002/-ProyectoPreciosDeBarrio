@@ -28,4 +28,7 @@ public interface ServicioComercio {
   List<HorarioComercio> obtenerHorarios(Long comercioId);
   Boolean estaAbierto(Long comercioId);
   void guardarFoto(Long comercioId, byte[] foto, String fotoTipo);
+  void solicitarVerificacion(Long comercioId);
+  List<Comercio> listarSolicitudesVerificacion();
+  void aprobarVerificacion(Long comercioId);
 }

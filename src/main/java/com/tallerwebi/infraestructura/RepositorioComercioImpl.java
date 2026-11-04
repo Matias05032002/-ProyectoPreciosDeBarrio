@@ -92,4 +92,15 @@ public class RepositorioComercioImpl implements RepositorioComercio {
       .list();
     return comercios.isEmpty() ? null : comercios.get(0);
   }
+
+  @Override
+  public List<Comercio> listarSolicitudesVerificacion() {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "FROM Comercio WHERE solicitudVerificacion = true AND verificado = false",
+        Comercio.class
+      )
+      .list();
+  }
 }

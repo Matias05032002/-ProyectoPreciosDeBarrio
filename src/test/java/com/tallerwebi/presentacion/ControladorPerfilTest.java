@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
@@ -25,16 +26,19 @@ public class ControladorPerfilTest {
   private HttpServletRequest requestMock;
   private HttpSession sesionMock;
   private RedirectAttributes redirectAttrs;
+  private ServicioComercio servicioComercioMock;
 
   @BeforeEach
   public void init() {
     servicioLoginMock = mock(ServicioLogin.class);
     servicioReporteMock = mock(ServicioReporte.class);
+    servicioComercioMock = mock(ServicioComercio.class);
     requestMock = mock(HttpServletRequest.class);
     sesionMock = mock(HttpSession.class);
     redirectAttrs = new RedirectAttributesModelMap();
 
-    controladorPerfil = new ControladorPerfil(servicioLoginMock, servicioReporteMock);
+    controladorPerfil =
+      new ControladorPerfil(servicioLoginMock, servicioReporteMock, servicioComercioMock);
   }
 
   @Test
