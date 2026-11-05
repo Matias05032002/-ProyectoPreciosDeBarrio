@@ -1,6 +1,7 @@
 package com.tallerwebi.config;
 
 import com.tallerwebi.presentacion.Interceptores.AuthInterceptor;
+import com.tallerwebi.presentacion.Interceptores.RolInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -53,6 +54,10 @@ public class SpringWebConfig implements WebMvcConfigurer {
         "/js/**",
         "/webjars/**"
       );
+
+    registry
+      .addInterceptor(new RolInterceptor())
+      .addPathPatterns("/admin/**", "/inicio-comercio/**", "/comercio/**", "/promociones/**");
   }
 
   // https://www.thymeleaf.org/doc/tutorials/3.0/thymeleafspring.html

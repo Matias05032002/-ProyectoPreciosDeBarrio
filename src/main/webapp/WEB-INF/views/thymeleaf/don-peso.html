@@ -1,98 +1,46 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<div th:fragment="don-peso" id="don-peso-widget">
+<div th:fragment="don-peso" id="don-peso-widget" class="dpw" th:attr="data-base=@{/asistente}">
 
-    <!-- El ícono del botón es de Bootstrap Icons: se carga acá para que se vea en todas las páginas -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/don-peso.css}" />
 
-    <button id="don-peso-btn" title="Preguntale a Don Peso" onclick="toggleDonPeso()">
-        <i class="bi bi-coin" style="font-size: 1.8rem;"></i>
+    <button type="button" class="dpw-fab" id="dpw-abrir" aria-label="Abrir chat con Don Peso"
+            aria-expanded="false" aria-controls="dpw-panel">
+        <img th:src="@{/css/don-peso-moneda.png}" alt="" width="44" height="44" />
+        <span class="dpw-fab-etiqueta">Preguntale a Don Peso</span>
     </button>
 
-    <div id="don-peso-panel" style="display:none;">
-        <div id="don-peso-header">
-            <span><i class="bi bi-coin"></i> Don Peso</span>
-            <button onclick="toggleDonPeso()" aria-label="Cerrar">&times;</button>
-        </div>
-        <div id="don-peso-mensajes">
-            <div class="dp-msg dp-bot">¡Hola! Soy Don Peso. Decime qué producto buscás y te digo dónde está más barato cerca tuyo.</div>
-        </div>
-        <div id="don-peso-footer">
-            <input type="text" id="don-peso-input" maxlength="300" placeholder="Ej: leche, aceite, pan..." onkeydown="if(event.key==='Enter') enviarConsulta()" />
-            <button onclick="enviarConsulta()">&#9654;</button>
-        </div>
-    </div>
+    <section class="dpw-panel" id="dpw-panel" role="dialog" aria-labelledby="dpw-titulo" hidden>
+        <header class="dpw-cabecera">
+            <img class="dpw-avatar" th:src="@{/css/don-peso-moneda.png}" alt="" width="40" height="40" />
+            <div class="dpw-cabecera-texto">
+                <h2 class="dpw-titulo" id="dpw-titulo">Don Peso</h2>
+                <p class="dpw-subtitulo">Tu asistente de precios del barrio</p>
+            </div>
+            <button type="button" class="dpw-icono" id="dpw-nueva" aria-label="Empezar una conversación nueva" title="Conversación nueva">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
+            </button>
+            <button type="button" class="dpw-icono" id="dpw-cerrar" aria-label="Cerrar el chat" title="Cerrar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+        </header>
 
-    <script>
-        let donPesoAbierto = false;
-        let donPesoLat = null;
-        let donPesoLon = null;
+        <div class="dpw-mensajes" id="dpw-mensajes" role="log" aria-live="polite" aria-relevant="additions"></div>
 
-        function toggleDonPeso() {
-            donPesoAbierto = !donPesoAbierto;
-            document.getElementById('don-peso-panel').style.display = donPesoAbierto ? 'flex' : 'none';
-            if (donPesoAbierto) {
-                if (navigator.geolocation && donPesoLat === null) {
-                    navigator.geolocation.getCurrentPosition(
-                        pos => { donPesoLat = pos.coords.latitude; donPesoLon = pos.coords.longitude; },
-                        () => {}
-                    );
-                }
-                document.getElementById('don-peso-input').focus();
-            }
-        }
+        <div class="dpw-sugerencias" id="dpw-sugerencias" aria-label="Preguntas sugeridas"></div>
 
-        // El texto puede traer HTML (lo que escribe el vecino o nombres de productos
-        // cargados por otros): se escapa ANTES de armar el formato propio
-        function escaparHtml(texto) {
-            return String(texto)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
+        <form class="dpw-form" id="dpw-form" autocomplete="off">
+            <label class="dpw-sr" for="dpw-entrada">Escribile a Don Peso</label>
+            <input class="dpw-entrada" id="dpw-entrada" type="text" maxlength="300"
+                   placeholder="Escribí tu consulta…" enterkeyhint="send" />
+            <button class="dpw-enviar" type="submit" aria-label="Enviar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+            </button>
+        </form>
+    </section>
 
-        function agregarMensaje(texto, tipo) {
-            const cont = document.getElementById('don-peso-mensajes');
-            const div = document.createElement('div');
-            div.className = 'dp-msg ' + tipo;
-            div.innerHTML = escaparHtml(texto)
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, '<br>');
-            cont.appendChild(div);
-            cont.scrollTop = cont.scrollHeight;
-            return div;
-        }
-
-        function enviarConsulta() {
-            const input = document.getElementById('don-peso-input');
-            const pregunta = input.value.trim();
-            if (!pregunta) return;
-
-            agregarMensaje(pregunta, 'dp-user');
-            input.value = '';
-
-            const loading = agregarMensaje('Don Peso está buscando...', 'dp-loading');
-
-            fetch('/spring/asistente/consultar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pregunta, latitud: donPesoLat, longitud: donPesoLon })
-            })
-                .then(r => r.json())
-                .then(data => {
-                    loading.remove();
-                    agregarMensaje(data.respuesta || data.error || 'No pude encontrar una respuesta.', 'dp-bot');
-                })
-                .catch(() => {
-                    loading.remove();
-                    agregarMensaje('Hubo un error al consultar. Intentá de nuevo.', 'dp-bot');
-                });
-        }
-    </script>
-
+    <script type="module" th:src="@{/js/don-peso.js}"></script>
 </div>
 </body>
 </html>

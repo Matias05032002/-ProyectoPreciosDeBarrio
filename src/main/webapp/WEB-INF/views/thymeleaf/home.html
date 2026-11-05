@@ -14,6 +14,7 @@
   <link rel="preload" as="image" th:href="@{/css/hero-gondolas.jpg}" th:if="${session['ROL'] == 'USER'}">
   <link rel="stylesheet" th:href="@{/css/main.css}" />
   <link rel="stylesheet" th:href="@{/css/home.css}" />
+  <link rel="stylesheet" th:href="@{/css/inicio-comercio.css}" th:if="${session['ROL'] == 'COMERCIO'}" />
 </head>
 
 <body>
@@ -152,35 +153,96 @@
 
 <!-- ============ Vista para COMERCIO ============ -->
 <th:block th:if="${session['ROL'] == 'COMERCIO'}">
-  <section class="hero-inicio">
+  <section class="hero-inicio ic-hero">
     <div class="container hero-contenido">
-      <h1 th:id="'titulo-pagina'" class="aparece mb-2">Tu comercio en el barrio</h1>
-      <p class="hero-texto aparece mb-0" style="--d:.08s">Gestioná tu local, tus productos y tus promociones.</p>
+      <p class="ic-saludo aparece">Hola, <span th:text="${session['NOMBRE']}">comercio</span></p>
+      <h1 th:id="'titulo-pagina'" class="aparece mb-0" style="--d:.08s"><span id="ic-nombre">Tu comercio</span></h1>
+      <p class="ic-estado aparece" id="ic-estado" style="--d:.16s" hidden></p>
     </div>
   </section>
-  <main role="main" class="container pt-4 pb-5">
-    <div class="atajos-inicio">
-      <a th:href="@{/comercio/perfil}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-shop" aria-hidden="true"></i></span>
-        <span><strong>Mi comercio</strong><span class="desc">Gestioná la información de tu local.</span></span>
-      </a>
-      <a th:href="@{/reporte/mis-reportes}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-clipboard-plus" aria-hidden="true"></i></span>
-        <span><strong>Mis reportes</strong><span class="desc">Administrá los precios que publicaste.</span></span>
-      </a>
-      <a th:href="@{/reporte/mis-productos}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
-        <span><strong>Mis productos</strong><span class="desc">Gestioná el catálogo de productos de tu comercio.</span></span>
-      </a>
-      <a th:href="@{/promociones/mis-promociones}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-tag" aria-hidden="true"></i></span>
-        <span><strong>Mis promociones</strong><span class="desc">Creá y desactivá tus ofertas.</span></span>
-      </a>
-      <a th:href="@{/comercio/dashboard}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
-        <span><strong>Dashboard</strong><span class="desc">Mirá cómo le va a tu comercio.</span></span>
-      </a>
+
+  <main role="main" class="container ic ic--cargando" id="inicio-comercio"
+        th:attr="data-resumen-url=@{/inicio-comercio/resumen},data-url-perfil=@{/comercio/perfil},data-url-horarios=@{/comercio/perfil/horarios}">
+    <div id="ic-contenido">
+      <div class="ic-cifras">
+        <div class="ic-cifra">
+          <span class="ic-cifra-numero" id="ic-cifra-precios">0</span>
+          <span class="ic-cifra-nombre">Precios reportados</span>
+        </div>
+        <div class="ic-cifra">
+          <span class="ic-cifra-numero" id="ic-cifra-vecinos">0</span>
+          <span class="ic-cifra-nombre">Vecinos que reportaron</span>
+        </div>
+        <div class="ic-cifra">
+          <span class="ic-cifra-numero" id="ic-cifra-promos">0</span>
+          <span class="ic-cifra-nombre">Promociones activas</span>
+        </div>
+      </div>
+
+      <section class="ic-perfil" id="ic-perfil" aria-labelledby="ic-perfil-titulo" hidden>
+        <div class="ic-perfil-cabecera">
+          <div class="ic-anillo" id="ic-anillo" data-texto="0%" role="img" aria-label="Avance del perfil"></div>
+          <div>
+            <h2 class="ic-perfil-titulo" id="ic-perfil-titulo">Completá tu comercio</h2>
+            <p class="ic-perfil-texto">Un perfil completo genera más confianza en los vecinos.</p>
+          </div>
+        </div>
+        <ul class="ic-pasos" id="ic-pasos"></ul>
+      </section>
+
+      <div class="ic-cuerpo">
+        <section class="ic-seccion" aria-labelledby="ic-acciones-titulo">
+          <div class="ic-seccion-cabecera">
+            <h2 class="ic-seccion-titulo" id="ic-acciones-titulo">¿Qué querés hacer?</h2>
+          </div>
+          <div class="ic-acciones">
+            <a th:href="@{/promociones/mis-promociones}" class="ic-accion ic-accion--principal">
+              <span class="ic-accion-icono"><i class="bi bi-megaphone" aria-hidden="true"></i></span>
+              <span>
+                <strong>Crear una promoción</strong>
+                <span class="ic-accion-desc d-block">Atraé vecinos con una oferta por producto o medio de pago.</span>
+              </span>
+            </a>
+            <a th:href="@{/reporte/mis-reportes}" class="ic-accion">
+              <span class="ic-accion-icono"><i class="bi bi-clipboard-plus" aria-hidden="true"></i></span>
+              <strong>Mis reportes</strong>
+              <span class="ic-accion-desc">Los precios de tu comercio.</span>
+            </a>
+            <a th:href="@{/reporte/mis-productos}" class="ic-accion">
+              <span class="ic-accion-icono"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
+              <strong>Mis productos</strong>
+              <span class="ic-accion-desc">Tu catálogo.</span>
+            </a>
+            <a th:href="@{/comercio/dashboard}" class="ic-accion">
+              <span class="ic-accion-icono"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
+              <strong>Dashboard</strong>
+              <span class="ic-accion-desc">Cómo le va a tu comercio.</span>
+            </a>
+            <a th:href="@{/comercio/perfil}" class="ic-accion">
+              <span class="ic-accion-icono"><i class="bi bi-shop" aria-hidden="true"></i></span>
+              <strong>Mi comercio</strong>
+              <span class="ic-accion-desc">Datos, foto y horarios.</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="ic-seccion" aria-labelledby="ic-ultimos-titulo">
+          <div class="ic-seccion-cabecera">
+            <h2 class="ic-seccion-titulo" id="ic-ultimos-titulo">Últimos precios en tu comercio</h2>
+            <a th:href="@{/reporte/mis-reportes}" class="ic-ver-todos">Ver todos</a>
+          </div>
+          <ul class="ic-lista" id="ic-ultimos" hidden></ul>
+          <p class="ic-vacio" id="ic-ultimos-vacio">Todavía no hay precios reportados en tu comercio. Cuando un vecino reporte uno, lo vas a ver acá.</p>
+        </section>
+      </div>
     </div>
+
+    <div class="ic-sin-comercio" id="ic-sin-comercio" hidden>
+      <p>Todavía no cargaste los datos de tu comercio. Completalos para que los vecinos te encuentren.</p>
+      <a th:href="@{/comercio/perfil}" class="btn btn-verde">Cargar mi comercio</a>
+    </div>
+
+    <p class="ic-vacio" id="ic-error" role="alert" hidden>No pudimos cargar tus números. Recargá la página para reintentar.</p>
   </main>
 </th:block>
 
@@ -202,6 +264,10 @@
         <span class="icono"><i class="bi bi-chat-left-text" aria-hidden="true"></i></span>
         <span><strong>Consultas recibidas</strong><span class="desc">Revisá los mensajes enviados por los vecinos.</span></span>
       </a>
+      <a th:href="@{/admin/verificaciones}" class="atajo-inicio entra-scroll">
+        <span class="icono"><i class="bi bi-patch-check" aria-hidden="true"></i></span>
+        <span><strong>Verificaciones</strong><span class="desc">Aprobá los comercios que piden el sello de verificado.</span></span>
+      </a>
     </div>
   </main>
 </th:block>
@@ -210,6 +276,8 @@
         integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
         crossorigin="anonymous"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script type="module" th:src="@{/js/inicio-comercio.js}" th:if="${session['ROL'] == 'COMERCIO'}"></script>
 
 <script th:if="${session['ROL'] == 'USER'}" th:inline="javascript">
   // Mapa chico del inicio: marca los comercios que tienen ubicación. La ubicación del vecino

@@ -13,6 +13,7 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import com.tallerwebi.presentacion.ControladorComercio;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -453,7 +454,7 @@ public class ControladorComercioTest {
   }
 
   @Test
-  public void verDashboardCalculaPrecioPromedio() {
+  public void verDashboardMuestraLasMetricasQueCalculaElServicio() {
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
     when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
     Comercio comercio = new Comercio();
@@ -465,6 +466,8 @@ public class ControladorComercioTest {
     Reporte r2 = new Reporte();
     r2.setPrecio(200.0);
     when(servicioReporteMock.buscarPorComercio(1L)).thenReturn(Arrays.asList(r1, r2));
+    when(servicioReporteMock.precioPromedioDelComercio(1L)).thenReturn(150.0);
+    when(servicioReporteMock.productoEstrellaDelComercio(1L)).thenReturn("Leche");
     when(servicioReporteMock.contarUsuariosDistintosPorComercio(1L))
       .thenReturn(Collections.emptyList());
     when(servicioReporteMock.contarReportesDudososPorComercio(1L)).thenReturn(0L);
@@ -473,6 +476,7 @@ public class ControladorComercioTest {
     ModelAndView mav = controladorComercio.verDashboard(requestMock);
 
     assertThat((Double) mav.getModel().get("precioPromedio"), is(150.0));
+    assertThat(mav.getModel().get("productoEstrella"), is("Leche"));
   }
 
   // --- verDashboard (Task 4) ---
@@ -529,13 +533,14 @@ public class ControladorComercioTest {
   // --- subirFoto (Task 2) ---
 
   @Test
-  public void subirFotoConTipoInvalidoRedireccionaConError() throws Exception {
+  public void subirFotoQueElServicioRechazaRedireccionaConError() throws Exception {
     when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
 
     Comercio comercio = new Comercio();
     comercio.setId(1L);
     when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
+    doThrow(new FotoInvalida()).when(servicioComercioMock).guardarFoto(any(), any());
 
     org.springframework.mock.web.MockMultipartFile archivo =
       new org.springframework.mock.web.MockMultipartFile(
@@ -548,27 +553,24 @@ public class ControladorComercioTest {
     ModelAndView mav = controladorComercio.subirFoto(archivo, sessionMock);
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/comercio/perfil?errorFoto=true"));
-    verify(servicioComercioMock, never()).guardarFoto(any(), any(), any());
   }
 
   @Test
-  public void subirFotoConArchivoDemsiadoGrandeRedireccionaConError() throws Exception {
-    when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
-    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+  public void subirFotoSinSerComercioRedireccionaAlInicioSinGuardar() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
 
-    Comercio comercio = new Comercio();
-    comercio.setId(1L);
-    when(servicioComercioMock.buscarComercioPorUsuarioId(1L)).thenReturn(comercio);
-
-    // 6 MB > 5 MB límite
-    byte[] bytes = new byte[6 * 1024 * 1024];
     org.springframework.mock.web.MockMultipartFile archivo =
-      new org.springframework.mock.web.MockMultipartFile("foto", "foto.jpg", "image/jpeg", bytes);
+      new org.springframework.mock.web.MockMultipartFile(
+        "foto",
+        "foto.jpg",
+        "image/jpeg",
+        new byte[100]
+      );
 
     ModelAndView mav = controladorComercio.subirFoto(archivo, sessionMock);
 
-    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/comercio/perfil?errorFoto=true"));
-    verify(servicioComercioMock, never()).guardarFoto(any(), any(), any());
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/home"));
+    verify(servicioComercioMock, never()).guardarFoto(any(), any());
   }
 
   @Test
@@ -590,7 +592,7 @@ public class ControladorComercioTest {
       mav.getViewName(),
       equalToIgnoringCase("redirect:/comercio/perfil?fotoActualizada=true")
     );
-    verify(servicioComercioMock, times(1)).guardarFoto(1L, bytes, "image/jpeg");
+    verify(servicioComercioMock, times(1)).guardarFoto(1L, bytes);
   }
 
   @Test

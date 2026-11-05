@@ -8,11 +8,13 @@ import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.ItemTicket;
 import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Reporte.ResumenDeActividad;
 import com.tallerwebi.dominio.Reporte.ServicioOcr;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
+import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
 import com.tallerwebi.dominio.excepcion.ReportePropio;
@@ -53,6 +55,7 @@ public class ControladorReporte {
   private static final String PREFIJO_ITEMS = "items[";
   private static final String ROL_COMERCIO = "COMERCIO";
   private static final String PARAM_PAGINA = "pagina";
+  private static final int CANTIDAD_DE_ULTIMOS_REPORTES = 6;
 
   @Autowired
   private ServicioOcr servicioOcr;
@@ -222,10 +225,9 @@ public class ControladorReporte {
   @RequestMapping(path = "/ultimos", method = RequestMethod.GET)
   @ResponseBody
   public List<Map<String, Object>> ultimosReportes() {
-    return reportesVisiblesEnElInicio()
+    return servicioReporte
+      .ultimosReportesVisibles(CANTIDAD_DE_ULTIMOS_REPORTES)
       .stream()
-      .sorted((a, b) -> b.getFechaDeReporte().compareTo(a.getFechaDeReporte()))
-      .limit(6)
       .map(r -> {
         Map<String, Object> reporte = new java.util.LinkedHashMap<>();
         reporte.put("id", r.getId());
@@ -246,36 +248,11 @@ public class ControladorReporte {
   @RequestMapping(path = "/resumen", method = RequestMethod.GET)
   @ResponseBody
   public Map<String, Object> resumenDeReportes() {
-    List<Reporte> visibles = reportesVisiblesEnElInicio();
-    java.time.LocalDateTime haceUnaSemana = java.time.LocalDateTime.now().minusDays(7);
-    long reportesDeLaSemana = visibles
-      .stream()
-      .filter(r -> r.getFechaDeReporte().isAfter(haceUnaSemana))
-      .count();
-    long comerciosConPrecios = visibles
-      .stream()
-      .map(r -> r.getComercio().getId())
-      .filter(java.util.Objects::nonNull)
-      .distinct()
-      .count();
+    ResumenDeActividad actividad = servicioReporte.resumenDeActividad();
     Map<String, Object> resumen = new java.util.LinkedHashMap<>();
-    resumen.put("reportesSemana", reportesDeLaSemana);
-    resumen.put("comercios", comerciosConPrecios);
+    resumen.put("reportesSemana", actividad.getReportesSemana());
+    resumen.put("comercios", actividad.getComercios());
     return resumen;
-  }
-
-  private List<Reporte> reportesVisiblesEnElInicio() {
-    return servicioReporte
-      .listarTodos()
-      .stream()
-      .filter(r ->
-        r.getFechaDeReporte() != null &&
-        r.getPrecio() != null &&
-        r.getProducto() != null &&
-        r.getComercio() != null
-      )
-      .filter(r -> r.getPuntuacion() == null || r.getPuntuacion() <= Reporte.PUNTUACION_DUDOSO)
-      .collect(java.util.stream.Collectors.toList());
   }
 
   @RequestMapping(path = "/mis-reportes", method = RequestMethod.GET)
@@ -573,22 +550,11 @@ public class ControladorReporte {
     }
     try {
       byte[] foto = Base64.getDecoder().decode(fotoBase64.substring(inicioDelContenido + 1));
-      if (foto.length > 10 * 1024 * 1024) {
-        return "La foto no puede superar los 10 MB";
-      }
-      // Validar magic bytes: JPEG (FF D8) o PNG (89 50 4E 47)
-      boolean esJpeg = foto.length >= 2 && (foto[0] & 0xFF) == 0xFF && (foto[1] & 0xFF) == 0xD8;
-      boolean esPng =
-        foto.length >= 4 &&
-        (foto[0] & 0xFF) == 0x89 &&
-        (foto[1] & 0xFF) == 0x50 &&
-        (foto[2] & 0xFF) == 0x4E &&
-        (foto[3] & 0xFF) == 0x47;
-      if (!esJpeg && !esPng) {
-        return "El archivo debe ser una imagen JPEG o PNG válida";
-      }
+      servicioReporte.validarFoto(foto);
       reporte.setFoto(foto);
       return null;
+    } catch (FotoInvalida e) {
+      return e.getMessage();
     } catch (IllegalArgumentException e) {
       return "No se pudo cargar la foto";
     }

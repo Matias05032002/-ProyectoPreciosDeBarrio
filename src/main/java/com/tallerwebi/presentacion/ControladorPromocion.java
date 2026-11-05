@@ -90,6 +90,7 @@ public class ControladorPromocion {
 
     ModelAndView mav = new ModelAndView("comercio/promociones");
     mav.addObject(ATRIBUTO_PROMOCIONES, promociones);
+    mav.addObject("proximas", servicioPromocion.listarPromocionesProximas());
 
     return mav;
   }

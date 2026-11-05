@@ -6,11 +6,12 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.mockito.Mockito.*;
 
-import com.tallerwebi.dominio.Comercio.Comercio;
-import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Comercio.ServicioRegistroComercio;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.ComercioYaRegistrado;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.DatosDeComercioInvalidos;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,7 +31,7 @@ public class ControladorLoginTest {
   private HttpServletRequest requestMock;
   private HttpSession sessionMock;
   private ServicioLogin servicioLoginMock;
-  private ServicioComercio servicioComercioMock;
+  private ServicioRegistroComercio servicioRegistroComercioMock;
   private RedirectAttributes redirectAttrs;
 
   @BeforeEach
@@ -41,8 +42,8 @@ public class ControladorLoginTest {
     requestMock = mock(HttpServletRequest.class);
     sessionMock = mock(HttpSession.class);
     servicioLoginMock = mock(ServicioLogin.class);
-    servicioComercioMock = mock(ServicioComercio.class);
-    controladorLogin = new ControladorLogin(servicioLoginMock, servicioComercioMock);
+    servicioRegistroComercioMock = mock(ServicioRegistroComercio.class);
+    controladorLogin = new ControladorLogin(servicioLoginMock, servicioRegistroComercioMock);
     redirectAttrs = new RedirectAttributesModelMap();
   }
 
@@ -146,80 +147,81 @@ public class ControladorLoginTest {
 
   // --- Tests para registrarmeComercio ---
 
-  @Test
-  public void registrarmeComercioSiDatosNuevosDeberiaCrearUsuarioYComercioYVolverAlLogin()
-    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    when(servicioComercioMock.buscarPorDireccionYLocalidad(anyString(), anyString()))
-      .thenReturn(null);
-    Usuario usuarioCreado = mock(Usuario.class);
-    when(usuarioCreado.getId()).thenReturn(1L);
-    when(servicioLoginMock.buscarPorEmail(anyString())).thenReturn(usuarioCreado);
-
-    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
+  private ModelAndView registrarComercio(String direccion, String localidad) {
+    return controladorLogin.registrarmeComercio(
       "comercio@unlam.com",
       "Password1",
       "Almacén Don José",
       "Almacen",
-      "Rivadavia 1234",
-      "La Matanza",
+      direccion,
+      localidad,
       requestMock,
       redirectAttrs
     );
-
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
-    verify(servicioLoginMock, times(1)).registrar(any(Usuario.class));
-    verify(servicioComercioMock, times(1)).guardarComercio(any(Comercio.class));
   }
 
   @Test
-  public void registrarmeComercioCuandoDireccionYLocalidadYaExistenDeberiaVolverAlFormularioConError()
-    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    Comercio comercioExistente = mock(Comercio.class);
-    when(servicioComercioMock.buscarPorDireccionYLocalidad("Rivadavia 1234", "La Matanza"))
-      .thenReturn(comercioExistente);
+  public void registrarmeComercioConDatosValidosDeberiaPedirleAlServicioElRegistroYVolverAlLogin()
+    throws Exception {
+    ModelAndView modelAndView = registrarComercio("Rivadavia 1234", "La Matanza");
 
-    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
-      "comercio@unlam.com",
-      "Password1",
-      "Almacén Don José",
-      "Almacen",
-      "Rivadavia 1234",
-      "La Matanza",
-      requestMock,
-      redirectAttrs
-    );
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
+    verify(servicioRegistroComercioMock, times(1))
+      .registrar(
+        "comercio@unlam.com",
+        "Password1",
+        "Almacén Don José",
+        "Almacen",
+        "Rivadavia 1234",
+        "La Matanza"
+      );
+  }
+
+  @Test
+  public void registrarmeComercioCuandoElComercioYaTieneDuenoDeberiaVolverAlFormularioConError()
+    throws Exception {
+    doThrow(new ComercioYaRegistrado())
+      .when(servicioRegistroComercioMock)
+      .registrar(any(), any(), any(), any(), any(), any());
+
+    ModelAndView modelAndView = registrarComercio("Rivadavia 1234", "La Matanza");
 
     assertThat(
       modelAndView.getViewName(),
-      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario")
+      equalTo(
+        "redirect:/nuevo-usuario?errorComercio=Ya+existe+un+comercio+en+esa+direcci%C3%B3n+y+localidad"
+      )
     );
-    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
-    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
   }
 
   @Test
   public void registrarmeComercioCuandoEmailYaExisteDeberiaVolverAlFormularioConError()
-    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    when(servicioComercioMock.buscarPorDireccionYLocalidad(anyString(), anyString()))
-      .thenReturn(null);
-    doThrow(new UsuarioExistente()).when(servicioLoginMock).registrar(any(Usuario.class));
+    throws Exception {
+    doThrow(new UsuarioExistente())
+      .when(servicioRegistroComercioMock)
+      .registrar(any(), any(), any(), any(), any(), any());
 
-    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
-      "yaexiste@unlam.com",
-      "Password1",
-      "Almacén Don José",
-      "Almacen",
-      "Rivadavia 1234",
-      "La Matanza",
-      requestMock,
-      redirectAttrs
-    );
+    ModelAndView modelAndView = registrarComercio("Rivadavia 1234", "La Matanza");
 
     assertThat(
       modelAndView.getViewName(),
-      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario")
+      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario?errorComercio=")
     );
-    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
+  }
+
+  @Test
+  public void registrarmeComercioConDatosInvalidosDeberiaMostrarElMotivoDelServicio()
+    throws Exception {
+    doThrow(new DatosDeComercioInvalidos("Elegí una localidad de la lista"))
+      .when(servicioRegistroComercioMock)
+      .registrar(any(), any(), any(), any(), any(), any());
+
+    ModelAndView modelAndView = registrarComercio("Rivadavia 1234", "Narnia");
+
+    assertThat(
+      modelAndView.getViewName(),
+      equalTo("redirect:/nuevo-usuario?errorComercio=Eleg%C3%AD+una+localidad+de+la+lista")
+    );
   }
 
   // --- Otros tests ---
@@ -263,70 +265,6 @@ public class ControladorLoginTest {
 
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
     verify(sessionMock, times(1)).invalidate();
-  }
-
-  @Test
-  public void registrarmeComercioConLocalidadInventadaNoDeberiaCrearNada()
-    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
-      "comercio@unlam.com",
-      "Password1",
-      "Almacén Don José",
-      "Almacen",
-      "Rivadavia 1234",
-      "Narnia",
-      requestMock,
-      redirectAttrs
-    );
-
-    assertThat(
-      modelAndView.getViewName(),
-      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario?errorComercio=")
-    );
-    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
-    verify(servicioComercioMock, never()).guardarComercio(any(Comercio.class));
-  }
-
-  @Test
-  public void registrarmeComercioSinDireccionNoDeberiaCrearUnaCuentaSinComercio()
-    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
-      "comercio@unlam.com",
-      "Password1",
-      "Almacén Don José",
-      "Almacen",
-      "   ",
-      "La Matanza",
-      requestMock,
-      redirectAttrs
-    );
-
-    assertThat(
-      modelAndView.getViewName(),
-      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario?errorComercio=")
-    );
-    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
-  }
-
-  @Test
-  public void registrarmeComercioConNombreMuyLargoNoDeberiaCrearNada()
-    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
-    ModelAndView modelAndView = controladorLogin.registrarmeComercio(
-      "comercio@unlam.com",
-      "Password1",
-      "a".repeat(151),
-      "Almacen",
-      "Rivadavia 1234",
-      "La Matanza",
-      requestMock,
-      redirectAttrs
-    );
-
-    assertThat(
-      modelAndView.getViewName(),
-      org.hamcrest.Matchers.startsWith("redirect:/nuevo-usuario?errorComercio=")
-    );
-    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
   }
 
   @Test
@@ -393,19 +331,7 @@ public class ControladorLoginTest {
 
   @Test
   public void registrarmeComercioExitosoDeberiaAvisarQueLaCuentaSeCreo() {
-    when(servicioComercioMock.buscarPorDireccionYLocalidad(anyString(), anyString()))
-      .thenReturn(null);
-
-    controladorLogin.registrarmeComercio(
-      "comercio@unlam.com",
-      "Password1",
-      "Almacén Don José",
-      "Almacen",
-      "Rivadavia 1234",
-      "La Matanza",
-      requestMock,
-      redirectAttrs
-    );
+    registrarComercio("Rivadavia 1234", "La Matanza");
 
     assertThat(
       redirectAttrs.getFlashAttributes().get("registroExitoso"),

@@ -677,4 +677,188 @@ public class ServicioReporteTest {
       error.getMessage()
     );
   }
+
+  // --- actividad del inicio y métricas del comercio ---
+
+  private Reporte reporteVisible(
+    String producto,
+    double precio,
+    LocalDateTime fecha,
+    Integer puntuacion
+  ) {
+    Producto unProducto = new Producto();
+    unProducto.setNombre(producto);
+    Comercio unComercio = new Comercio();
+    unComercio.setId(1L);
+    Reporte reporte = new Reporte();
+    reporte.setProducto(unProducto);
+    reporte.setComercio(unComercio);
+    reporte.setPrecio(precio);
+    reporte.setFechaDeReporte(fecha);
+    reporte.setPuntuacion(puntuacion);
+    return reporte;
+  }
+
+  @Test
+  public void ultimosReportesVisiblesDeberiaDevolverLosMasRecientesPrimero() {
+    LocalDateTime ahora = LocalDateTime.now();
+    Reporte viejo = reporteVisible("Leche", 1150.0, ahora.minusDays(2), 0);
+    Reporte nuevo = reporteVisible("Aceite", 2320.0, ahora.minusHours(1), 0);
+    when(repositorioReporteMock.listarTodos()).thenReturn(List.of(viejo, nuevo));
+
+    List<Reporte> ultimos = servicioReporte.ultimosReportesVisibles(6);
+
+    assertThat(ultimos, equalTo(List.of(nuevo, viejo)));
+  }
+
+  @Test
+  public void ultimosReportesVisiblesNoDeberiaIncluirLosDudososNiLosIncompletos() {
+    LocalDateTime ahora = LocalDateTime.now();
+    Reporte confiable = reporteVisible(
+      "Leche",
+      1150.0,
+      ahora.minusHours(3),
+      Reporte.PUNTUACION_DUDOSO
+    );
+    Reporte dudoso = reporteVisible(
+      "Aceite",
+      99.0,
+      ahora.minusHours(1),
+      Reporte.PUNTUACION_DUDOSO + 1
+    );
+    Reporte sinPrecio = reporteVisible("Arroz", 1.0, ahora.minusHours(2), 0);
+    sinPrecio.setPrecio(null);
+    Reporte sinFecha = reporteVisible("Fideos", 1.0, null, 0);
+    when(repositorioReporteMock.listarTodos())
+      .thenReturn(List.of(confiable, dudoso, sinPrecio, sinFecha));
+
+    assertThat(servicioReporte.ultimosReportesVisibles(6), equalTo(List.of(confiable)));
+  }
+
+  @Test
+  public void ultimosReportesVisiblesDeberiaRespetarElLimite() {
+    LocalDateTime ahora = LocalDateTime.now();
+    List<Reporte> muchos = new ArrayList<>();
+    for (int i = 0; i < 9; i++) {
+      muchos.add(reporteVisible("Producto " + i, 100.0 + i, ahora.minusHours(i), 0));
+    }
+    when(repositorioReporteMock.listarTodos()).thenReturn(muchos);
+
+    assertThat(servicioReporte.ultimosReportesVisibles(6).size(), equalTo(6));
+  }
+
+  @Test
+  public void resumenDeActividadDeberiaContarSoloLaUltimaSemanaYLosComerciosDistintos() {
+    LocalDateTime ahora = LocalDateTime.now();
+    Reporte reciente = reporteVisible("Leche", 1150.0, ahora.minusDays(1), 0);
+    Reporte viejo = reporteVisible("Aceite", 2320.0, ahora.minusDays(30), 0);
+    viejo.getComercio().setId(2L);
+    Reporte dudoso = reporteVisible(
+      "Arroz",
+      1.0,
+      ahora.minusHours(1),
+      Reporte.PUNTUACION_DUDOSO + 1
+    );
+    dudoso.getComercio().setId(3L);
+    when(repositorioReporteMock.listarTodos()).thenReturn(List.of(reciente, viejo, dudoso));
+
+    ResumenDeActividad resumen = servicioReporte.resumenDeActividad();
+
+    assertThat(resumen.getReportesSemana(), equalTo(1L));
+    assertThat(resumen.getComercios(), equalTo(2L));
+  }
+
+  @Test
+  public void resumenDeActividadSinReportesDeberiaDevolverCeros() {
+    when(repositorioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    ResumenDeActividad resumen = servicioReporte.resumenDeActividad();
+
+    assertThat(resumen.getReportesSemana(), equalTo(0L));
+    assertThat(resumen.getComercios(), equalTo(0L));
+  }
+
+  @Test
+  public void precioPromedioDelComercioDeberiaPromediarLosPreciosReportados() {
+    Reporte r1 = reporteVisible("Leche", 100.0, LocalDateTime.now(), 0);
+    Reporte r2 = reporteVisible("Aceite", 200.0, LocalDateTime.now(), 0);
+    Reporte sinPrecio = reporteVisible("Arroz", 1.0, LocalDateTime.now(), 0);
+    sinPrecio.setPrecio(null);
+    when(repositorioReporteMock.buscarPorComercio(1L)).thenReturn(List.of(r1, r2, sinPrecio));
+
+    assertThat(servicioReporte.precioPromedioDelComercio(1L), equalTo(150.0));
+  }
+
+  @Test
+  public void precioPromedioDelComercioSinReportesDeberiaSerCero() {
+    when(repositorioReporteMock.buscarPorComercio(1L)).thenReturn(Collections.emptyList());
+
+    assertThat(servicioReporte.precioPromedioDelComercio(1L), equalTo(0.0));
+  }
+
+  @Test
+  public void productoEstrellaDelComercioDeberiaSerElMasReportado() {
+    Reporte leche1 = reporteVisible("Leche", 100.0, LocalDateTime.now(), 0);
+    Reporte leche2 = reporteVisible("Leche", 110.0, LocalDateTime.now(), 0);
+    Reporte aceite = reporteVisible("Aceite", 200.0, LocalDateTime.now(), 0);
+    when(repositorioReporteMock.buscarPorComercio(1L)).thenReturn(List.of(aceite, leche1, leche2));
+
+    assertThat(servicioReporte.productoEstrellaDelComercio(1L), equalTo("Leche"));
+  }
+
+  @Test
+  public void productoEstrellaDelComercioEnEmpateDeberiaElegirElPrimeroEnOrdenAlfabetico() {
+    Reporte leche = reporteVisible("Leche", 100.0, LocalDateTime.now(), 0);
+    Reporte aceite = reporteVisible("Aceite", 200.0, LocalDateTime.now(), 0);
+    when(repositorioReporteMock.buscarPorComercio(1L)).thenReturn(List.of(leche, aceite));
+
+    assertThat(servicioReporte.productoEstrellaDelComercio(1L), equalTo("Aceite"));
+  }
+
+  @Test
+  public void productoEstrellaDelComercioSinReportesDeberiaDevolverGuion() {
+    when(repositorioReporteMock.buscarPorComercio(1L)).thenReturn(Collections.emptyList());
+
+    assertThat(servicioReporte.productoEstrellaDelComercio(1L), equalTo("-"));
+  }
+
+  // --- validarFoto ---
+
+  @Test
+  public void validarFotoAceptaJpegPngYWebp() {
+    byte[] jpeg = { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00 };
+    byte[] png = { (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A };
+    byte[] webp = { 'R', 'I', 'F', 'F', 0, 0, 0, 0, 'W', 'E', 'B', 'P' };
+
+    org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> servicioReporte.validarFoto(jpeg));
+    org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> servicioReporte.validarFoto(png));
+    org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> servicioReporte.validarFoto(webp));
+  }
+
+  @Test
+  public void validarFotoRechazaUnArchivoQueNoEsImagenAunqueDigaSerlo() {
+    byte[] texto = "<html>no soy una foto</html>".getBytes();
+
+    assertThrows(FotoInvalida.class, () -> servicioReporte.validarFoto(texto));
+  }
+
+  @Test
+  public void validarFotoRechazaUnaFotoDeMasDeDiezMegas() {
+    byte[] enorme = new byte[10 * 1024 * 1024 + 1];
+    enorme[0] = (byte) 0xFF;
+    enorme[1] = (byte) 0xD8;
+    enorme[2] = (byte) 0xFF;
+
+    FotoInvalida error = assertThrows(
+      FotoInvalida.class,
+      () -> servicioReporte.validarFoto(enorme)
+    );
+
+    assertThat(error.getMessage(), equalTo("La foto no puede superar los 10 MB"));
+  }
+
+  @Test
+  public void validarFotoRechazaUnaFotoVacia() {
+    assertThrows(FotoInvalida.class, () -> servicioReporte.validarFoto(new byte[0]));
+  }
 }

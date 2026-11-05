@@ -2,8 +2,10 @@ package com.tallerwebi.dominio.Comercio;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -263,14 +265,22 @@ public class ServicioComercioTest {
     assertThat(resultado, equalTo(false));
   }
 
+  private static byte[] jpegDe(int largo) {
+    byte[] bytes = new byte[largo];
+    bytes[0] = (byte) 0xFF;
+    bytes[1] = (byte) 0xD8;
+    bytes[2] = (byte) 0xFF;
+    return bytes;
+  }
+
   @Test
-  public void guardarFotoDeberiaActualizarElComercioConLosDatos() {
+  public void guardarFotoDeberiaActualizarElComercioConElTipoRealDelArchivo() throws Exception {
     Comercio comercio = new Comercio();
     comercio.setId(1L);
     when(repositorioComercioMock.buscarComercio(1L)).thenReturn(comercio);
 
-    byte[] bytes = new byte[] { 1, 2, 3 };
-    servicioComercio.guardarFoto(1L, bytes, "image/jpeg");
+    byte[] bytes = jpegDe(100);
+    servicioComercio.guardarFoto(1L, bytes);
 
     assertThat(comercio.getFoto(), equalTo(bytes));
     assertThat(comercio.getFotoTipo(), equalTo("image/jpeg"));
@@ -278,10 +288,38 @@ public class ServicioComercioTest {
   }
 
   @Test
-  public void guardarFotoCuandoElComercioNoExisteNoDeberiaHacerNada() {
+  public void guardarFotoQueNoEsUnaImagenPermitidaLanzaFotoInvalida() {
+    byte[] noEsImagen = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+
+    assertThrows(FotoInvalida.class, () -> servicioComercio.guardarFoto(1L, noEsImagen));
+
+    verify(repositorioComercioMock, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void guardarFotoMayorACincoMegasLanzaFotoInvalida() {
+    byte[] enorme = jpegDe(5 * 1024 * 1024 + 1);
+
+    assertThrows(FotoInvalida.class, () -> servicioComercio.guardarFoto(1L, enorme));
+
+    verify(repositorioComercioMock, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void guardarFotoDeExactamenteCincoMegasSeAcepta() throws Exception {
+    Comercio comercio = new Comercio();
+    when(repositorioComercioMock.buscarComercio(1L)).thenReturn(comercio);
+
+    servicioComercio.guardarFoto(1L, jpegDe(5 * 1024 * 1024));
+
+    verify(repositorioComercioMock).actualizarComercio(comercio);
+  }
+
+  @Test
+  public void guardarFotoCuandoElComercioNoExisteNoDeberiaHacerNada() throws Exception {
     when(repositorioComercioMock.buscarComercio(99L)).thenReturn(null);
 
-    servicioComercio.guardarFoto(99L, new byte[] { 1, 2, 3 }, "image/jpeg");
+    servicioComercio.guardarFoto(99L, jpegDe(100));
 
     verify(repositorioComercioMock, never()).actualizarComercio(any());
   }

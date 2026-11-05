@@ -1,182 +1,125 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Panel Admin — Estadísticas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}"/>
+    <link rel="stylesheet" th:href="@{/css/admin.css}"/>
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<main class="container mt-4">
-    <h2 id="titulo-pagina" class="fw-bold mb-4"><i class="bi bi-bar-chart-fill me-2"></i>Panel de Estadísticas</h2>
+<main class="container ad">
+    <header class="ad-cabecera">
+        <h1 id="titulo-pagina" class="ad-titulo">Estadísticas</h1>
+        <p class="ad-bajada">Cómo se usa Precios de Barrio: quiénes participan, qué se reporta y dónde.</p>
+    </header>
 
-    <!-- Tarjetas resumen -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card text-white bg-primary">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <div id="total-usuarios" class="fs-2 fw-bold" th:text="${totalUsuarios}">0</div>
-                        <div>Usuarios registrados</div>
-                    </div>
-                    <i class="bi bi-people-fill fs-1 opacity-50"></i>
-                </div>
+    <nav th:replace="~{admin/subnav :: subnav('estadisticas')}"></nav>
+
+    <div class="ad-cifras">
+        <div class="ad-cifra">
+            <div>
+                <span id="total-usuarios" class="ad-cifra-numero" th:text="${totalUsuarios}">0</span>
+                <span class="ad-cifra-nombre">Usuarios registrados</span>
             </div>
+            <span class="ad-cifra-icono" aria-hidden="true"><i class="bi bi-people-fill"></i></span>
         </div>
-        <div class="col-md-6">
-            <div class="card text-white bg-success">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <div id="total-reportes" class="fs-2 fw-bold" th:text="${totalReportes}">0</div>
-                        <div>Reportes cargados</div>
-                    </div>
-                    <i class="bi bi-receipt fs-1 opacity-50"></i>
-                </div>
+        <div class="ad-cifra">
+            <div>
+                <span id="total-reportes" class="ad-cifra-numero" th:text="${totalReportes}">0</span>
+                <span class="ad-cifra-nombre">Reportes cargados</span>
             </div>
+            <span class="ad-cifra-icono" aria-hidden="true"><i class="bi bi-receipt"></i></span>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <!-- Productos más reportados -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header fw-bold"><i class="bi bi-trophy me-2"></i>Productos más reportados</div>
-                <div class="card-body p-0">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead><tr><th>#</th><th>Producto</th><th>Reportes</th></tr></thead>
-                        <tbody>
-                        <tr th:each="fila, i : ${productosMasReportados}">
-                            <td th:text="${i.count}"></td>
-                            <td th:text="${fila[0]}"></td>
-                            <td><span class="badge bg-primary" th:text="${fila[1]}"></span></td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(productosMasReportados)}">
-                            <td colspan="3" class="text-center text-muted">Sin datos</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+    <div class="ad-grilla">
+        <section class="ad-tarjeta" aria-labelledby="t-mes">
+            <h2 class="ad-tarjeta-titulo" id="t-mes"><i class="bi bi-calendar3" aria-hidden="true"></i>Reportes por mes</h2>
+            <ol class="ad-ranking" data-barras th:unless="${#lists.isEmpty(reportesPorMes)}">
+                <li class="ad-fila ad-fila--sin-puesto" th:each="fila : ${reportesPorMes}" th:attr="data-valor=${fila[2]}">
+                    <span class="ad-nombre" th:text="${fila[0] + ' ' + fila[1]}">Mes</span>
+                    <span class="ad-valor" th:text="${fila[2]}">0</span>
+                    <span class="ad-barra" aria-hidden="true"><span></span></span>
+                </li>
+            </ol>
+            <p class="ad-vacio" th:if="${#lists.isEmpty(reportesPorMes)}">Todavía no hay datos.</p>
+        </section>
 
-        <!-- Comercios más reportados -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header fw-bold"><i class="bi bi-shop me-2"></i>Comercios más activos</div>
-                <div class="card-body p-0">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead><tr><th>#</th><th>Comercio</th><th>Reportes</th></tr></thead>
-                        <tbody>
-                        <tr th:each="fila, i : ${comerciosMasReportados}">
-                            <td th:text="${i.count}"></td>
-                            <td th:text="${fila[0]}"></td>
-                            <td><span class="badge bg-success" th:text="${fila[1]}"></span></td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(comerciosMasReportados)}">
-                            <td colspan="3" class="text-center text-muted">Sin datos</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <section class="ad-tarjeta" aria-labelledby="t-productos">
+            <h2 class="ad-tarjeta-titulo" id="t-productos"><i class="bi bi-trophy" aria-hidden="true"></i>Productos más reportados</h2>
+            <ol class="ad-ranking" data-barras th:unless="${#lists.isEmpty(productosMasReportados)}">
+                <li class="ad-fila" th:each="fila, i : ${productosMasReportados}" th:attr="data-valor=${fila[1]}">
+                    <span class="ad-puesto" th:text="${i.count}">1</span>
+                    <span class="ad-nombre" th:text="${fila[0]}">Nombre</span>
+                    <span class="ad-valor" th:text="${fila[1]}">0</span>
+                    <span class="ad-barra" aria-hidden="true"><span></span></span>
+                </li>
+            </ol>
+            <p class="ad-vacio" th:if="${#lists.isEmpty(productosMasReportados)}">Todavía no hay datos.</p>
+        </section>
 
-        <!-- Usuarios más activos -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header fw-bold"><i class="bi bi-person-check me-2"></i>Usuarios más activos</div>
-                <div class="card-body p-0">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead><tr><th>#</th><th>Usuario</th><th>Reportes</th></tr></thead>
-                        <tbody>
-                        <tr th:each="fila, i : ${usuariosMasActivos}">
-                            <td th:text="${i.count}"></td>
-                            <td th:text="${fila[0] + ' ' + fila[1]}"></td>
-                            <td><span class="badge bg-info text-dark" th:text="${fila[2]}"></span></td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(usuariosMasActivos)}">
-                            <td colspan="3" class="text-center text-muted">Sin datos</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <section class="ad-tarjeta" aria-labelledby="t-comercios">
+            <h2 class="ad-tarjeta-titulo" id="t-comercios"><i class="bi bi-shop" aria-hidden="true"></i>Comercios más activos</h2>
+            <ol class="ad-ranking" data-barras th:unless="${#lists.isEmpty(comerciosMasReportados)}">
+                <li class="ad-fila" th:each="fila, i : ${comerciosMasReportados}" th:attr="data-valor=${fila[1]}">
+                    <span class="ad-puesto" th:text="${i.count}">1</span>
+                    <span class="ad-nombre" th:text="${fila[0]}">Nombre</span>
+                    <span class="ad-valor" th:text="${fila[1]}">0</span>
+                    <span class="ad-barra" aria-hidden="true"><span></span></span>
+                </li>
+            </ol>
+            <p class="ad-vacio" th:if="${#lists.isEmpty(comerciosMasReportados)}">Todavía no hay datos.</p>
+        </section>
 
-        <!-- Productos más dudosos -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Productos más marcados como dudosos</div>
-                <div class="card-body p-0">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead><tr><th>#</th><th>Producto</th><th>Marcas</th></tr></thead>
-                        <tbody>
-                        <tr th:each="fila, i : ${productosMasDudosos}">
-                            <td th:text="${i.count}"></td>
-                            <td th:text="${fila[0]}"></td>
-                            <td><span class="badge bg-warning text-dark" th:text="${fila[1]}"></span></td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(productosMasDudosos)}">
-                            <td colspan="3" class="text-center text-muted">Sin datos</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <section class="ad-tarjeta" aria-labelledby="t-usuarios">
+            <h2 class="ad-tarjeta-titulo" id="t-usuarios"><i class="bi bi-person-check" aria-hidden="true"></i>Usuarios más activos</h2>
+            <ol class="ad-ranking" data-barras th:unless="${#lists.isEmpty(usuariosMasActivos)}">
+                <li class="ad-fila" th:each="fila, i : ${usuariosMasActivos}" th:attr="data-valor=${fila[2]}">
+                    <span class="ad-puesto" th:text="${i.count}">1</span>
+                    <span class="ad-nombre" th:text="${fila[0] + ' ' + fila[1]}">Nombre</span>
+                    <span class="ad-valor" th:text="${fila[2]}">0</span>
+                    <span class="ad-barra" aria-hidden="true"><span></span></span>
+                </li>
+            </ol>
+            <p class="ad-vacio" th:if="${#lists.isEmpty(usuariosMasActivos)}">Todavía no hay datos.</p>
+        </section>
 
-        <!-- Distribución por rango etario -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header fw-bold"><i class="bi bi-person-lines-fill me-2"></i>Distribución por edad</div>
-                <div class="card-body p-0">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead><tr><th>Rango</th><th>Usuarios</th></tr></thead>
-                        <tbody>
-                        <tr th:each="fila : ${distribucionPorRangoEtario}">
-                            <td th:text="${fila[0]}"></td>
-                            <td><span class="badge bg-secondary" th:text="${fila[1]}"></span></td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(distribucionPorRangoEtario)}">
-                            <td colspan="2" class="text-center text-muted">Sin datos</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <section class="ad-tarjeta" aria-labelledby="t-dudosos">
+            <h2 class="ad-tarjeta-titulo" id="t-dudosos"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>Productos más marcados como dudosos</h2>
+            <ol class="ad-ranking" data-barras th:unless="${#lists.isEmpty(productosMasDudosos)}">
+                <li class="ad-fila" th:each="fila, i : ${productosMasDudosos}" th:attr="data-valor=${fila[1]}">
+                    <span class="ad-puesto" th:text="${i.count}">1</span>
+                    <span class="ad-nombre" th:text="${fila[0]}">Nombre</span>
+                    <span class="ad-valor" th:text="${fila[1]}">0</span>
+                    <span class="ad-barra ad-barra--alerta" aria-hidden="true"><span></span></span>
+                </li>
+            </ol>
+            <p class="ad-vacio" th:if="${#lists.isEmpty(productosMasDudosos)}">Todavía no hay datos.</p>
+        </section>
 
-        <!-- Reportes por mes -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header fw-bold"><i class="bi bi-calendar3 me-2"></i>Reportes por mes</div>
-                <div class="card-body p-0">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead><tr><th>Mes</th><th>Año</th><th>Reportes</th></tr></thead>
-                        <tbody>
-                        <tr th:each="fila : ${reportesPorMes}">
-                            <td th:text="${fila[0]}"></td>
-                            <td th:text="${fila[1]}"></td>
-                            <td><span class="badge bg-dark" th:text="${fila[2]}"></span></td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(reportesPorMes)}">
-                            <td colspan="3" class="text-center text-muted">Sin datos</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <section class="ad-tarjeta" aria-labelledby="t-edad">
+            <h2 class="ad-tarjeta-titulo" id="t-edad"><i class="bi bi-person-lines-fill" aria-hidden="true"></i>Distribución por edad</h2>
+            <ol class="ad-ranking" data-barras th:unless="${#lists.isEmpty(distribucionPorRangoEtario)}">
+                <li class="ad-fila ad-fila--sin-puesto" th:each="fila : ${distribucionPorRangoEtario}" th:attr="data-valor=${fila[1]}">
+                    <span class="ad-nombre" th:text="${fila[0]}">Rango</span>
+                    <span class="ad-valor" th:text="${fila[1]}">0</span>
+                    <span class="ad-barra" aria-hidden="true"><span></span></span>
+                </li>
+            </ol>
+            <p class="ad-vacio" th:if="${#lists.isEmpty(distribucionPorRangoEtario)}">Todavía no hay datos.</p>
+        </section>
     </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+<script type="module" th:src="@{/js/admin.js}"></script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>

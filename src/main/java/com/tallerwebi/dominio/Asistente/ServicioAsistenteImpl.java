@@ -1,13 +1,16 @@
 package com.tallerwebi.dominio.Asistente;
 
 import com.google.gson.*;
+import com.tallerwebi.dominio.Comercio.RepositorioComercio;
+import com.tallerwebi.dominio.Comercio.RepositorioHorario;
+import com.tallerwebi.dominio.Comercio.RepositorioPromocion;
 import com.tallerwebi.dominio.Gemini.ServicioGemini;
-import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Lista.RepositorioLista;
+import com.tallerwebi.dominio.Producto.RepositorioProducto;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
+import java.time.Clock;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,18 +18,85 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ServicioAsistenteImpl implements ServicioAsistente {
 
-  private static final int MAX_REPORTES = 20;
-  private static final double RADIO_KM = 2.0;
+  private static final int MAX_TURNOS_HISTORIAL = 10;
+  private static final String PROMPT_DEL_SISTEMA =
+    "Sos Don Peso, el asistente de Precios de Barrio, una app donde los vecinos comparan " +
+    "precios de los comercios del barrio. Tu trabajo es ayudar al vecino a resolver sus " +
+    "problemas de compras y a usar la app.\n" +
+    "\n" +
+    "Qué sabés hacer:\n" +
+    "- Decir dónde está más barato un producto y comparar comercios.\n" +
+    "- Armar una compra con un presupuesto: elegí los precios más bajos, sumá y mostrá " +
+    "el total sin pasarte del presupuesto.\n" +
+    "- Revisar las listas de compras del vecino y decirle cuánto puede ahorrar " +
+    "comprando en otro comercio.\n" +
+    "- Contar las promociones vigentes y tenerlas en cuenta al calcular (descuentos por " +
+    "producto o por medio de pago).\n" +
+    "- Recomendar comercios cercanos y decir cuáles están abiertos ahora.\n" +
+    "- Explicar cómo usar la app.\n" +
+    "\n" +
+    "Reglas:\n" +
+    "- Respondé en español rioplatense, cercano y claro, en hasta 8 líneas. Podés usar " +
+    "listas con guiones y **negrita**.\n" +
+    "- Precios, comercios, promociones, listas y productos: usá SOLO los datos que te " +
+    "pasan. Nunca inventes. Si no hay datos, decilo y sugerí reportar el precio en la app.\n" +
+    "- Si el vecino pregunta por un comercio abierto, usá solo el estado que figura en los " +
+    "datos (\"abierto ahora\", \"cerrado ahora\", \"sin horario cargado\"). Nunca supongas un horario.\n" +
+    "- Las promociones que figuran como \"todavía NO empezaron\" no se pueden usar hoy: " +
+    "nunca las presentes como vigentes.\n" +
+    "- Mencioná siempre el comercio y la dirección del precio que recomendás.\n" +
+    "- Si un dato dice \"hace N días\" con N mayor a 5, o figura como \"dato viejo\", " +
+    "avisá que puede haber cambiado. Si figura como dudoso, avisá que no es seguro.\n" +
+    "- Si un producto está en el catálogo pero sin precios, decí que la app lo conoce pero " +
+    "nadie reportó su precio y sugerí reportarlo.\n" +
+    "- Si el vecino cuenta un problema o una duda, ayudalo paso a paso. Si te falta " +
+    "información para ayudarlo (presupuesto, producto, cantidad), hacé UNA sola pregunta corta.\n" +
+    "- Si el tema no tiene que ver con compras, precios o la app, decí amablemente que solo " +
+    "podés ayudar con eso.\n" +
+    "- No des consejos médicos, legales ni financieros.\n" +
+    "\n" +
+    "Guía de la app (para explicar cómo usarla; si no estás seguro de un paso exacto, " +
+    "indicá en qué sección buscarlo, sin inventar botones):\n" +
+    "- Menú: Productos, Comercios, Promociones, Reportes, Mis listas y Mi perfil. En el " +
+    "celular hay una barra inferior y el botón Menú. En Opciones están Sobre la app, " +
+    "Dar feedback y Cerrar sesión.\n" +
+    "- Buscar un producto: en Productos se busca por nombre y se ve en qué comercio está más barato.\n" +
+    "- Reportar un precio: se carga en Reportes, a mano o subiendo la foto del ticket (la app " +
+    "reconoce los productos y los precios y se confirman antes de guardar). El precio tiene que " +
+    "ser mayor a cero, con hasta 2 decimales, y no se puede reportar el mismo producto en el " +
+    "mismo comercio más de una vez por día. El propio reporte se puede editar durante 2 días.\n" +
+    "- Reportes dudosos: si un precio de otro vecino parece mal, se lo marca como dudoso. No se " +
+    "puede marcar el propio ni marcar dos veces el mismo. Con varias marcas se muestra como " +
+    "dudoso y, si llega al máximo, se elimina.\n" +
+    "- Mis listas: se crea una lista, se le agregan productos desde un precio reportado, se " +
+    "cambian las cantidades y se ve el total estimado antes de salir a comprar.\n" +
+    "- Comercios: muestra el mapa con los comercios del barrio, sus horarios y cómo llegar.\n" +
+    "- Promociones: ofertas de los comercios, por producto o por medio de pago.\n" +
+    "- Mi perfil: datos personales, foto y cambio de contraseña.";
 
-  private final RepositorioReporte repositorioReporte;
   private final ServicioGemini servicioGemini;
+  private final ContextoAsistente contextoAsistente;
 
   public ServicioAsistenteImpl(
     RepositorioReporte repositorioReporte,
-    ServicioGemini servicioGemini
+    ServicioGemini servicioGemini,
+    RepositorioPromocion repositorioPromocion,
+    RepositorioLista repositorioLista,
+    RepositorioProducto repositorioProducto,
+    RepositorioComercio repositorioComercio,
+    RepositorioHorario repositorioHorario
   ) {
-    this.repositorioReporte = repositorioReporte;
     this.servicioGemini = servicioGemini;
+    this.contextoAsistente =
+      new ContextoAsistente(
+        repositorioReporte,
+        repositorioPromocion,
+        repositorioLista,
+        repositorioProducto,
+        repositorioComercio,
+        repositorioHorario,
+        Clock.systemDefaultZone()
+      );
   }
 
   @Override
@@ -34,25 +104,12 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
     String pregunta,
     Double latitud,
     Double longitud,
+    Long usuarioId,
     List<Map<String, String>> historial
   ) throws Exception {
-    List<Reporte> reportes = repositorioReporte.listarRecientes(7);
-    List<Reporte> reportesFiltrados = filtrarPorKeyword(reportes, pregunta);
-    String contexto = construirContexto(reportesFiltrados, latitud, longitud);
-
-    String systemPrompt =
-      "Sos Don Peso, el asistente de Precios de Barrio.\n" +
-      "Tu único trabajo es ayudar a vecinos a comprar más barato usando datos reales de la app.\n" +
-      "Reglas:\n" +
-      "- Respondé en español rioplatense, breve y directo.\n" +
-      "- Recomendá siempre el precio más bajo. Mencioná el comercio y la dirección.\n" +
-      "- Si los datos tienen más de 5 días, avisalo.\n" +
-      "- NO inventes precios ni comercios. Solo usá los datos que te dan.\n" +
-      "- Si la pregunta no es sobre precios o compras, decí: 'Solo puedo ayudarte con precios del barrio.'";
-
+    String contexto = contextoAsistente.construir(pregunta, latitud, longitud, usuarioId);
     String userPrompt = construirUserPrompt(contexto, pregunta, historial);
-
-    return llamarGemini(systemPrompt, userPrompt);
+    return llamarGemini(PROMPT_DEL_SISTEMA, userPrompt);
   }
 
   private String construirUserPrompt(
@@ -65,7 +122,7 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
 
     if (historial != null && !historial.isEmpty()) {
       sb.append("Conversación anterior:\n");
-      int desde = Math.max(0, historial.size() - 6); // últimos 3 turnos (user + assistant)
+      int desde = Math.max(0, historial.size() - MAX_TURNOS_HISTORIAL); // user + assistant
       for (int i = desde; i < historial.size(); i++) {
         Map<String, String> turno = historial.get(i);
         String rol = "user".equals(turno.get("role")) ? "Vecino" : "Don Peso";
@@ -76,101 +133,6 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
 
     sb.append("Pregunta actual: ").append(pregunta);
     return sb.toString();
-  }
-
-  private String construirContexto(List<Reporte> reportes, Double latitud, Double longitud) {
-    String contexto = construirContextoConFiltro(reportes, latitud, longitud, true);
-    if (contexto == null) {
-      contexto = construirContextoConFiltro(reportes, latitud, longitud, false);
-    }
-    return contexto != null ? contexto : "No hay reportes disponibles.\n";
-  }
-
-  private String construirContextoConFiltro(
-    List<Reporte> reportes,
-    Double latitud,
-    Double longitud,
-    boolean filtrarPorDistancia
-  ) {
-    StringBuilder sb = new StringBuilder();
-    sb.append(
-      filtrarPorDistancia
-        ? "Productos disponibles en la app (nombre, precio, comercio, dirección, distancia):\n"
-        : "Productos disponibles en la app (sin filtro de distancia):\n"
-    );
-
-    int count = 0;
-    for (Reporte reporte : reportes) {
-      if (count >= MAX_REPORTES) break;
-      if (!esReporteValido(reporte)) continue;
-      if (debeExcluir(reporte, latitud, longitud, filtrarPorDistancia)) continue;
-      sb.append(formatearReporte(reporte, latitud, longitud));
-      count++;
-    }
-    return count > 0 ? sb.toString() : null;
-  }
-
-  private boolean esReporteValido(Reporte reporte) {
-    return reporte.getComercio() != null && reporte.getProducto() != null;
-  }
-
-  private boolean debeExcluir(
-    Reporte reporte,
-    Double latitud,
-    Double longitud,
-    boolean filtrarPorDistancia
-  ) {
-    if (!filtrarPorDistancia || latitud == null || longitud == null) return false;
-    double distancia = calcularDistanciaKm(
-      latitud,
-      longitud,
-      reporte.getComercio().getLatitud(),
-      reporte.getComercio().getLongitud()
-    );
-    return distancia > RADIO_KM;
-  }
-
-  private String formatearReporte(Reporte reporte, Double latitud, Double longitud) {
-    String linea = String.format(
-      "- %s: $%.2f en %s (%s)",
-      reporte.getProducto().getNombre(),
-      reporte.getPrecio(),
-      reporte.getComercio().getNombre(),
-      reporte.getComercio().getDireccion()
-    );
-    // Sin ubicación del vecino (o del comercio) no hay distancia que informar: no se inventa "0.0 km"
-    if (!hayDistancia(reporte, latitud, longitud)) return linea + System.lineSeparator();
-    double distancia = calcularDistanciaKm(
-      latitud,
-      longitud,
-      reporte.getComercio().getLatitud(),
-      reporte.getComercio().getLongitud()
-    );
-    return linea + String.format(" a %.1f km%n", distancia);
-  }
-
-  private boolean hayDistancia(Reporte reporte, Double latitud, Double longitud) {
-    return (
-      latitud != null &&
-      longitud != null &&
-      reporte.getComercio().getLatitud() != null &&
-      reporte.getComercio().getLongitud() != null
-    );
-  }
-
-  private double calcularDistanciaKm(Double lat1, Double lon1, Double lat2, Double lon2) {
-    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return 0.0;
-    final int radioTierra = 6371;
-    double dLat = Math.toRadians(lat2 - lat1);
-    double dLon = Math.toRadians(lon2 - lon1);
-    double haversine =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(Math.toRadians(lat1)) *
-        Math.cos(Math.toRadians(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    double angulo = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
-    return radioTierra * angulo;
   }
 
   private String llamarGemini(String systemPrompt, String userPrompt) throws Exception {
@@ -184,18 +146,5 @@ public class ServicioAsistenteImpl implements ServicioAsistente {
       .get("content")
       .getAsString()
       .trim();
-  }
-
-  private List<Reporte> filtrarPorKeyword(List<Reporte> reportes, String pregunta) {
-    String preguntaLower = pregunta.toLowerCase(Locale.ROOT);
-    List<Reporte> filtrados = reportes
-      .stream()
-      .filter(reporte ->
-        reporte.getProducto() != null &&
-        reporte.getProducto().getNombre() != null &&
-        preguntaLower.contains(reporte.getProducto().getNombre().toLowerCase(Locale.ROOT))
-      )
-      .collect(Collectors.toList());
-    return filtrados.isEmpty() ? reportes : filtrados;
   }
 }

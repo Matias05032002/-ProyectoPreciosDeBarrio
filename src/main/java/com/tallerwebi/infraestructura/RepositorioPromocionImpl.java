@@ -43,6 +43,21 @@ public class RepositorioPromocionImpl implements RepositorioPromocion {
   }
 
   @Override
+  public List<Promocion> listarProximas() {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT p FROM Promocion p JOIN FETCH p.comercio " +
+        "WHERE p.activa = true " +
+        "AND p.fechaInicio > :ahora " +
+        "ORDER BY p.fechaInicio ASC",
+        Promocion.class
+      )
+      .setParameter("ahora", LocalDateTime.now())
+      .list();
+  }
+
+  @Override
   public List<Promocion> listarActivas() {
     return sessionFactory
       .getCurrentSession()

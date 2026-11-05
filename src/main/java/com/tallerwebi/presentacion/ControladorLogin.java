@@ -1,12 +1,14 @@
 package com.tallerwebi.presentacion;
 
-import com.tallerwebi.dominio.Comercio.Comercio;
-import com.tallerwebi.dominio.Comercio.ServicioComercio;
-import com.tallerwebi.dominio.Localidades;
+import com.tallerwebi.dominio.Comercio.ServicioRegistroComercio;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.ComercioYaRegistrado;
+import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.DatosDeComercioInvalidos;
+import com.tallerwebi.dominio.excepcion.EmailInvalido;
+import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -22,7 +24,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class ControladorLogin {
 
   private ServicioLogin servicioLogin;
-  private ServicioComercio servicioComercio;
+  private ServicioRegistroComercio servicioRegistroComercio;
   private static final String VISTA_NUEVO_USUARIO = "nuevo-usuario";
   private static final String ATTR_ERROR = "error";
   private static final String REDIRECT_LOGIN = "redirect:/login";
@@ -31,14 +33,14 @@ public class ControladorLogin {
   private static final String MENSAJE_REGISTRO_EXITOSO = "¡Tu cuenta se creó! Ya podés ingresar.";
   private static final String MENSAJE_CUENTA_BLOQUEADA =
     "Demasiados intentos fallidos. Esperá unos minutos antes de volver a intentar.";
-  private static final int LARGO_MAXIMO_NOMBRE_COMERCIO = 150;
-  private static final int LARGO_MAXIMO_DIRECCION = 200;
-  private static final int LARGO_MAXIMO_TIPO = 50;
 
   @Autowired
-  public ControladorLogin(ServicioLogin servicioLogin, ServicioComercio servicioComercio) {
+  public ControladorLogin(
+    ServicioLogin servicioLogin,
+    ServicioRegistroComercio servicioRegistroComercio
+  ) {
     this.servicioLogin = servicioLogin;
-    this.servicioComercio = servicioComercio;
+    this.servicioRegistroComercio = servicioRegistroComercio;
   }
 
   @RequestMapping("/login")
@@ -114,38 +116,22 @@ public class ControladorLogin {
     HttpServletRequest request,
     RedirectAttributes redirectAttrs
   ) {
-    String errorDeDatos = validarDatosDeComercio(
-      nombreIngresado,
-      tipo,
-      direccionIngresada,
-      localidadIngresada
-    );
-    if (errorDeDatos != null) {
-      return new ModelAndView(
-        "redirect:/nuevo-usuario?errorComercio=" +
-        java.net.URLEncoder.encode(errorDeDatos, java.nio.charset.StandardCharsets.UTF_8)
-      );
-    }
-    String nombre = nombreIngresado.trim();
-    String direccion = direccionIngresada.trim();
-    String localidad = localidadIngresada.trim();
-
-    Comercio existente = servicioComercio.buscarPorDireccionYLocalidad(direccion, localidad);
-    if (existente != null && existente.getUsuarioId() != null) {
-      return new ModelAndView(
-        "redirect:/nuevo-usuario?errorComercio=Ya+existe+un+comercio+en+esa+direcci%C3%B3n+y+localidad"
-      );
-    }
-
-    Usuario usuario = new Usuario();
-    usuario.setEmail(email);
-    usuario.setPassword(password);
-    usuario.setNombre(nombre);
-    usuario.setRol("COMERCIO");
-
     try {
-      servicioLogin.registrar(usuario);
-    } catch (Exception e) {
+      servicioRegistroComercio.registrar(
+        email,
+        password,
+        nombreIngresado,
+        tipo,
+        direccionIngresada,
+        localidadIngresada
+      );
+    } catch (
+      DatosDeComercioInvalidos
+      | ComercioYaRegistrado
+      | UsuarioExistente
+      | EmailInvalido
+      | ContrasenaInvalida e
+    ) {
       return new ModelAndView(
         "redirect:/nuevo-usuario?errorComercio=" +
         java.net.URLEncoder.encode(
@@ -154,57 +140,8 @@ public class ControladorLogin {
         )
       );
     }
-
-    Usuario usuarioCreado = servicioLogin.buscarPorEmail(email);
-    if (usuarioCreado != null) {
-      Comercio comercioExistente = servicioComercio.buscarPorDireccionYLocalidad(
-        direccion,
-        localidad
-      );
-      if (comercioExistente != null) {
-        comercioExistente.setUsuarioId(usuarioCreado.getId());
-        servicioComercio.actualizarComercio(comercioExistente);
-      } else {
-        Comercio comercio = new Comercio();
-        comercio.setNombre(nombre);
-        comercio.setTipo(tipo);
-        comercio.setDireccion(direccion);
-        comercio.setLocalidad(localidad);
-        comercio.setActivo(true);
-        comercio.setFechaRegistro(LocalDateTime.now());
-        comercio.setUsuarioId(usuarioCreado.getId());
-        servicioComercio.guardarComercio(comercio);
-      }
-    }
     redirectAttrs.addFlashAttribute(ATTR_REGISTRO_EXITOSO, MENSAJE_REGISTRO_EXITOSO);
     return new ModelAndView(REDIRECT_LOGIN);
-  }
-
-  // Se valida antes de crear el usuario: si no, quedaría una cuenta sin comercio
-  private String validarDatosDeComercio(
-    String nombre,
-    String tipo,
-    String direccion,
-    String localidad
-  ) {
-    if (estaVacio(nombre) || estaVacio(direccion) || estaVacio(tipo)) {
-      return "Completá el nombre, el tipo y la dirección del comercio";
-    }
-    if (
-      nombre.trim().length() > LARGO_MAXIMO_NOMBRE_COMERCIO ||
-      direccion.trim().length() > LARGO_MAXIMO_DIRECCION ||
-      tipo.trim().length() > LARGO_MAXIMO_TIPO
-    ) {
-      return "El nombre, el tipo o la dirección del comercio son demasiado largos";
-    }
-    if (!Localidades.esValida(localidad)) {
-      return "Elegí una localidad de la lista";
-    }
-    return null;
-  }
-
-  private boolean estaVacio(String valor) {
-    return valor == null || valor.isBlank();
   }
 
   @RequestMapping(path = "/nuevo-usuario", method = RequestMethod.GET)

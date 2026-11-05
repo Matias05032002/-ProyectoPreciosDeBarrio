@@ -78,6 +78,16 @@ public class ControladorPromocionTest {
   }
 
   @Test
+  public void listarActivasTambienMuestraLasProximas() {
+    when(servicioPromocionMock.listarPromocionesActivas()).thenReturn(Collections.emptyList());
+    when(servicioPromocionMock.listarPromocionesProximas()).thenReturn(Collections.emptyList());
+
+    ModelAndView mav = controlador.listarActivas();
+
+    assertThat(mav.getModel().get("proximas"), equalTo(Collections.emptyList()));
+  }
+
+  @Test
   public void misPromocionesSinSesionRedirigeAlLogin() {
     ModelAndView mav = controlador.misPromociones(requestMock);
 

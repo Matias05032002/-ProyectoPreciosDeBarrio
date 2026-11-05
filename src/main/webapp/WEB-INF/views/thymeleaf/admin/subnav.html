@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Navegación entre las secciones del panel. activo: estadisticas | consultas | verificaciones -->
+<nav th:fragment="subnav(activo)" class="ad-tabs" aria-label="Secciones del panel">
+    <a class="ad-tab" th:href="@{/admin/estadisticas}"
+       th:attr="aria-current=${activo == 'estadisticas'} ? 'page' : null">
+        <i class="bi bi-bar-chart-fill" aria-hidden="true"></i>Estadísticas
+    </a>
+    <a class="ad-tab" th:href="@{/admin/consultas}"
+       th:attr="aria-current=${activo == 'consultas'} ? 'page' : null">
+        <i class="bi bi-chat-left-text" aria-hidden="true"></i>Consultas
+    </a>
+    <a class="ad-tab" th:href="@{/admin/verificaciones}"
+       th:attr="aria-current=${activo == 'verificaciones'} ? 'page' : null">
+        <i class="bi bi-patch-check" aria-hidden="true"></i>Verificaciones
+    </a>
+</nav>
+</body>
+</html>

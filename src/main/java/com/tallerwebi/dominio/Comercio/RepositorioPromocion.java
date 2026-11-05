@@ -11,5 +11,7 @@ public interface RepositorioPromocion {
 
   List<Promocion> listarActivas();
 
+  List<Promocion> listarProximas();
+
   void actualizar(Promocion promocion);
 }
