@@ -175,6 +175,70 @@ public class ControladorProductoTest {
   }
 
   @Test
+  public void buscarConRubroFiltraPorEseRubroYLoDejaEnLaVista() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen",
+      1L,
+      null,
+      0
+    );
+    when(requestMock.getParameter("categoria")).thenReturn("Lacteos");
+    when(
+      servicioProductoMock.buscarProductosConPrecio(
+        "",
+        "Lacteos",
+        null,
+        OrdenProducto.PRECIO,
+        null,
+        null
+      )
+    )
+      .thenReturn(Arrays.asList(dto));
+    when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(1);
+    when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
+      .thenReturn(Arrays.asList(dto));
+
+    ModelAndView modelAndView = controladorProducto.buscarProducto(
+      "",
+      "precio",
+      null,
+      null,
+      null,
+      0,
+      requestMock
+    );
+
+    assertThat(modelAndView.getModel().get("categoria"), equalTo("Lacteos"));
+    assertThat(((List<?>) modelAndView.getModel().get("productos")).size(), equalTo(1));
+    verify(servicioProductoMock, never())
+      .buscarProductosConPrecio(anyString(), any(), any(), any(), any());
+  }
+
+  @Test
+  public void buscarSinRubroNoPasaCategoriaALaVista() {
+    when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(0);
+    when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
+      .thenReturn(Collections.emptyList());
+
+    ModelAndView modelAndView = controladorProducto.buscarProducto(
+      "Leche",
+      "precio",
+      null,
+      null,
+      null,
+      0,
+      requestMock
+    );
+
+    assertThat(modelAndView.getModel().get("categoria"), is(nullValue()));
+  }
+
+  @Test
   public void productoConPrecioTieneGettersCorrectos() {
     ProductoConPrecio dto = new ProductoConPrecio(
       "Leche",
@@ -335,5 +399,47 @@ public class ControladorProductoTest {
 
     assertThat(modelAndView.getViewName(), equalTo("redirect:/producto/lista"));
     verify(this.servicioProductoMock, times(1)).buscarProductoPorId(99L);
+  }
+
+  @Test
+  public void preciosEnCadaLocalDeberiaDevolverComercioDireccionYPrecio() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenísima");
+    producto.setUnidad("1l");
+    com.tallerwebi.dominio.Comercio.Comercio comercio =
+      new com.tallerwebi.dominio.Comercio.Comercio();
+    comercio.setId(10L);
+    comercio.setNombre("Coto");
+    comercio.setDireccion("Av. Rivadavia 9840");
+    comercio.setLocalidad("Villa Luro");
+    com.tallerwebi.dominio.Reporte.Reporte reporte = new com.tallerwebi.dominio.Reporte.Reporte();
+    reporte.setId(7L);
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(1307.99);
+    reporte.setFechaDeReporte(LocalDateTime.now().minusDays(1));
+    reporte.setPuntuacion(0);
+    when(servicioProductoMock.buscarPreciosDelProductoEnCadaLocal(7L))
+      .thenReturn(Collections.singletonList(reporte));
+
+    List<java.util.Map<String, Object>> precios = controladorProducto.preciosEnCadaLocal(7L);
+
+    assertThat(precios, hasSize(1));
+    assertThat(precios.get(0).get("comercio"), is("Coto"));
+    assertThat(precios.get(0).get("comercioId"), is(10L));
+    assertThat(precios.get(0).get("direccion"), is("Av. Rivadavia 9840"));
+    assertThat(precios.get(0).get("localidad"), is("Villa Luro"));
+    assertThat(precios.get(0).get("precio"), is(1307.99));
+    assertThat(precios.get(0).get("antiguedad"), is("Fresco"));
+    assertThat(precios.get(0).get("esDudoso"), is(false));
+  }
+
+  @Test
+  public void preciosEnCadaLocalSinResultadosDeberiaDevolverListaVacia() {
+    when(servicioProductoMock.buscarPreciosDelProductoEnCadaLocal(99L))
+      .thenReturn(Collections.emptyList());
+
+    assertThat(controladorProducto.preciosEnCadaLocal(99L), is(empty()));
   }
 }

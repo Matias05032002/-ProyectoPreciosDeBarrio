@@ -25,6 +25,7 @@ public class ProductoConPrecio {
   private boolean esMasBarato;
   private int localesComparados;
   private Double diferenciaConElMasBarato;
+  private Double ahorroMaximo;
 
   public ProductoConPrecio(
     String nombre,
@@ -154,5 +155,13 @@ public class ProductoConPrecio {
 
   public void setDiferenciaConElMasBarato(Double diferenciaConElMasBarato) {
     this.diferenciaConElMasBarato = diferenciaConElMasBarato;
+  }
+
+  public Double getAhorroMaximo() {
+    return ahorroMaximo;
+  }
+
+  public void setAhorroMaximo(Double ahorroMaximo) {
+    this.ahorroMaximo = ahorroMaximo;
   }
 }
