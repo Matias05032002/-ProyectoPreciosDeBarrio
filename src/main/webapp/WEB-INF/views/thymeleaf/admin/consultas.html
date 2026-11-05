@@ -3,48 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Consultas recibidas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <title>Consultas recibidas — Precios de Barrio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+    <link rel="stylesheet" th:href="@{/css/admin.css}"/>
 </head>
 <body>
-
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<main class="container mt-5">
-    <h1>Consultas recibidas</h1>
+<main class="container ad">
+    <header class="ad-cabecera">
+        <h1 id="titulo-pagina" class="ad-titulo">Consultas recibidas</h1>
+        <p class="ad-bajada">Los mensajes que dejaron los vecinos desde la sección de contacto.</p>
+    </header>
 
-    <div th:if="${#lists.isEmpty(consultas)}" class="alert alert-info">
-        Todavía no hay consultas recibidas.
+    <nav th:replace="~{admin/subnav :: subnav('consultas')}"></nav>
+
+    <div class="ad-estado-vacio" id="sin-consultas" th:if="${#lists.isEmpty(consultas)}">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <h2>Todavía no hay consultas</h2>
+        <p>Cuando un vecino escriba desde la app, el mensaje va a aparecer acá.</p>
     </div>
 
-    <div class="table-responsive" th:if="${!#lists.isEmpty(consultas)}">
-        <table class="table table-striped">
-            <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Asunto</th>
-                <th>Mensaje</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="consulta : ${consultas}">
-                <td th:text="${consulta.nombre}"></td>
-                <td th:text="${consulta.email}"></td>
-                <td th:text="${consulta.asunto}"></td>
-                <td th:text="${consulta.mensaje}"></td>
-                <td th:text="${#temporals.format(consulta.fecha, 'dd/MM/yyyy HH:mm')}"></td>
-                <td th:text="${consulta.estado}"></td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
+    <th:block th:unless="${#lists.isEmpty(consultas)}">
+        <div class="ad-herramientas">
+            <div class="ad-buscador">
+                <label for="ad-buscar" class="visually-hidden">Buscar en las consultas</label>
+                <input type="search" id="ad-buscar" placeholder="Buscar por nombre, email o asunto" autocomplete="off">
+            </div>
+            <p class="ad-contador" id="ad-contador" aria-live="polite"
+               th:text="${#lists.size(consultas)} + ' de ' + ${#lists.size(consultas)} + ' consultas'">0 de 0 consultas</p>
+        </div>
+
+        <div class="ad-lista" id="ad-lista">
+            <article class="ad-consulta" th:each="consulta : ${consultas}"
+                     th:attr="data-texto=${#strings.toLowerCase((consulta.nombre ?: '') + ' ' + (consulta.email ?: '') + ' ' + (consulta.asunto ?: '') + ' ' + (consulta.mensaje ?: ''))}">
+                <div class="ad-consulta-cabecera">
+                    <h2 class="ad-asunto" th:text="${consulta.asunto}">Asunto</h2>
+                    <span class="ad-fecha" th:text="${#temporals.format(consulta.fecha, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</span>
+                </div>
+                <p class="ad-mensaje" th:text="${consulta.mensaje}">Mensaje</p>
+                <div class="ad-pie">
+                    <p class="ad-remitente">
+                        <strong th:text="${consulta.nombre}">Nombre</strong> ·
+                        <span th:text="${consulta.email}">email</span>
+                    </p>
+                    <span class="ad-estado" th:text="${consulta.estado}"
+                          th:classappend="${consulta.estado != null and #strings.equalsIgnoreCase(consulta.estado, 'Pendiente')} ? 'ad-estado--pendiente'">Pendiente</span>
+                    <a class="ad-boton ad-boton--claro"
+                       th:href="${'mailto:' + consulta.email + '?subject=' + #uris.escapeQueryParam('Re: ' + consulta.asunto)}">
+                        <i class="bi bi-reply" aria-hidden="true"></i>Responder
+                    </a>
+                </div>
+            </article>
+        </div>
+
+        <div class="ad-estado-vacio" id="ad-sin-resultados" hidden>
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <h2>No encontramos consultas</h2>
+            <p>Probá con otro nombre, email o asunto.</p>
+        </div>
+    </th:block>
 </main>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+<script type="module" th:src="@{/js/admin.js}"></script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>

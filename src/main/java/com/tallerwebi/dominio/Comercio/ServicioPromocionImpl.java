@@ -67,6 +67,12 @@ public class ServicioPromocionImpl implements ServicioPromocion {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public List<Promocion> listarPromocionesProximas() {
+    return repositorioPromocion.listarProximas();
+  }
+
+  @Override
   public void actualizarPromocion(Promocion promocion, Long usuarioId) {
     Promocion existente = repositorioPromocion.buscarPorId(promocion.getId());
 

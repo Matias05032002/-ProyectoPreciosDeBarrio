@@ -127,6 +127,15 @@ public class ServicioPromocionImplTest {
   }
 
   @Test
+  public void listarPromocionesProximasPideLasQueTodaviaNoEmpezaron() {
+    when(repositorioPromocionMock.listarProximas()).thenReturn(Collections.emptyList());
+
+    assertThat(servicioPromocion.listarPromocionesProximas(), equalTo(Collections.emptyList()));
+
+    verify(repositorioPromocionMock).listarProximas();
+  }
+
+  @Test
   public void listarPromocionesActivas() {
     when(repositorioPromocionMock.listarActivas()).thenReturn(Collections.emptyList());
 

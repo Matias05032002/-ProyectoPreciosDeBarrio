@@ -9,6 +9,7 @@ public interface ServicioAsistente {
     String pregunta,
     Double latitud,
     Double longitud,
+    Long usuarioId,
     List<Map<String, String>> historial
   ) throws Exception;
 }

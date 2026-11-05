@@ -723,11 +723,11 @@ public class ControladorReporteTest {
   }
 
   @Test
-  public void ultimosReportesDeberiaDevolverLosMasRecientesPrimero() {
+  public void ultimosReportesDeberiaDevolverLoQueElServicioElige() {
     java.time.LocalDateTime ahora = java.time.LocalDateTime.of(2026, 11, 3, 20, 0);
-    Reporte viejo = reporteDe("Leche", 1150.0, ahora.minusDays(2), 0);
     Reporte nuevo = reporteDe("Aceite", 2320.0, ahora.minusHours(1), 0);
-    when(servicioReporteMock.listarTodos()).thenReturn(List.of(viejo, nuevo));
+    Reporte viejo = reporteDe("Leche", 1150.0, ahora.minusDays(2), 0);
+    when(servicioReporteMock.ultimosReportesVisibles(6)).thenReturn(List.of(nuevo, viejo));
 
     List<java.util.Map<String, Object>> ultimos = controladorReporte.ultimosReportes();
 
@@ -745,7 +745,7 @@ public class ControladorReporteTest {
     Reporte conFoto = reporteDe("Leche", 1150.0, ahora.minusHours(1), 0);
     conFoto.setFoto(new byte[] { 1, 2, 3 });
     Reporte sinFoto = reporteDe("Aceite", 2320.0, ahora.minusHours(2), 0);
-    when(servicioReporteMock.listarTodos()).thenReturn(List.of(conFoto, sinFoto));
+    when(servicioReporteMock.ultimosReportesVisibles(6)).thenReturn(List.of(conFoto, sinFoto));
 
     List<java.util.Map<String, Object>> ultimos = controladorReporte.ultimosReportes();
 
@@ -754,80 +754,40 @@ public class ControladorReporteTest {
   }
 
   @Test
-  public void ultimosReportesNoDeberiaIncluirLosMarcadosComoDudosos() {
-    java.time.LocalDateTime ahora = java.time.LocalDateTime.of(2026, 11, 3, 20, 0);
-    Reporte confiable = reporteDe("Leche", 1150.0, ahora.minusHours(3), Reporte.PUNTUACION_DUDOSO);
-    Reporte dudoso = reporteDe("Aceite", 99.0, ahora.minusHours(1), Reporte.PUNTUACION_DUDOSO + 1);
-    when(servicioReporteMock.listarTodos()).thenReturn(List.of(confiable, dudoso));
-
-    List<java.util.Map<String, Object>> ultimos = controladorReporte.ultimosReportes();
-
-    assertThat(ultimos, hasSize(1));
-    assertThat(ultimos.get(0).get("producto"), is("Leche"));
-  }
-
-  @Test
-  public void ultimosReportesDeberiaDevolverComoMuchoSeis() {
-    java.time.LocalDateTime ahora = java.time.LocalDateTime.of(2026, 11, 3, 20, 0);
-    List<Reporte> muchos = new java.util.ArrayList<>();
-    for (int i = 0; i < 9; i++) {
-      muchos.add(reporteDe("Producto " + i, 100.0 + i, ahora.minusHours(i), 0));
-    }
-    when(servicioReporteMock.listarTodos()).thenReturn(muchos);
-
-    assertThat(controladorReporte.ultimosReportes(), hasSize(6));
-  }
-
-  @Test
   public void ultimosReportesSinReportesDeberiaDevolverListaVacia() {
-    when(servicioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
+    when(servicioReporteMock.ultimosReportesVisibles(6)).thenReturn(Collections.emptyList());
 
     assertThat(controladorReporte.ultimosReportes(), is(empty()));
   }
 
   @Test
-  public void resumenDeberiaContarSoloLosReportesDeLosUltimosSieteDias() {
-    java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
-    Reporte reciente = reporteDe("Leche", 1150.0, ahora.minusDays(1), 0);
-    Reporte viejo = reporteDe("Aceite", 2320.0, ahora.minusDays(30), 0);
-    when(servicioReporteMock.listarTodos()).thenReturn(List.of(reciente, viejo));
+  public void resumenDeberiaMostrarLosNumerosQueCalculaElServicio() {
+    when(servicioReporteMock.resumenDeActividad())
+      .thenReturn(new com.tallerwebi.dominio.Reporte.ResumenDeActividad(5L, 3L));
 
     java.util.Map<String, Object> resumen = controladorReporte.resumenDeReportes();
 
-    assertThat(resumen.get("reportesSemana"), is(1L));
+    assertThat(resumen.get("reportesSemana"), is(5L));
+    assertThat(resumen.get("comercios"), is(3L));
   }
 
   @Test
-  public void resumenDeberiaContarComerciosDistintosConPrecios() {
-    java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
-    Reporte unoEnElPrimerComercio = reporteDe("Leche", 1150.0, ahora.minusHours(1), 0);
-    unoEnElPrimerComercio.getComercio().setId(1L);
-    Reporte otroEnElPrimerComercio = reporteDe("Aceite", 2320.0, ahora.minusHours(2), 0);
-    otroEnElPrimerComercio.getComercio().setId(1L);
-    Reporte enElSegundoComercio = reporteDe("Arroz", 900.0, ahora.minusHours(3), 0);
-    enElSegundoComercio.getComercio().setId(2L);
-    when(servicioReporteMock.listarTodos())
-      .thenReturn(List.of(unoEnElPrimerComercio, otroEnElPrimerComercio, enElSegundoComercio));
+  public void guardarReporteConFotoInvalidaMuestraElMotivoDelServicio() throws Exception {
+    Reporte reporte = new Reporte();
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    org.mockito.Mockito
+      .doThrow(new com.tallerwebi.dominio.excepcion.FotoInvalida("Foto mala"))
+      .when(servicioReporteMock)
+      .validarFoto(any());
 
-    assertThat(controladorReporte.resumenDeReportes().get("comercios"), is(2L));
-  }
+    ModelAndView mav = controladorReporte.guardarReporte(
+      reporte,
+      "data:image/jpeg;base64,/9j/AA==",
+      requestMock
+    );
 
-  @Test
-  public void resumenNoDeberiaContarLosReportesDudosos() {
-    java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
-    Reporte dudoso = reporteDe("Leche", 1.0, ahora.minusHours(1), Reporte.PUNTUACION_DUDOSO + 1);
-    when(servicioReporteMock.listarTodos()).thenReturn(List.of(dudoso));
-
-    assertThat(controladorReporte.resumenDeReportes().get("reportesSemana"), is(0L));
-  }
-
-  @Test
-  public void resumenSinReportesDeberiaDevolverCeros() {
-    when(servicioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
-
-    java.util.Map<String, Object> resumen = controladorReporte.resumenDeReportes();
-
-    assertThat(resumen.get("reportesSemana"), is(0L));
-    assertThat(resumen.get("comercios"), is(0L));
+    assertThat(mav.getModel().get("error"), is("Foto mala"));
+    verify(servicioReporteMock, never()).guardarReporte(any());
   }
 }

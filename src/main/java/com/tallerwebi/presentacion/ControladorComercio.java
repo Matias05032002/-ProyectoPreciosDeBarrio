@@ -8,8 +8,10 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -252,8 +254,11 @@ public class ControladorComercio {
     mav.addObject("totalPrecios", reportes != null ? reportes.size() : 0);
     mav.addObject("totalVecinos", vecinos != null ? vecinos.size() : 0);
     mav.addObject("totalDudosos", totalDudosos != null ? totalDudosos : 0L);
-    mav.addObject("precioPromedio", calcularPrecioPromedio(reportes));
-    mav.addObject("productoEstrella", calcularProductoEstrella(reportes));
+    mav.addObject("precioPromedio", servicioReporte.precioPromedioDelComercio(comercio.getId()));
+    mav.addObject(
+      "productoEstrella",
+      servicioReporte.productoEstrellaDelComercio(comercio.getId())
+    );
     mav.addObject("rangosEtarios", rangosEtarios);
     mav.addObject("topVecinos", vecinos);
     List<Object[]> productosMasBuscados = servicioReporte.productosMasBuscadosPorLocalidad(
@@ -329,9 +334,6 @@ public class ControladorComercio {
     return new ModelAndView(REDIRECT_PERFIL + "/horarios?guardado");
   }
 
-  private static final long MAX_FOTO_BYTES = 5 * 1024 * 1024; // 5 MB
-  private static final String[] TIPOS_PERMITIDOS = { "image/jpeg", "image/png", "image/webp" };
-
   @RequestMapping(path = "/perfil/foto", method = RequestMethod.POST)
   public ModelAndView subirFoto(@RequestParam("foto") MultipartFile archivo, HttpSession session) {
     if (LOGGER.isInfoEnabled()) {
@@ -343,21 +345,9 @@ public class ControladorComercio {
     Comercio comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
     if (comercio == null) return new ModelAndView(REDIRECT_PERFIL);
 
-    String tipo = archivo.getContentType();
-    boolean tipoValido = false;
-    for (String permitido : TIPOS_PERMITIDOS) {
-      if (permitido.equals(tipo)) {
-        tipoValido = true;
-        break;
-      }
-    }
-    if (!tipoValido || archivo.getSize() > MAX_FOTO_BYTES) {
-      return new ModelAndView(REDIRECT_PERFIL + "?errorFoto=true");
-    }
-
     try {
-      servicioComercio.guardarFoto(comercio.getId(), archivo.getBytes(), tipo);
-    } catch (Exception exc) {
+      servicioComercio.guardarFoto(comercio.getId(), archivo.getBytes());
+    } catch (FotoInvalida | IOException exc) {
       return new ModelAndView(REDIRECT_PERFIL + "?errorFoto=true");
     }
     return new ModelAndView(REDIRECT_PERFIL + "?fotoActualizada=true");
@@ -372,30 +362,5 @@ public class ControladorComercio {
     }
     String tipo = comercio.getFotoTipo() != null ? comercio.getFotoTipo() : "image/jpeg";
     return ResponseEntity.ok().contentType(MediaType.parseMediaType(tipo)).body(comercio.getFoto());
-  }
-
-  private double calcularPrecioPromedio(List<Reporte> reportes) {
-    if (reportes == null || reportes.isEmpty()) return 0.0;
-    long count = reportes.stream().filter(r -> r.getPrecio() != null).count();
-    if (count == 0) return 0.0;
-    double suma = reportes
-      .stream()
-      .filter(r -> r.getPrecio() != null)
-      .mapToDouble(Reporte::getPrecio)
-      .sum();
-    return suma / count;
-  }
-
-  private String calcularProductoEstrella(List<Reporte> reportes) {
-    if (reportes == null || reportes.isEmpty()) return "-";
-    return reportes
-      .stream()
-      .filter(r -> r.getProducto() != null && r.getProducto().getNombre() != null)
-      .collect(Collectors.groupingBy(r -> r.getProducto().getNombre(), Collectors.counting()))
-      .entrySet()
-      .stream()
-      .max(Map.Entry.comparingByValue())
-      .map(Map.Entry::getKey)
-      .orElse("-");
   }
 }

@@ -1,5 +1,7 @@
 package com.tallerwebi.dominio.Comercio;
 
+import com.tallerwebi.dominio.Imagen.TipoDeImagen;
+import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import jakarta.transaction.Transactional;
 import java.util.Collections;
 import java.util.List;
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Service;
 @Service("ServicioComercio")
 @Transactional
 public class ServicioComercioImpl implements ServicioComercio {
+
+  private static final int MAX_FOTO_BYTES = 5 * 1024 * 1024;
 
   // Rectángulo que contiene a la Argentina continental: una coordenada afuera es un error
   private static final double LATITUD_MINIMA = -55.1;
@@ -280,12 +284,17 @@ public class ServicioComercioImpl implements ServicioComercio {
     return false;
   }
 
+  // El tipo se saca del contenido del archivo, no del que declara el navegador
   @Override
-  public void guardarFoto(Long comercioId, byte[] foto, String fotoTipo) {
+  public void guardarFoto(Long comercioId, byte[] foto) throws FotoInvalida {
+    String tipo = TipoDeImagen.detectar(foto);
+    if (tipo == null || foto.length > MAX_FOTO_BYTES) {
+      throw new FotoInvalida();
+    }
     Comercio comercio = repositorioComercio.buscarComercio(comercioId);
     if (comercio == null) return;
     comercio.setFoto(foto);
-    comercio.setFotoTipo(fotoTipo);
+    comercio.setFotoTipo(tipo);
     repositorioComercio.actualizarComercio(comercio);
   }
 

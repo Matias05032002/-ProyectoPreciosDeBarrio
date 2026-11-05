@@ -85,22 +85,12 @@ public class ServicioReporteImpl implements ServicioReporte {
       return null;
     }
     // No puede marcar su propio reporte: se avisa en vez de ignorarlo en silencio
-    if (
-      reporte.getUsuario() != null &&
-      usuario != null &&
-      reporte.getUsuario().getId().equals(usuario.getId())
-    ) {
+    if (MarcasDeDudoso.esElAutor(reporte, usuario)) {
       throw new ReportePropio();
     }
     // No puede marcar dos veces el mismo reporte
-    if (usuario != null) {
-      boolean yaMarco = reporte
-        .getUsuariosQueMarcaron()
-        .stream()
-        .anyMatch(u -> u.getId() != null && u.getId().equals(usuario.getId()));
-      if (yaMarco) {
-        return reporte;
-      }
+    if (MarcasDeDudoso.yaLoMarco(reporte, usuario)) {
+      return reporte;
     }
     return repositorioReporte.marcarDudoso(id, usuario);
   }
@@ -326,5 +316,39 @@ public class ServicioReporteImpl implements ServicioReporte {
   @Override
   public List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite) {
     return repositorioReporte.productosMasBuscadosPorLocalidad(localidad, limite);
+  }
+
+  @Override
+  public List<Reporte> ultimosReportesVisibles(int limite) {
+    return MetricasDeReportes.masRecientes(
+      MetricasDeReportes.visibles(repositorioReporte.listarTodos()),
+      limite
+    );
+  }
+
+  @Override
+  public ResumenDeActividad resumenDeActividad() {
+    return MetricasDeReportes.resumen(
+      MetricasDeReportes.visibles(repositorioReporte.listarTodos())
+    );
+  }
+
+  @Override
+  public void validarFoto(byte[] foto) throws FotoInvalida {
+    FotoDeReporte.validar(foto);
+  }
+
+  @Override
+  public double precioPromedioDelComercio(Long comercioId) {
+    return MetricasDeReportes.precioPromedio(reportesDelComercio(comercioId));
+  }
+
+  @Override
+  public String productoEstrellaDelComercio(Long comercioId) {
+    return MetricasDeReportes.productoEstrella(reportesDelComercio(comercioId));
+  }
+
+  private List<Reporte> reportesDelComercio(Long comercioId) {
+    return repositorioReporte.buscarPorComercio(comercioId);
   }
 }

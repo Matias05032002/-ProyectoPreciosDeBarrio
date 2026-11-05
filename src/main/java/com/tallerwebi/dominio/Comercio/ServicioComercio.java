@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.Comercio;
 
+import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import java.util.List;
 
 public interface ServicioComercio {
@@ -27,7 +28,7 @@ public interface ServicioComercio {
   void guardarHorarios(Long comercioId, List<HorarioComercio> horarios);
   List<HorarioComercio> obtenerHorarios(Long comercioId);
   Boolean estaAbierto(Long comercioId);
-  void guardarFoto(Long comercioId, byte[] foto, String fotoTipo);
+  void guardarFoto(Long comercioId, byte[] foto) throws FotoInvalida;
   void solicitarVerificacion(Long comercioId);
   List<Comercio> listarSolicitudesVerificacion();
   void aprobarVerificacion(Long comercioId);

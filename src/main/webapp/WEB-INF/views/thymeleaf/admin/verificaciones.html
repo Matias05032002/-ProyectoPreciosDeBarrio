@@ -2,131 +2,68 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Solicitudes de verificación | Precios de Barrio</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
-          rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solicitudes de verificación — Precios de Barrio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+    <link rel="stylesheet" th:href="@{/css/admin.css}"/>
 </head>
-
-<body class="bg-light">
-
+<body>
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<div class="container mt-5">
+<main class="container ad">
+    <header class="ad-cabecera">
+        <h1 id="titulo-pagina" class="ad-titulo">Solicitudes de verificación</h1>
+        <p class="ad-bajada">Revisá los comercios que piden el sello de verificado y aprobalos.</p>
+    </header>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2>
-                <i class="bi bi-patch-check me-2"></i>
-                Solicitudes de verificación
-            </h2>
-            <p class="text-muted">
-                Revisá las solicitudes de los comercios.
-            </p>
-        </div>
+    <nav th:replace="~{admin/subnav :: subnav('verificaciones')}"></nav>
 
-        <a th:href="@{/admin/estadisticas}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>
-            Volver al panel
-        </a>
+    <p class="ad-aviso" role="status" id="aviso-verificacion" th:if="${param.verificacionAprobada}">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>Comercio verificado correctamente.
+    </p>
+
+    <div class="ad-estado-vacio" id="sin-solicitudes" th:if="${#lists.isEmpty(solicitudesVerificacion)}">
+        <i class="bi bi-patch-check" aria-hidden="true"></i>
+        <h2>No hay solicitudes pendientes</h2>
+        <p>Cuando un comercio pida verificarse, va a aparecer acá.</p>
     </div>
 
-    <!-- Mensaje de aprobación -->
-    <div th:if="${param.verificacionAprobada}"
-         class="alert alert-success alert-dismissible fade show"
-         role="alert">
-
-        <i class="bi bi-check-circle me-1"></i>
-        Comercio verificado correctamente.
-
-        <button type="button" class="btn-close"
-                data-bs-dismiss="alert"></button>
-    </div>
-
-    <!-- No hay solicitudes -->
-    <div th:if="${#lists.isEmpty(solicitudesVerificacion)}"
-         class="alert alert-info">
-
-        <i class="bi bi-info-circle me-2"></i>
-        No hay solicitudes de verificación pendientes.
-    </div>
-
-    <!-- Tabla de solicitudes -->
-    <div th:unless="${#lists.isEmpty(solicitudesVerificacion)}"
-         class="card shadow-sm">
-
-        <div class="card-body">
-
-            <div class="table-responsive">
-
-                <table class="table table-hover align-middle">
-
-                    <thead class="table-dark">
-                    <tr>
-                        <th>Comercio</th>
-                        <th>Tipo</th>
-                        <th>Dirección</th>
-                        <th>Localidad</th>
-                        <th>Estado</th>
-                        <th>Acción</th>
-                    </tr>
-                    </thead>
-
-                    <tbody>
-
-                    <tr th:each="comercio : ${solicitudesVerificacion}">
-
-                        <td>
-                            <strong th:text="${comercio.nombre}"></strong>
-                        </td>
-
-                        <td th:text="${comercio.tipo}"></td>
-
-                        <td th:text="${comercio.direccion}"></td>
-
-                        <td th:text="${comercio.localidad}"></td>
-
-                        <td>
-                            <span class="badge bg-warning text-dark">
-                                Pendiente
-                            </span>
-                        </td>
-
-                        <td>
-                            <form th:action="@{/admin/verificacion/{id}/aprobar(id=${comercio.id})}"
-                                  method="POST">
-
-                                <button type="submit"
-                                        class="btn btn-success btn-sm"
-                                        onclick="return confirm('¿Confirmás que querés verificar este comercio?')">
-
-                                    <i class="bi bi-patch-check-fill me-1"></i>
-                                    Aprobar
-                                </button>
-
-                            </form>
-                        </td>
-
-                    </tr>
-
-                    </tbody>
-
-                </table>
-
+    <div class="ad-lista ad-lista--doble" th:unless="${#lists.isEmpty(solicitudesVerificacion)}">
+        <article class="ad-consulta" th:each="comercio : ${solicitudesVerificacion}">
+            <div class="ad-consulta-cabecera">
+                <h2 class="ad-asunto" th:text="${comercio.nombre}">Comercio</h2>
+                <span class="ad-estado ad-estado--pendiente">Pendiente</span>
             </div>
-
-        </div>
-
+            <p class="ad-solicitud-datos">
+                <span th:text="${comercio.tipo}">Tipo</span> ·
+                <span th:text="${comercio.direccion}">Dirección</span>,
+                <span th:text="${comercio.localidad}">Localidad</span>
+            </p>
+            <form th:action="@{/admin/verificacion/{id}/aprobar(id=${comercio.id})}" method="post"
+                  th:attr="data-confirmar=${'Vas a verificar a «' + comercio.nombre + '».'}">
+                <button type="submit" class="ad-boton ad-boton--primario">
+                    <i class="bi bi-patch-check-fill" aria-hidden="true"></i>Aprobar
+                </button>
+            </form>
+        </article>
     </div>
 
-</div>
+    <dialog class="ad-dialogo" id="ad-confirmar" aria-labelledby="ad-confirmar-titulo">
+        <h2 id="ad-confirmar-titulo">¿Aprobar esta verificación?</h2>
+        <p id="ad-confirmar-detalle"></p>
+        <div class="ad-dialogo-botones">
+            <button type="button" class="ad-boton ad-boton--claro" id="ad-confirmar-no">Cancelar</button>
+            <button type="button" class="ad-boton ad-boton--primario" id="ad-confirmar-si">Aprobar</button>
+        </div>
+    </dialog>
+</main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+<script type="module" th:src="@{/js/admin.js}"></script>
+<div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>

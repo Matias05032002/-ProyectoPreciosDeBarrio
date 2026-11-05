@@ -11,6 +11,8 @@ public interface ServicioPromocion {
 
   List<Promocion> listarPromocionesActivas();
 
+  List<Promocion> listarPromocionesProximas();
+
   void actualizarPromocion(Promocion promocion, Long usuarioId);
 
   void desactivarPromocion(Long promocionId, Long usuarioId);
