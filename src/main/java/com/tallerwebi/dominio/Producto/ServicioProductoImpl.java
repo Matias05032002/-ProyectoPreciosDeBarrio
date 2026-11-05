@@ -5,6 +5,7 @@ import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
 import jakarta.transaction.Transactional;
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.Set;
@@ -70,8 +72,30 @@ public class ServicioProductoImpl implements ServicioProducto {
     Double latUsuario,
     Double lngUsuario
   ) {
+    return buscarProductosConPrecio(nombre, null, usuario, orden, latUsuario, lngUsuario);
+  }
+
+  @Override
+  public List<ProductoConPrecio> buscarProductosConPrecio(
+    String nombre,
+    String categoria,
+    Usuario usuario,
+    OrdenProducto orden,
+    Double latUsuario,
+    Double lngUsuario
+  ) {
     List<Reporte> reportes = repositorioReporte.buscarPorNombre(nombre);
     if (reportes == null) reportes = Collections.emptyList();
+    if (categoria != null && !categoria.isBlank()) {
+      String buscada = sinTildes(categoria);
+      reportes =
+        reportes
+          .stream()
+          .filter(r ->
+            r.getProducto() != null && buscada.equals(sinTildes(r.getProducto().getCategoria()))
+          )
+          .toList();
+    }
 
     Map<Object, List<ProductoConPrecio>> gruposPorProducto = new LinkedHashMap<>();
     for (Reporte reporte : quedarseConElUltimoDeCadaLocal(reportes)) {
@@ -87,6 +111,38 @@ public class ServicioProductoImpl implements ServicioProducto {
 
     gruposPorProducto.values().forEach(this::marcarElMasBaratoDelGrupo);
     return ordenar(gruposPorProducto, orden);
+  }
+
+  // Las categorías se guardaron sin tildes ("Lacteos"): se comparan sin tildes ni mayúsculas
+  private String sinTildes(String texto) {
+    if (texto == null) return "";
+    return Normalizer
+      .normalize(texto.trim(), Normalizer.Form.NFD)
+      .replaceAll("\\p{M}", "")
+      .toLowerCase(Locale.ROOT);
+  }
+
+  // Todos los locales donde está el producto de un reporte, con el precio vigente de cada uno:
+  // los confiables de menor a mayor precio y, al final, los marcados como dudosos.
+  @Override
+  public List<Reporte> buscarPreciosDelProductoEnCadaLocal(Long reporteId) {
+    Reporte elegido = repositorioReporte.buscarReporte(reporteId);
+    if (elegido == null || elegido.getProducto() == null || elegido.getProducto().getId() == null) {
+      return Collections.emptyList();
+    }
+    List<Reporte> reportes = repositorioReporte.buscarPorProducto(elegido.getProducto().getId());
+    if (reportes == null) return Collections.emptyList();
+
+    List<Reporte> preciosPorLocal = new ArrayList<>(quedarseConElUltimoDeCadaLocal(reportes));
+    preciosPorLocal.removeIf(r -> r.getComercio() == null || r.getPrecio() == null);
+    preciosPorLocal.sort(
+      Comparator.comparing((Reporte r) -> esDudoso(r) ? 1 : 0).thenComparing(Reporte::getPrecio)
+    );
+    return preciosPorLocal;
+  }
+
+  private boolean esDudoso(Reporte reporte) {
+    return reporte.getPuntuacion() != null && reporte.getPuntuacion() > Reporte.PUNTUACION_DUDOSO;
   }
 
   private ProductoConPrecio crearProductoConPrecio(
@@ -164,6 +220,11 @@ public class ServicioProductoImpl implements ServicioProducto {
       .filter(dto -> !dto.isEsDudoso())
       .mapToDouble(ProductoConPrecio::getPrecioMinimo)
       .min();
+    OptionalDouble maximo = grupo
+      .stream()
+      .filter(dto -> !dto.isEsDudoso())
+      .mapToDouble(ProductoConPrecio::getPrecioMinimo)
+      .max();
 
     for (ProductoConPrecio dto : grupo) {
       dto.setLocalesComparados(grupo.size());
@@ -173,6 +234,11 @@ public class ServicioProductoImpl implements ServicioProducto {
         dto.setDiferenciaConElMasBarato(diferencia);
       } else {
         dto.setEsMasBarato(true);
+        // Cuánto se ahorra comprando acá en vez de en el local más caro (sin contar los dudosos)
+        double ahorro = maximo.getAsDouble() - minimo.getAsDouble();
+        if (ahorro > 0) {
+          dto.setAhorroMaximo(ahorro);
+        }
       }
     }
   }

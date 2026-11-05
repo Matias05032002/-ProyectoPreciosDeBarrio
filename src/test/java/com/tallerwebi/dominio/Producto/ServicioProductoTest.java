@@ -280,6 +280,88 @@ public class ServicioProductoTest {
   }
 
   @Test
+  public void elMasBaratoGuardaCuantoSeAhorraContraElMasCaro() {
+    Reporte caro = crearReporteEnLocal(1L, 10L, 300.0, ahora(), 0);
+    Reporte medio = crearReporteEnLocal(1L, 20L, 250.0, ahora(), 0);
+    Reporte barato = crearReporteEnLocal(1L, 30L, 200.0, ahora(), 0);
+    dadoQueLaBusquedaDevuelve("Leche", caro, medio, barato);
+
+    List<ProductoConPrecio> resultado = buscarPorPrecio("Leche");
+
+    assertThat(resultado.get(0).getAhorroMaximo(), equalTo(100.0));
+    assertThat(resultado.get(1).getAhorroMaximo(), equalTo(null));
+    assertThat(resultado.get(2).getAhorroMaximo(), equalTo(null));
+  }
+
+  @Test
+  public void siTodosLosLocalesCuestanLoMismoNoHayAhorro() {
+    Reporte uno = crearReporteEnLocal(1L, 10L, 200.0, ahora(), 0);
+    Reporte otro = crearReporteEnLocal(1L, 20L, 200.0, ahora(), 0);
+    dadoQueLaBusquedaDevuelve("Leche", uno, otro);
+
+    List<ProductoConPrecio> resultado = buscarPorPrecio("Leche");
+
+    assertThat(resultado.get(0).getAhorroMaximo(), equalTo(null));
+  }
+
+  @Test
+  public void elAhorroNoCuentaElPrecioDeUnReporteDudoso() {
+    Reporte barato = crearReporteEnLocal(1L, 10L, 200.0, ahora(), 0);
+    Reporte normal = crearReporteEnLocal(1L, 20L, 230.0, ahora(), 0);
+    Reporte dudoso = crearReporteEnLocal(1L, 30L, 900.0, ahora(), Reporte.PUNTUACION_DUDOSO + 1);
+    dadoQueLaBusquedaDevuelve("Leche", barato, normal, dudoso);
+
+    List<ProductoConPrecio> resultado = buscarPorPrecio("Leche");
+
+    assertThat(resultado.get(0).getAhorroMaximo(), equalTo(30.0));
+  }
+
+  @Test
+  public void buscarPorRubroDevuelveSoloLosProductosDeEsaCategoria() {
+    Reporte leche = crearReporteEnLocal(1L, 10L, 200.0, ahora(), 0);
+    leche.getProducto().setCategoria("Lacteos");
+    Reporte arroz = crearReporteEnLocal(2L, 10L, 300.0, ahora(), 0);
+    arroz.getProducto().setCategoria("Almacen");
+    dadoQueLaBusquedaDevuelve("", leche, arroz);
+
+    List<ProductoConPrecio> resultado = buscarEnRubro("", "Lacteos");
+
+    assertThat(resultado.size(), equalTo(1));
+    assertThat(resultado.get(0).getPrecioMinimo(), equalTo(200.0));
+  }
+
+  @Test
+  public void elRubroSeComparaSinTildesNiMayusculas() {
+    Reporte leche = crearReporteEnLocal(1L, 10L, 200.0, ahora(), 0);
+    leche.getProducto().setCategoria("Lacteos");
+    dadoQueLaBusquedaDevuelve("", leche);
+
+    assertThat(buscarEnRubro("", "Lácteos").size(), equalTo(1));
+    assertThat(buscarEnRubro("", "  lacteos ").size(), equalTo(1));
+  }
+
+  @Test
+  public void unRubroSinProductosDevuelveListaVacia() {
+    Reporte leche = crearReporteEnLocal(1L, 10L, 200.0, ahora(), 0);
+    leche.getProducto().setCategoria("Lacteos");
+    dadoQueLaBusquedaDevuelve("", leche);
+
+    assertThat(buscarEnRubro("", "Mascotas").isEmpty(), equalTo(true));
+  }
+
+  @Test
+  public void sinRubroDevuelveTodosLosProductos() {
+    Reporte leche = crearReporteEnLocal(1L, 10L, 200.0, ahora(), 0);
+    leche.getProducto().setCategoria("Lacteos");
+    Reporte arroz = crearReporteEnLocal(2L, 10L, 300.0, ahora(), 0);
+    arroz.getProducto().setCategoria("Almacen");
+    dadoQueLaBusquedaDevuelve("", leche, arroz);
+
+    assertThat(buscarEnRubro("", null).size(), equalTo(2));
+    assertThat(buscarEnRubro("", "").size(), equalTo(2));
+  }
+
+  @Test
   public void unProductoEnUnSoloLocalNoSeMarcaComoMasBarato() {
     Reporte unico = crearReporteEnLocal(1L, 10L, 300.0, ahora(), 0);
     dadoQueLaBusquedaDevuelve("Leche", unico);
@@ -418,6 +500,17 @@ public class ServicioProductoTest {
     );
   }
 
+  private List<ProductoConPrecio> buscarEnRubro(String nombre, String categoria) {
+    return servicioProducto.buscarProductosConPrecio(
+      nombre,
+      categoria,
+      null,
+      OrdenProducto.PRECIO,
+      null,
+      null
+    );
+  }
+
   private List<Double> precios(List<ProductoConPrecio> productos) {
     List<Double> precios = new ArrayList<>();
     for (ProductoConPrecio producto : productos) {
@@ -466,5 +559,68 @@ public class ServicioProductoTest {
     when(reporte.getPuntuacion()).thenReturn(0);
     when(reporte.getUsuariosQueMarcaron()).thenReturn(Collections.emptyList());
     return reporte;
+  }
+
+  // ── precios del producto en cada local (modal "Ver precios") ───────────────
+
+  @Test
+  public void preciosDelProductoDevuelveUnPrecioPorLocalDeMenorAMayor() {
+    Reporte caro = crearReporteEnLocal(1L, 10L, 300.0, ahora(), 0);
+    Reporte barato = crearReporteEnLocal(1L, 20L, 200.0, ahora(), 0);
+    Reporte medio = crearReporteEnLocal(1L, 30L, 250.0, ahora(), 0);
+    dadoQueElReporteEs(5L, caro);
+    when(this.repositorioReporteMock.buscarPorProducto(1L))
+      .thenReturn(Arrays.asList(caro, barato, medio));
+
+    List<Reporte> resultado = servicioProducto.buscarPreciosDelProductoEnCadaLocal(5L);
+
+    assertThat(resultado, equalTo(Arrays.asList(barato, medio, caro)));
+  }
+
+  @Test
+  public void preciosDelProductoUsaSoloElUltimoReporteDeCadaLocal() {
+    Reporte viejoBarato = crearReporteEnLocal(1L, 10L, 100.0, ahora().minusDays(30), 0);
+    Reporte nuevo = crearReporteEnLocal(1L, 10L, 300.0, ahora(), 0);
+    dadoQueElReporteEs(5L, nuevo);
+    when(this.repositorioReporteMock.buscarPorProducto(1L))
+      .thenReturn(Arrays.asList(viejoBarato, nuevo));
+
+    List<Reporte> resultado = servicioProducto.buscarPreciosDelProductoEnCadaLocal(5L);
+
+    assertThat(resultado, equalTo(Arrays.asList(nuevo)));
+  }
+
+  @Test
+  public void preciosDelProductoDejaLosDudososAlFinalAunqueSeanMasBaratos() {
+    Reporte dudosoBarato = crearReporteEnLocal(
+      1L,
+      10L,
+      10.0,
+      ahora(),
+      Reporte.PUNTUACION_DUDOSO + 1
+    );
+    Reporte confiable = crearReporteEnLocal(1L, 20L, 200.0, ahora(), 0);
+    dadoQueElReporteEs(5L, confiable);
+    when(this.repositorioReporteMock.buscarPorProducto(1L))
+      .thenReturn(Arrays.asList(dudosoBarato, confiable));
+
+    List<Reporte> resultado = servicioProducto.buscarPreciosDelProductoEnCadaLocal(5L);
+
+    assertThat(resultado, equalTo(Arrays.asList(confiable, dudosoBarato)));
+  }
+
+  @Test
+  public void preciosDelProductoDeUnReporteInexistenteDevuelveListaVacia() {
+    when(this.repositorioReporteMock.buscarReporte(99L)).thenReturn(null);
+
+    assertThat(
+      servicioProducto.buscarPreciosDelProductoEnCadaLocal(99L),
+      equalTo(Collections.emptyList())
+    );
+    verify(this.repositorioReporteMock, never()).buscarPorProducto(any());
+  }
+
+  private void dadoQueElReporteEs(Long reporteId, Reporte reporte) {
+    when(this.repositorioReporteMock.buscarReporte(reporteId)).thenReturn(reporte);
   }
 }

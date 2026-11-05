@@ -40,9 +40,28 @@ public class VistaProducto extends VistaWeb {
     return page.locator("#alerta-dudoso").count() > 0;
   }
 
+  // "Marcar dudoso" está dentro del menú de tres puntos de la tarjeta: primero se abre el menú
   public void darClickEnMarcarDudoso() {
+    page.locator("[id^='btn-menu-producto-']").first().click();
     page.locator("[id^='btn-marcar-dudoso']").first().click();
     page.waitForLoadState();
+  }
+
+  public void darClickEnVerPrecios() {
+    page.locator("[id^='btn-ver-precios-']").first().click();
+  }
+
+  public boolean hayModalDePrecios() {
+    page.waitForSelector("#modalPrecios.show", new Page.WaitForSelectorOptions().setTimeout(5000));
+    return page.locator("#modalPrecios").isVisible();
+  }
+
+  public boolean hayComerciosEnElModalDePrecios() {
+    page.waitForSelector(
+      "#precios-lista .lp-local",
+      new Page.WaitForSelectorOptions().setTimeout(5000)
+    );
+    return page.locator("#precios-lista .lp-local").count() > 0;
   }
 
   public void darClickEnFotoDelProducto() {

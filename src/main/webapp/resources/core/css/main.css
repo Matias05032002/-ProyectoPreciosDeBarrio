@@ -1,24 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
+
 /* =========================================
    PRECIOS DE BARRIO (PDB)
    Identidad visual global
    ========================================= */
 
 :root {
-    --mp-bg: #F8FAFC;
+    --mp-bg: #F5F7EF;
     --mp-surface: #FFFFFF;
-    --mp-dark: #111827;
-    --mp-dark-soft: #1F2937;
-    --mp-text: #1E293B;
-    --mp-muted: #64748B;
-    --mp-border: #E2E8F0;
+    --mp-dark: #0B0F0C;
+    --mp-dark-soft: #1B231D;
+    --mp-text: #10281F;
+    --mp-muted: #4A5A45;
+    --mp-border: #D3DDBD;
 
-    --mp-primary: #10B981;
-    --mp-primary-hover: #059669;
-    --mp-primary-light: #D1FAE5;
+    --mp-primary: #1E6B3A;
+    --mp-primary-hover: #14532D;
+    --mp-primary-light: #E4F0CB;
 
-    --mp-accent: #8B5CF6;
-    --mp-accent-hover: #7C3AED;
-    --mp-accent-light: #EDE9FE;
+    --mp-accent: #BEF264;
+    --mp-accent-hover: #A3E635;
+    --mp-accent-light: #F0FBD6;
 
     --mp-danger: #DC2626;
     --mp-warning: #D97706;
@@ -35,6 +37,7 @@ html {
 
 /* El navbar es sticky-top: ocupa su lugar en el flujo y queda pegado arriba al scrollear.
    Un padding-top en el body dejaba una franja vacía encima del navbar. */
+
 body {
     background: var(--mp-bg);
     color: var(--mp-text);
@@ -42,7 +45,12 @@ body {
     line-height: 1.6;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     color: var(--mp-dark);
     font-weight: 700;
     letter-spacing: -.025em;
@@ -54,7 +62,7 @@ a {
 }
 
 a:hover {
-    color: var(--mp-accent-hover);
+    color: var(--mp-dark);
 }
 
 /* Navbar */
@@ -74,7 +82,7 @@ a:hover {
 }
 
 .navbar-brand:hover {
-    color: #A7F3D0 !important;
+    color: var(--mp-accent) !important;
 }
 
 .navbar .nav-link {
@@ -88,7 +96,7 @@ a:hover {
 .navbar .nav-link:hover,
 .navbar .nav-link:focus {
     color: #FFFFFF !important;
-    background: rgba(16, 185, 129, .12);
+    background: rgba(190, 242, 100, .14);
     border-radius: 9px;
 }
 
@@ -132,9 +140,9 @@ a:hover {
 
 .btn-primary:hover,
 .btn-success:hover {
-    background: #047857 !important;
-    border-color: #047857 !important;
-    box-shadow: 0 5px 14px rgba(16, 185, 129, .2);
+    background: #0F3F22 !important;
+    border-color: #0F3F22 !important;
+    box-shadow: 0 5px 14px rgba(20, 83, 45, .25);
 }
 
 .btn-secondary {
@@ -159,13 +167,13 @@ a:hover {
 }
 
 .btn-accent {
-    color: #FFFFFF;
+    color: var(--mp-on-accent, #0B0F0C);
     background: var(--mp-accent);
     border: 1px solid var(--mp-accent);
 }
 
 .btn-accent:hover {
-    color: #FFFFFF;
+    color: var(--mp-on-accent, #0B0F0C);
     background: var(--mp-accent-hover);
 }
 
@@ -181,7 +189,7 @@ a:hover {
 
 .card-header {
     padding: 1rem 1.25rem;
-    background: #F1F5F9;
+    background: #EEF2E3;
     border-bottom: 1px solid var(--mp-border);
     font-weight: 700;
 }
@@ -219,7 +227,7 @@ a:hover {
 .form-control:focus,
 .form-select:focus {
     border-color: var(--mp-primary);
-    box-shadow: 0 0 0 .22rem rgba(16, 185, 129, .15);
+    box-shadow: 0 0 0 .22rem rgba(20, 83, 45, .18);
 }
 
 /* Tablas */
@@ -234,7 +242,7 @@ a:hover {
 .table thead th {
     padding: .9rem;
     color: #475569;
-    background: #F1F5F9;
+    background: #EEF2E3;
     border-bottom: 1px solid var(--mp-border);
     font-size: .85rem;
     font-weight: 750;
@@ -247,7 +255,7 @@ a:hover {
 }
 
 .table-hover tbody tr:hover > * {
-    --bs-table-bg-state: #ECFDF5;
+    --bs-table-bg-state: #F0F6DF;
 }
 
 /* Etiquetas */
@@ -302,7 +310,7 @@ a:hover {
     background:
             radial-gradient(
                     ellipse at 0% 0%,
-                    rgba(139, 92, 246, .08),
+                    rgba(190, 242, 100, .22),
                     transparent 38%
             ),
             var(--mp-bg);
@@ -346,20 +354,20 @@ a:hover {
 .perfil-page .perfil-stat {
     margin-top: 1.25rem;
     padding: 1rem 1.1rem;
-    border: 1px solid #A7F3D0;
+    border: 1px solid #D3DDBD;
     border-radius: 14px;
-    background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+    background: linear-gradient(135deg, #F5F9E8, #E4F0CB);
 }
 
 .perfil-page .perfil-stat .stat-label {
-    color: #047857;
+    color: #14532D;
     font-size: .85rem;
     font-weight: 600;
 }
 
 .perfil-page .perfil-stat .stat-value {
     margin-top: .15rem;
-    color: #065F46;
+    color: #0B2B1B;
     font-size: 2.2rem;
     font-weight: 800;
     line-height: 1.2;
@@ -376,6 +384,7 @@ a:hover {
 .perfil-page .text-center .text-muted {
     color: var(--mp-muted) !important;
 }
+
 /* =========================================
    DON PESO - Asistente flotante
    ========================================= */
@@ -501,7 +510,7 @@ a:hover {
 
 #don-peso-input:focus {
     border-color: var(--mp-primary);
-    box-shadow: 0 0 0 .22rem rgba(16, 185, 129, .15);
+    box-shadow: 0 0 0 .22rem rgba(20, 83, 45, .18);
 }
 
 #don-peso-footer > button {
@@ -518,9 +527,6 @@ a:hover {
 #don-peso-footer > button:hover {
     background: #E6B800;
 }
-
-
-/* Responsive */
 
 @media (min-width: 992px) {
     .perfil-page .perfil-sidebar {
@@ -568,4 +574,266 @@ a:hover {
         scroll-behavior: auto !important;
         transition: none !important;
     }
+}
+
+/* =========================================
+   REDISEÑO · Bosque y Lima, detalles en negro
+   Mobile primero: barra inferior + menú lateral.
+   En pantallas grandes vuelve la barra superior.
+   ========================================= */
+
+:root {
+    --mp-on-accent: #0B0F0C;
+    --mp-ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+h1,
+h2,
+h3,
+.titulo-display {
+    font-family: Syne, Inter, system-ui, sans-serif;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid var(--mp-accent);
+    outline-offset: 2px;
+}
+
+.brand-acento {
+    color: var(--mp-accent);
+}
+
+/* Navbar: en celular el menú es un panel lateral (offcanvas de Bootstrap) */
+
+.navbar .btn-menu {
+    display: none;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 .85rem;
+    color: #FFFFFF;
+    border: 1.5px solid rgba(255, 255, 255, .35);
+    border-radius: 14px;
+}
+
+@media (max-width: 991.98px) {
+    .navbar .btn-menu {
+        display: inline-flex;
+    }
+}
+
+.navbar .offcanvas {
+    background: var(--mp-dark);
+    color: #FFFFFF;
+}
+
+.navbar .offcanvas-title {
+    color: #FFFFFF;
+    font-family: Syne, Inter, sans-serif;
+    font-weight: 700;
+}
+
+.navbar .nav-link {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+/* Barra inferior (solo celular) */
+
+.bnav {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    body:has(.bnav) {
+        padding-bottom: 84px;
+    }
+
+    .bnav {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        align-items: center;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1030;
+        height: 72px;
+        padding: 0 6px env(safe-area-inset-bottom);
+        box-sizing: content-box;
+        background: #FFFFFF;
+        border-top: 1px solid var(--mp-border);
+    }
+
+    .bnav a,
+    .bnav button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        min-height: 56px;
+        padding: 0;
+        font-size: .7rem;
+        font-weight: 600;
+        color: var(--mp-muted);
+        background: none;
+        border: 0;
+        transition: color .2s ease, transform .15s ease;
+    }
+
+    .bnav a:active,
+    .bnav button:active {
+        transform: scale(.94);
+    }
+
+    .bnav i {
+        font-size: 1.4rem;
+        line-height: 1;
+    }
+
+    .bnav .activo {
+        color: var(--mp-dark);
+        font-weight: 700;
+    }
+
+    .bnav .bnav-central {
+        width: 58px;
+        height: 58px;
+        min-height: 58px;
+        margin: -26px auto 0;
+        border-radius: 50%;
+        color: var(--mp-accent);
+        background: var(--mp-dark);
+        border: 4px solid #FFFFFF;
+        box-shadow: 0 8px 18px rgba(11, 15, 12, .3);
+    }
+
+    .bnav .bnav-central i {
+        font-size: 1.8rem;
+    }
+
+    /* Don Peso sube para no taparse con la barra inferior */
+
+    #don-peso-widget {
+        bottom: 92px;
+        right: 16px;
+    }
+
+    #don-peso-panel {
+        width: min(320px, calc(100vw - 32px));
+    }
+}
+
+/* Animaciones (CSS puro) */
+
+.aparece {
+    animation: aparece .6s var(--mp-ease) both;
+    animation-delay: var(--d, 0s);
+}
+
+@keyframes aparece {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes caida {
+    from { opacity: 0; margin-top: -26px; }
+    to { opacity: 1; margin-top: 0; }
+}
+
+@keyframes entrada-scroll {
+    from { opacity: .6; transform: translateY(28px) scale(.985); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes entrada-scroll-izq {
+    from { opacity: .6; transform: translateX(-28px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes progreso {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+@supports (animation-timeline: view()) {
+    .entra-scroll {
+        animation: entrada-scroll linear both;
+        animation-timeline: view();
+        animation-range-start: 0%;
+        animation-range-end: 30%;
+    }
+
+    .entra-scroll-izq {
+        animation: entrada-scroll-izq linear both;
+        animation-timeline: view();
+        animation-range-start: 0%;
+        animation-range-end: 30%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .aparece,
+    .entra-scroll,
+    .entra-scroll-izq {
+        animation: none !important;
+    }
+}
+
+/* =========================================
+   Verde de marca y botón verde (compartidos por inicio y lista de productos)
+   ========================================= */
+
+:root {
+    --verde-ref: #138A57;
+    --verde-ref-oscuro: #0E6F46;
+    --verde-ref-claro: #E3F4EA;
+}
+
+.btn-verde {
+    min-height: 48px;
+    padding: 0 2rem;
+    color: #FFFFFF !important;
+    background: var(--verde-ref) !important;
+    border: 0 !important;
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.btn-verde:hover {
+    background: var(--verde-ref-oscuro) !important;
+}
+
+/* Cuenta en la barra superior: inicial en un círculo en lugar del correo */
+
+.cuenta-nav {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-width: 0;
+}
+
+.cuenta-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    color: #FFFFFF;
+    font-weight: 800;
+    background: var(--verde-ref);
+    border-radius: 50%;
+}
+
+.cuenta-email {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

@@ -1,195 +1,302 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Productos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/lista-productos.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<div class="container mt-4">
+<header class="lp-cabecera">
+    <div class="container lp-cabecera-fila">
+        <div class="lp-cabecera-texto">
+            <h1 id="titulo-pagina" class="aparece">Productos del barrio</h1>
+            <p class="lp-subtitulo aparece" style="--d:.08s">Encontrá dónde está más barato antes de salir a comprar.</p>
+            <!-- Se completa con /reporte/resumen; si no responde queda oculto -->
+            <p id="resumen-productos" class="lp-resumen" th:attr="data-url-resumen=@{/reporte/resumen}" hidden>
+                <i class="bi bi-clock-history" aria-hidden="true"></i>
+                <span id="resumen-productos-texto"></span>
+            </p>
+        </div>
+        <!-- Foto solo en pantallas anchas: en el celular el lugar se lo queda el buscador -->
+        <div class="lp-cabecera-foto aparece" style="--d:.2s"
+             th:style="'--foto:url(' + @{/css/hero-gondolas.jpg} + ')'" aria-hidden="true"></div>
+    </div>
+</header>
+
+<main class="container lp-principal">
 
     <div th:if="${errorDudoso}" id="alerta-dudoso" class="alert alert-warning" role="alert"
          th:text="${errorDudoso}"></div>
 
-    <form th:action="@{/producto/buscar}" method="get" class="mb-4" id="form-buscar">
-        <div class="input-group">
-            <input type="text" name="nombre" id="buscador-producto" class="form-control form-control-lg"
+    <form th:action="@{/producto/buscar}" method="get" id="form-buscar" class="lp-buscador aparece" style="--d:.16s" role="search">
+        <div class="lp-campo">
+            <label for="buscador-producto" class="visually-hidden">Producto a buscar</label>
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="nombre" id="buscador-producto" maxlength="100" autocomplete="off"
                    placeholder="¿Qué producto buscás?" th:value="${busqueda}">
-
-            <select name="orden" id="orden-productos" class="form-select form-select-lg">
-                <option value="precio" th:selected="${orden == 'precio'}">Menor precio</option>
-                <option value="reciente" th:selected="${orden == 'reciente'}">Más reciente</option>
-                <option value="cercania" th:selected="${orden == 'cercania'}">Más cercano</option>
-            </select>
-
-            <input type="hidden" name="lat" id="lat-usuario" th:value="${lat}">
-            <input type="hidden" name="lng" id="lng-usuario" th:value="${lng}">
-
-            <button type="submit" id="btn-buscar-producto" class="btn btn-primary">
-                Buscar
-            </button>
         </div>
+
+        <input type="hidden" name="categoria" th:if="${categoria != null}" th:value="${categoria}">
+        <input type="hidden" name="lat" id="lat-usuario" th:value="${lat}">
+        <input type="hidden" name="lng" id="lng-usuario" th:value="${lng}">
+
+        <button type="submit" id="btn-buscar-producto" class="btn btn-verde">Buscar</button>
     </form>
 
-    <div th:if="${historialBusquedas != null and !#lists.isEmpty(historialBusquedas)}"
-         class="mb-4">
-        <h6 class="text-muted">Búsquedas recientes</h6>
+    <p id="aviso-ubicacion" class="lp-aviso" role="alert" hidden></p>
 
-        <div class="d-flex flex-wrap gap-2">
-            <a th:each="busquedaAnterior : ${historialBusquedas}"
-               th:href="@{/producto/buscar(nombre=${busquedaAnterior}, orden='precio')}"
-               th:text="${busquedaAnterior}"
-               class="btn btn-outline-secondary btn-sm">
-            </a>
-        </div>
+    <!-- Rubros: atajos a las búsquedas más comunes del barrio -->
+    <nav class="lp-rubros aparece" style="--d:.24s" aria-label="Rubros">
+        <a th:href="@{/producto/buscar(nombre='', categoria='Lacteos', orden='precio')}" class="lp-rubro"
+           th:classappend="${categoria == 'Lacteos'} ? 'activo'"
+           th:attr="aria-current=${categoria == 'Lacteos'} ? 'true' : null"><i class="bi bi-droplet-half" aria-hidden="true"></i><span>Lácteos</span></a>
+        <a th:href="@{/producto/buscar(nombre='', categoria='Almacen', orden='precio')}" class="lp-rubro"
+           th:classappend="${categoria == 'Almacen'} ? 'activo'"
+           th:attr="aria-current=${categoria == 'Almacen'} ? 'true' : null"><i class="bi bi-basket2" aria-hidden="true"></i><span>Almacén</span></a>
+        <a th:href="@{/producto/buscar(nombre='', categoria='Bebidas sin alcohol', orden='precio')}" class="lp-rubro"
+           th:classappend="${categoria == 'Bebidas sin alcohol'} ? 'activo'"
+           th:attr="aria-current=${categoria == 'Bebidas sin alcohol'} ? 'true' : null"><i class="bi bi-cup-straw" aria-hidden="true"></i><span>Bebidas</span></a>
+        <a th:href="@{/producto/buscar(nombre='', categoria='Verduras y frutas', orden='precio')}" class="lp-rubro"
+           th:classappend="${categoria == 'Verduras y frutas'} ? 'activo'"
+           th:attr="aria-current=${categoria == 'Verduras y frutas'} ? 'true' : null"><i class="bi bi-apple" aria-hidden="true"></i><span>Verdulería</span></a>
+        <a th:href="@{/producto/buscar(nombre='', categoria='Panaderia y reposteria', orden='precio')}" class="lp-rubro"
+           th:classappend="${categoria == 'Panaderia y reposteria'} ? 'activo'"
+           th:attr="aria-current=${categoria == 'Panaderia y reposteria'} ? 'true' : null"><i class="bi bi-cake2" aria-hidden="true"></i><span>Panadería</span></a>
+        <a th:href="@{/producto/buscar(nombre='', categoria='Limpieza del hogar', orden='precio')}" class="lp-rubro"
+           th:classappend="${categoria == 'Limpieza del hogar'} ? 'activo'"
+           th:attr="aria-current=${categoria == 'Limpieza del hogar'} ? 'true' : null"><i class="bi bi-bucket" aria-hidden="true"></i><span>Limpieza</span></a>
+    </nav>
+
+    <p class="lp-rubro-activo" th:if="${categoria != null}">
+        Mostrando el rubro <strong th:text="${categoria}"></strong>
+        <a th:href="@{/producto/buscar(nombre=${busqueda}, orden=${orden})}" class="lp-rubro-quitar" id="btn-quitar-rubro">
+            <i class="bi bi-x-lg" aria-hidden="true"></i> Quitar
+        </a>
+    </p>
+
+    <!-- Orden a la vista: al elegir una opción se vuelve a buscar -->
+    <fieldset class="lp-orden-barra" id="orden-productos">
+        <legend class="lp-orden-titulo">Ordenar por</legend>
+        <label class="lp-orden-opcion">
+            <input type="radio" name="orden" value="precio" form="form-buscar"
+                   th:checked="${orden == null or orden == 'precio'}">
+            <span><i class="bi bi-tag" aria-hidden="true"></i> <span class="lp-opcion-corta">Precio</span><span class="lp-opcion-larga">Menor precio</span></span>
+        </label>
+        <label class="lp-orden-opcion">
+            <input type="radio" name="orden" value="reciente" form="form-buscar"
+                   th:checked="${orden == 'reciente'}">
+            <span><i class="bi bi-clock-history" aria-hidden="true"></i> <span class="lp-opcion-corta">Reciente</span><span class="lp-opcion-larga">Más reciente</span></span>
+        </label>
+        <label class="lp-orden-opcion">
+            <input type="radio" name="orden" value="cercania" form="form-buscar"
+                   th:checked="${orden == 'cercania'}">
+            <span><i class="bi bi-geo-alt" aria-hidden="true"></i> <span class="lp-opcion-corta">Cercano</span><span class="lp-opcion-larga">Más cercano</span></span>
+        </label>
+    </fieldset>
+
+    <div th:if="${historialBusquedas != null and !#lists.isEmpty(historialBusquedas)}" class="lp-recientes">
+        <span class="lp-recientes-titulo">Búsquedas recientes</span>
+        <a th:each="busquedaAnterior : ${historialBusquedas}"
+           th:href="@{/producto/buscar(nombre=${busquedaAnterior}, orden='precio')}"
+           th:text="${busquedaAnterior}"
+           class="lp-chip">
+        </a>
     </div>
 
-    <h2 id="titulo-pagina">Productos del barrio</h2>
-    <p class="text-muted">Encontrá dónde está más barato antes de salir a comprar.</p>
-
-    <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-3 g-md-4 lp-resultados">
         <div class="col" th:each="producto : ${productos}">
-            <div class="card h-100 shadow-sm"
-                 th:classappend="${producto.esMasBarato} ? 'border-success border-2'"
-                 th:id="'card-producto-' + ${producto.reporteId}">
+            <article class="lp-card entra-scroll"
+                     th:classappend="${producto.esMasBarato} ? 'lp-card-barato'"
+                     th:id="'card-producto-' + ${producto.reporteId}">
 
-                <!-- Foto asociada al reporte del producto -->
-                <img th:if="${producto.reporteId != null}"
-                     th:src="@{/reporte/{id}/foto(id=${producto.reporteId})}"
-                     class="card-img-top"
-                     th:id="'foto-producto-' + ${producto.reporteId}"
-                     alt="Foto del producto"
-                     style="height: 200px; object-fit: contain; cursor: pointer; background-color: #e9ecef;"
-                     data-bs-toggle="modal"
-                     data-bs-target="#modalFoto"
-                     th:attr="data-src=@{/reporte/{id}/foto(id=${producto.reporteId})}"
-                     onclick="abrirFoto(this)"
-                     onerror="this.parentElement.querySelector('.card-img-placeholder').style.display='flex'; this.style.display='none'">
+                <!-- Foto asociada al reporte del producto; si falla o no hay, se muestra el ícono gris de siempre -->
+                <div class="lp-media">
+                    <img th:if="${producto.reporteId != null}"
+                         th:src="@{/reporte/{id}/foto(id=${producto.reporteId})}"
+                         class="lp-foto"
+                         th:id="'foto-producto-' + ${producto.reporteId}"
+                         alt="Foto del producto"
+                         loading="lazy"
+                         data-bs-toggle="modal"
+                         data-bs-target="#modalFoto"
+                         th:attr="data-src=@{/reporte/{id}/foto(id=${producto.reporteId})}"
+                         onclick="abrirFoto(this)"
+                         onerror="this.parentElement.querySelector('.card-img-placeholder').style.display='flex'; this.style.display='none'">
 
-                <div class="card-img-placeholder align-items-center justify-content-center"
-                     th:id="'placeholder-foto-' + ${producto.reporteId}"
-                     style="height: 200px; display: none; background-color: #e9ecef; cursor: pointer;"
-                     data-bs-toggle="modal"
-                     data-bs-target="#modalFoto">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#adb5bd" viewBox="0 0 16 16">
-                        <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-                        <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
-                    </svg>
-                </div>
-
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h5 class="card-title mb-0" th:text="${producto.nombre}"></h5>
-
-                        <span th:text="${producto.antiguedad}"
-                              th:classappend="${producto.antiguedad == 'Fresco'} ? 'bg-success' : (${producto.antiguedad == 'Desactualizado'} ? 'bg-warning text-dark' : 'bg-danger')"
-                              class="badge"
-                              th:id="'badge-antiguedad-' + ${producto.reporteId}">
-                        </span>
-
-                        <span th:if="${producto.esDudoso}" class="badge bg-secondary ms-1">
-                            Dudoso
-                        </span>
+                    <div class="card-img-placeholder lp-placeholder"
+                         th:id="'placeholder-foto-' + ${producto.reporteId}"
+                         th:style="${producto.reporteId == null} ? 'display: flex;' : 'display: none;'"
+                         data-bs-toggle="modal"
+                         data-bs-target="#modalFoto">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#adb5bd" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                            <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+                        </svg>
                     </div>
 
-                    <p class="card-text text-muted mb-1">
+                    <span th:text="${producto.antiguedad}"
+                          th:classappend="'lp-' + ${#strings.toLowerCase(producto.antiguedad)}"
+                          class="badge lp-estado"
+                          th:id="'badge-antiguedad-' + ${producto.reporteId}">
+                    </span>
+
+                    <span th:if="${producto.esMasBarato}" class="lp-cinta" aria-hidden="true">
+                        <i class="bi bi-lightning-charge-fill"></i> Más barato
+                    </span>
+
+                    <span th:if="${producto.esDudoso}" class="badge lp-dudoso">
+                        <i class="bi bi-flag-fill" aria-hidden="true"></i> Dudoso
+                    </span>
+                </div>
+
+                <div class="lp-cuerpo">
+                    <!-- Menú de tres puntos: acá vive "Marcar dudoso" para no recargar la tarjeta -->
+                    <div class="dropdown lp-menu" th:if="${producto.reporteId != null}">
+                        <button type="button"
+                                class="lp-btn-menu"
+                                th:id="'btn-menu-producto-' + ${producto.reporteId}"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                th:attr="aria-label='Más opciones de ' + ${producto.nombre}">
+                            <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end lp-menu-lista">
+                            <li>
+                                <form th:action="@{/reporte/{id}/dudoso(id=${producto.reporteId})}" method="post">
+                                    <input type="hidden" name="nombreProducto" th:value="${producto.nombre}">
+                                    <button type="submit"
+                                            th:id="'btn-marcar-dudoso-' + ${producto.reporteId}"
+                                            class="dropdown-item lp-item-dudoso"
+                                            th:disabled="${producto.yaMarcoDudoso}">
+                                        <i class="bi bi-flag" aria-hidden="true"></i>
+                                        <span th:text="${producto.yaMarcoDudoso} ? 'Ya marcaste dudoso' : 'Marcar dudoso'"></span>
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <h2 class="lp-nombre" th:text="${producto.nombre}"></h2>
+
+                    <p class="lp-detalle">
                         <span th:text="${producto.marca}"></span> ·
                         <span th:text="${producto.unidad}"></span>
+                        <span class="lp-categoria" th:if="${producto.categoria != null}" th:text="${producto.categoria}"></span>
                     </p>
 
-                    <p class="card-text">
-                        <span class="text-muted small" th:text="${producto.categoria}"></span>
+                    <p class="lp-precio" th:if="${producto.precioMinimo != null}">
+                        <small>Desde</small>
+                        <strong th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'POINT', 2, 'COMMA')}"></strong>
                     </p>
 
-                    <p class="card-text fw-bold text-success"
-                       th:if="${producto.precioMinimo != null}">
-                        Desde
-                        <span th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'POINT', 2, 'COMMA')}"></span>
-                    </p>
-
-                    <p class="mb-1" th:if="${producto.esMasBarato}">
-                        <span class="badge bg-success"
-                              th:id="'badge-mas-barato-' + ${producto.reporteId}">
+                    <p class="lp-barato" th:if="${producto.esMasBarato}">
+                        <span th:id="'badge-mas-barato-' + ${producto.reporteId}">
+                            <i class="bi bi-patch-check-fill" aria-hidden="true"></i>
                             Más barato de los <span th:text="${producto.localesComparados}"></span> locales
                         </span>
                     </p>
-                    <p class="mb-1 small text-danger"
+                    <p class="lp-ahorro" th:if="${producto.ahorroMaximo != null}"
+                       th:id="'ahorro-' + ${producto.reporteId}">
+                        <i class="bi bi-piggy-bank" aria-hidden="true"></i>
+                        Ahorrás hasta
+                        <strong th:text="${'$' + #numbers.formatDecimal(producto.ahorroMaximo, 1, 'POINT', 2, 'COMMA')}"></strong>
+                        <span th:if="${producto.precioMinimo != null}"
+                              th:text="${'(' + #numbers.formatDecimal(producto.ahorroMaximo * 100 / (producto.precioMinimo + producto.ahorroMaximo), 1, 'POINT', 0, 'COMMA') + '%)'}"></span>
+                        <span class="lp-ahorro-nota">vs. el más caro</span>
+                    </p>
+                    <p class="lp-diferencia"
                        th:if="${producto.diferenciaConElMasBarato != null}"
                        th:id="'diferencia-' + ${producto.reporteId}">
                         +<span th:text="${'$' + #numbers.formatDecimal(producto.diferenciaConElMasBarato, 1, 'POINT', 2, 'COMMA')}"></span>
                         que el más barato
                     </p>
 
-                    <p class="card-text text-muted small" th:if="${producto.comercio != null}">
-                        en <span th:text="${producto.comercio}"></span>
-                        <span th:if="${producto.distanciaKm != null}">
-                            · <span th:text="${#numbers.formatDecimal(producto.distanciaKm, 1, 'POINT', 2, 'COMMA') + ' km'}"></span>
+                    <p class="lp-comercio" th:if="${producto.comercio != null}">
+                        <i class="bi bi-shop" aria-hidden="true"></i>
+                        <span th:text="${producto.comercio}"></span>
+                        <span class="lp-distancia" th:if="${producto.distanciaKm != null}">
+                            <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                            <span th:text="${#numbers.formatDecimal(producto.distanciaKm, 1, 'POINT', 2, 'COMMA') + ' km'}"></span>
                         </span>
                     </p>
 
-                    <form th:if="${producto.reporteId != null}"
-                          th:action="@{/reporte/{id}/dudoso(id=${producto.reporteId})}"
-                          method="post"
-                          class="mt-2">
-                        <input type="hidden" name="nombreProducto" th:value="${producto.nombre}">
-
-                        <button type="submit"
-                                th:id="'btn-marcar-dudoso-' + ${producto.reporteId}"
-                                class="btn btn-outline-danger btn-sm"
-                                th:disabled="${producto.yaMarcoDudoso}"
-                                th:text="${producto.yaMarcoDudoso} ? 'Ya marcaste dudoso' : 'Marcar dudoso'">
+                    <div class="lp-acciones" th:if="${producto.reporteId != null}">
+                        <button type="button"
+                                class="lp-btn-precios"
+                                th:id="'btn-ver-precios-' + ${producto.reporteId}"
+                                th:attr="data-reporte-id=${producto.reporteId},data-nombre=${producto.nombre},data-marca=${producto.marca},data-unidad=${producto.unidad}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalPrecios"
+                                onclick="abrirPrecios(this)">
+                            Ver precios
                         </button>
-                        <button th:if="${session['ROL'] != null and producto.reporteId != null}"
+
+                        <button th:if="${session['ROL'] != null}"
                                 type="button"
-                                class="btn btn-outline-success btn-sm mt-2"
+                                class="lp-btn-lista"
                                 th:id="'btn-agregar-lista-' + ${producto.reporteId}"
                                 th:attr="data-reporte-id=${producto.reporteId}"
                                 data-bs-toggle="modal"
                                 data-bs-target="#modalAgregarLista"
                                 onclick="seleccionarReporte(this)">
-                            + Agregar a lista
+                            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                            <span>Agregar a lista</span>
                         </button>
-                    </form>
+                    </div>
                 </div>
-            </div>
+            </article>
         </div>
     </div>
 
-    <div th:if="${productos == null or #lists.isEmpty(productos)}"
-         class="text-center mt-5">
-        <p class="text-muted">Buscá un producto para ver los resultados.</p>
+    <div th:if="${productos == null or #lists.isEmpty(productos)}" class="lp-vacio">
+        <span class="lp-vacio-icono"><i class="bi bi-basket2" aria-hidden="true"></i></span>
+        <p class="lp-vacio-titulo" th:if="${categoria != null and (busqueda == null or #strings.isEmpty(busqueda))}">
+            Todavía no hay productos en <strong th:text="${categoria}"></strong>.
+        </p>
+        <p class="lp-vacio-titulo" th:if="${categoria == null and (busqueda == null or #strings.isEmpty(busqueda))}">Buscá un producto para ver los resultados.</p>
+        <p class="lp-vacio-titulo" th:unless="${busqueda == null or #strings.isEmpty(busqueda)}">
+            No encontramos resultados para <strong th:text="${busqueda}"></strong>.
+        </p>
+        <p class="lp-vacio-texto">Revisá cómo lo escribiste, probá con una palabra más corta (por ejemplo "leche" en vez de "leche entera larga vida") o elegí un rubro de arriba.</p>
+        <div class="lp-vacio-acciones">
+            <a th:href="@{/reporte}" class="lp-vacio-boton">
+                <i class="bi bi-plus-circle" aria-hidden="true"></i> Reportar este precio
+            </a>
+        </div>
     </div>
 
-</div>
-<!-- Paginación -->
-<div th:if="${totalPaginas != null and totalPaginas > 1}"
-     class="d-flex justify-content-center align-items-center gap-3 mt-4 mb-2">
-    <a th:if="${pagina > 0}"
-       th:href="@{/producto/buscar(nombre=${busqueda},orden=${orden},lat=${lat},lng=${lng},pagina=${pagina - 1})}"
-       class="btn btn-outline-primary">
-        &larr; Anterior
-    </a>
-    <span class="text-muted">
-        Página <span th:text="${pagina + 1}"></span>
-        de <span th:text="${totalPaginas}"></span>
-    </span>
-    <a th:if="${pagina + 1 < totalPaginas}"
-       th:href="@{/producto/buscar(nombre=${busqueda},orden=${orden},lat=${lat},lng=${lng},pagina=${pagina + 1})}"
-       class="btn btn-outline-primary">
-        Siguiente &rarr;
-    </a>
-</div>
+    <!-- Paginación -->
+    <nav th:if="${totalPaginas != null and totalPaginas > 1}" class="lp-paginacion" aria-label="Páginas de resultados">
+        <a th:if="${pagina > 0}"
+           th:href="@{/producto/buscar(nombre=${busqueda},orden=${orden},categoria=${categoria},lat=${lat},lng=${lng},pagina=${pagina - 1})}"
+           class="lp-pagina">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Anterior
+        </a>
+        <span class="lp-pagina-actual">
+            Página <span th:text="${pagina + 1}"></span>
+            de <span th:text="${totalPaginas}"></span>
+        </span>
+        <a th:if="${pagina + 1 < totalPaginas}"
+           th:href="@{/producto/buscar(nombre=${busqueda},orden=${orden},categoria=${categoria},lat=${lat},lng=${lng},pagina=${pagina + 1})}"
+           class="lp-pagina">
+            Siguiente <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </a>
+    </nav>
+
+</main>
 
 <div th:if="${dudosoMarcado}" id="modalDudoso" class="modal fade" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">¡Gracias por tu reporte!</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
             <div class="modal-body">
@@ -197,7 +304,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-verde" data-bs-dismiss="modal">
                     Cerrar
                 </button>
             </div>
@@ -213,23 +320,23 @@
 </script>
 
 <div th:if="${productoAValorar != null}"
-     class="toast-container position-fixed bottom-0 end-0 p-3">
+     class="toast-container position-fixed bottom-0 end-0 p-3 lp-toast-zona">
     <div id="notificacion-valorar-producto"
-         class="toast border-primary"
+         class="toast lp-toast"
          role="alert"
          aria-live="polite"
          aria-atomic="true"
          data-bs-autohide="false">
-        <div class="toast-header bg-primary text-white">
+        <div class="toast-header">
             <strong class="me-auto">Ayudá a tu barrio</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"
+            <button type="button" class="btn-close" data-bs-dismiss="toast"
                     aria-label="Cerrar"></button>
         </div>
         <div class="toast-body">
             ¿El precio de <strong th:text="${productoAValorar.nombre}"></strong> sigue siendo correcto?
             Valorá esta publicación para mantener la información actualizada.
             <button type="button"
-                    class="btn btn-outline-primary btn-sm mt-2 d-block"
+                    class="btn btn-verde btn-sm mt-2 d-block"
                     th:attr="data-reporte-id=${productoAValorar.reporteId}"
                     onclick="irAValorarProducto(this)">
                 Valorar publicación
@@ -272,8 +379,43 @@
 </script>
 
 <script>
+    // Al cambiar el orden se vuelve a buscar con el mismo texto
+    document.querySelectorAll('input[name="orden"]').forEach(function (opcion) {
+        opcion.addEventListener('change', function () {
+            document.getElementById('form-buscar').requestSubmit();
+        });
+    });
+
+    // Botón de buscar: queda "cargando" para que se note que se está buscando
+    document.getElementById('form-buscar').addEventListener('submit', function (e) {
+        if (e.defaultPrevented) { return; }
+        var boton = document.getElementById('btn-buscar-producto');
+        boton.classList.add('cargando');
+        boton.setAttribute('aria-busy', 'true');
+    });
+
+    // Resumen de la semana en la cabecera
+    (function () {
+        var caja = document.getElementById('resumen-productos');
+        fetch(caja.getAttribute('data-url-resumen'), { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { if (!r.ok) { throw new Error(); } return r.json(); })
+            .then(function (d) {
+                if (!d || !d.reportesSemana) { return; }
+                var plural = function (n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); };
+                document.getElementById('resumen-productos-texto').textContent =
+                    plural(d.reportesSemana, 'precio reportado', 'precios reportados') + ' esta semana' +
+                    (d.comercios ? ' en ' + plural(d.comercios, 'comercio', 'comercios') : '');
+                caja.hidden = false;
+            })
+            .catch(function () { /* sin resumen la página funciona igual */ });
+    })();
+
+    // Si se ordena por cercanía hace falta la ubicación: se pide al buscar y, si no se puede, se avisa en la página
     document.getElementById('form-buscar').addEventListener('submit', function(e) {
-        var orden = document.getElementById('orden-productos').value;
+        var elegido = document.querySelector('input[name="orden"]:checked');
+        var orden = elegido ? elegido.value : 'precio';
+        var aviso = document.getElementById('aviso-ubicacion');
+        aviso.hidden = true;
 
         if (orden === 'cercania') {
             var latInput = document.getElementById('lat-usuario');
@@ -282,12 +424,21 @@
             if (!latInput.value || !lngInput.value) {
                 e.preventDefault();
 
+                if (!navigator.geolocation) {
+                    aviso.textContent = 'Tu navegador no permite usar la ubicación.';
+                    aviso.hidden = false;
+                    return;
+                }
+
+                aviso.textContent = 'Buscando tu ubicación…';
+                aviso.hidden = false;
                 navigator.geolocation.getCurrentPosition(function(pos) {
                     latInput.value = pos.coords.latitude;
                     lngInput.value = pos.coords.longitude;
                     document.getElementById('form-buscar').submit();
                 }, function() {
-                    alert('No se pudo obtener tu ubicación. Activá el GPS o los permisos del navegador.');
+                    aviso.textContent = 'No se pudo obtener tu ubicación. Activá el GPS o los permisos del navegador.';
+                    aviso.hidden = false;
                 });
             }
         } else {
@@ -296,19 +447,56 @@
         }
     });
 </script>
+
+<!-- Ver precios: foto del producto y los comercios donde se encuentra -->
+<div class="modal fade" id="modalPrecios" tabindex="-1" aria-labelledby="titulo-modal-precios" aria-hidden="true"
+     th:attr="data-url-precios=@{/producto/precios/},data-url-comercio=@{/comercio/}">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down lp-modal-precios">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="lp-volver" data-bs-dismiss="modal" aria-label="Volver">
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="lp-precios-foto">
+                    <img id="precios-foto" src="" alt="" hidden>
+                    <div id="precios-sin-foto" class="lp-precios-sin-foto" hidden>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#adb5bd" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                            <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+                        </svg>
+                    </div>
+                </div>
+                <h2 id="titulo-modal-precios" class="lp-precios-titulo"></h2>
+                <p id="precios-detalle" class="lp-precios-detalle"></p>
+
+                <h3 class="lp-precios-subtitulo">Precios en los comercios</h3>
+                <p id="precios-estado" class="lp-precios-estado" role="status">Buscando precios…</p>
+                <ul id="precios-lista" class="lp-locales"></ul>
+            </div>
+            <div class="modal-footer" th:if="${session['ROL'] != null}">
+                <button type="button" id="btn-precios-agregar-lista" class="btn btn-verde w-100" onclick="agregarDesdePrecios()">
+                    Agregar a una lista
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalAgregarLista" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Agregar a una lista</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form th:action="@{/mis-listas/agregar-producto}" method="post">
                 <input type="hidden" name="reporteId" id="input-reporte-id" value="">
                 <div class="modal-body">
                     <div th:if="${listas == null or #lists.isEmpty(listas)}" class="text-center">
                         <p class="text-muted">No tenés listas creadas.</p>
-                        <a th:href="@{/mis-listas}" class="btn btn-primary btn-sm">Crear una lista</a>
+                        <a th:href="@{/mis-listas}" class="btn btn-verde btn-sm">Crear una lista</a>
                     </div>
                     <div th:if="${listas != null and !#lists.isEmpty(listas)}">
                         <p class="text-muted mb-3">Seleccioná a qué lista querés agregar el producto:</p>
@@ -334,9 +522,18 @@
                 </div>
                 <div class="modal-footer" th:if="${listas != null and !#lists.isEmpty(listas)}">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" id="btn-confirmar-agregar" class="btn btn-success">Agregar</button>
+                    <button type="submit" id="btn-confirmar-agregar" class="btn btn-verde">Agregar</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3 lp-toast-zona">
+    <div id="toast-gracias" class="toast lp-toast" role="status" aria-live="polite" aria-atomic="true" data-bs-delay="4000">
+        <div class="toast-body">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            ¡Gracias! Tu valoración ayuda a mantener los precios actualizados.
         </div>
     </div>
 </div>
@@ -353,15 +550,19 @@
 
     function confirmarPrecioCorrecto() {
         bootstrap.Modal.getInstance(document.getElementById('modalValorarProducto')).hide();
-        alert('¡Gracias! Tu valoración ayuda a mantener los precios actualizados.');
+        bootstrap.Toast.getOrCreateInstance(document.getElementById('toast-gracias')).show();
     }
 
     function marcarPrecioDudoso(boton) {
         var reporteId = boton.getAttribute('data-reporte-id');
         var botonValoracion = document.getElementById('btn-marcar-dudoso-' + reporteId);
+        var menu = document.getElementById('btn-menu-producto-' + reporteId);
         bootstrap.Modal.getInstance(document.getElementById('modalValorarProducto')).hide();
+        if (menu) {
+            menu.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            bootstrap.Dropdown.getOrCreateInstance(menu).show();
+        }
         if (botonValoracion) {
-            botonValoracion.scrollIntoView({ behavior: 'smooth', block: 'center' });
             botonValoracion.focus();
         }
     }
@@ -370,11 +571,139 @@
         document.getElementById('foto-ampliada').src = img.getAttribute('data-src');
     }
 </script>
+<script>
+    // Modal "Ver precios": trae de /producto/precios/{id} el precio del producto en cada comercio
+    var reporteDelModal = null;
+
+    function formatoPrecio(n) {
+        return '$' + Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function distanciaKm(a, b, c, d) {
+        var rad = Math.PI / 180;
+        var dLat = (c - a) * rad;
+        var dLng = (d - b) * rad;
+        var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(a * rad) * Math.cos(c * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    }
+
+    function textoDistancia(local) {
+        var lat = parseFloat(document.getElementById('lat-usuario').value);
+        var lng = parseFloat(document.getElementById('lng-usuario').value);
+        if (isNaN(lat) || isNaN(lng) || local.latitud == null || local.longitud == null) { return ''; }
+        var km = distanciaKm(lat, lng, local.latitud, local.longitud);
+        if (km < 1) { return 'a ' + (Math.max(1, Math.round(km * 100)) * 10) + ' m'; }
+        return 'a ' + km.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + ' km';
+    }
+
+    function elemento(tag, clase, contenido) {
+        var el = document.createElement(tag);
+        if (clase) { el.className = clase; }
+        if (contenido != null) { el.textContent = contenido; }
+        return el;
+    }
+
+    function pintarLocales(locales) {
+        var modal = document.getElementById('modalPrecios');
+        var lista = document.getElementById('precios-lista');
+        var estado = document.getElementById('precios-estado');
+        lista.textContent = '';
+        if (!locales.length) {
+            estado.textContent = 'Todavía no hay precios cargados para este producto.';
+            estado.hidden = false;
+            return;
+        }
+        estado.hidden = true;
+        var masBarato = null;
+        locales.forEach(function (l) { if (masBarato === null && !l.esDudoso) { masBarato = l.precio; } });
+
+        locales.forEach(function (l) {
+            var fila = elemento('a', 'lp-local');
+            fila.href = modal.getAttribute('data-url-comercio') + l.comercioId;
+
+            var icono = elemento('span', 'lp-local-icono');
+            icono.innerHTML = '<i class="bi bi-shop" aria-hidden="true"></i>';
+
+            var datos = elemento('span', 'lp-local-datos');
+            datos.appendChild(elemento('strong', null, l.comercio));
+            var lugar = [l.direccion, l.localidad].filter(Boolean).join(', ');
+            var distancia = textoDistancia(l);
+            var detalle = lugar + (lugar && distancia ? ' · ' : '') + distancia;
+            if (detalle) { datos.appendChild(elemento('small', null, detalle)); }
+            var etiquetas = elemento('span', 'lp-local-etiquetas');
+            etiquetas.appendChild(elemento('span', 'lp-mini lp-mini-' + (l.antiguedad || 'desconocido').toLowerCase(), l.antiguedad));
+            if (l.esDudoso) { etiquetas.appendChild(elemento('span', 'lp-mini lp-mini-dudoso', 'Dudoso')); }
+            datos.appendChild(etiquetas);
+
+            var precio = elemento('span', 'lp-local-precio');
+            precio.appendChild(elemento('strong', null, formatoPrecio(l.precio)));
+            if (!l.esDudoso && masBarato !== null) {
+                if (l.precio === masBarato) {
+                    precio.appendChild(elemento('small', 'lp-local-barato', 'Más barato'));
+                } else {
+                    precio.appendChild(elemento('small', 'lp-local-mas', '+' + formatoPrecio(l.precio - masBarato)));
+                }
+            }
+
+            fila.appendChild(icono);
+            fila.appendChild(datos);
+            fila.appendChild(precio);
+            var item = document.createElement('li');
+            item.appendChild(fila);
+            lista.appendChild(item);
+        });
+    }
+
+    function abrirPrecios(boton) {
+        var modal = document.getElementById('modalPrecios');
+        reporteDelModal = boton.getAttribute('data-reporte-id');
+
+        document.getElementById('titulo-modal-precios').textContent = boton.getAttribute('data-nombre');
+        document.getElementById('precios-detalle').textContent =
+            [boton.getAttribute('data-marca'), boton.getAttribute('data-unidad')].filter(Boolean).join(' · ');
+
+        var foto = document.getElementById('precios-foto');
+        var sinFoto = document.getElementById('precios-sin-foto');
+        sinFoto.hidden = true;
+        foto.hidden = false;
+        foto.onerror = function () { foto.hidden = true; sinFoto.hidden = false; };
+        foto.alt = 'Foto de ' + boton.getAttribute('data-nombre');
+        foto.src = document.getElementById('foto-producto-' + reporteDelModal)
+            ? document.getElementById('foto-producto-' + reporteDelModal).getAttribute('data-src')
+            : '';
+        if (!foto.getAttribute('src')) { foto.hidden = true; sinFoto.hidden = false; }
+
+        var estado = document.getElementById('precios-estado');
+        document.getElementById('precios-lista').textContent = '';
+        estado.textContent = 'Buscando precios…';
+        estado.hidden = false;
+
+        fetch(modal.getAttribute('data-url-precios') + reporteDelModal, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { if (!r.ok) { throw new Error(); } return r.json(); })
+            .then(pintarLocales)
+            .catch(function () {
+                estado.textContent = 'No pudimos cargar los precios. Probá de nuevo.';
+                estado.hidden = false;
+            });
+    }
+
+    // Cierra "Ver precios" y abre "Agregar a lista" para ese mismo producto
+    function agregarDesdePrecios() {
+        var modal = document.getElementById('modalPrecios');
+        document.getElementById('input-reporte-id').value = reporteDelModal;
+        modal.addEventListener('hidden.bs.modal', function abrir() {
+            modal.removeEventListener('hidden.bs.modal', abrir);
+            new bootstrap.Modal(document.getElementById('modalAgregarLista')).show();
+        });
+        bootstrap.Modal.getInstance(modal).hide();
+    }
+</script>
 <div class="modal fade" id="modalFoto" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content bg-dark">
             <div class="modal-header border-0">
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body text-center p-0">
                 <img id="foto-ampliada" src="" alt="Foto del producto"
