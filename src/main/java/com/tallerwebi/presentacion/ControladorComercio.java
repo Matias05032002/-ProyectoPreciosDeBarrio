@@ -138,6 +138,29 @@ public class ControladorComercio {
     return new ModelAndView(REDIRECT_PERFIL + "?editado=true");
   }
 
+  @PostMapping("/perfil/solicitar-verificacion")
+  public ModelAndView solicitarVerificacion(HttpServletRequest request) {
+    Long usuarioId = (Long) request.getSession().getAttribute("ID");
+
+    if (usuarioId == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+
+    if (!esComercio(request)) {
+      return new ModelAndView(REDIRECT_HOME);
+    }
+
+    Comercio comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
+
+    if (comercio == null) {
+      return new ModelAndView(REDIRECT_PERFIL);
+    }
+
+    servicioComercio.solicitarVerificacion(comercio.getId());
+
+    return new ModelAndView(REDIRECT_PERFIL + "?verificacionSolicitada=true");
+  }
+
   // Lo usa el botón "Buscar en el mapa" del perfil: devuelve las opciones en JSON
   @RequestMapping(path = "/ubicaciones/sugerencias", method = RequestMethod.GET)
   @ResponseBody

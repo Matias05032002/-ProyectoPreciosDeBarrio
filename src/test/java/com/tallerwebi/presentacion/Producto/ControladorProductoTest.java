@@ -111,6 +111,41 @@ public class ControladorProductoTest {
   }
 
   @Test
+  public void buscarProductoConSesionDeberiaInvitarAValorarUnaPublicacion() {
+    ProductoConPrecio dto = new ProductoConPrecio(
+      "Leche",
+      "La Serenisima",
+      "litro",
+      "Lacteos",
+      150.0,
+      "Almacen Central",
+      1L,
+      null,
+      0
+    );
+    when(sessionMock.getAttribute("ID")).thenReturn(10L);
+    when(
+      servicioProductoMock.buscarProductosConPrecio("Leche", null, OrdenProducto.PRECIO, null, null)
+    )
+      .thenReturn(Collections.singletonList(dto));
+    when(servicioPaginadorMock.calcularTotalPaginas(1, 9)).thenReturn(1);
+    when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
+      .thenReturn(Collections.singletonList(dto));
+
+    ModelAndView modelAndView = controladorProducto.buscarProducto(
+      "Leche",
+      "precio",
+      null,
+      null,
+      null,
+      0,
+      requestMock
+    );
+
+    assertThat(modelAndView.getModel().get("productoAValorar"), is(dto));
+  }
+
+  @Test
   public void buscarUnProductoQueNoExisteDevuelveListaVacia() {
     when(
       this.servicioProductoMock.buscarProductosConPrecio(

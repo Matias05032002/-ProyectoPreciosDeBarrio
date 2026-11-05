@@ -1,5 +1,7 @@
 package com.tallerwebi.presentacion;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
@@ -8,6 +10,7 @@ import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,13 +25,21 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class ControladorPerfil {
 
   private static final String REDIRECT_LOGIN = "redirect:/login";
+  private static final String ROL_COMERCIO = "COMERCIO";
+
   private final ServicioLogin servicioLogin;
   private final ServicioReporte servicioReporte;
+  private final ServicioComercio servicioComercio;
 
   @Autowired
-  public ControladorPerfil(ServicioLogin servicioLogin, ServicioReporte servicioReporte) {
+  public ControladorPerfil(
+    ServicioLogin servicioLogin,
+    ServicioReporte servicioReporte,
+    ServicioComercio servicioComercio
+  ) {
     this.servicioLogin = servicioLogin;
     this.servicioReporte = servicioReporte;
+    this.servicioComercio = servicioComercio;
   }
 
   @RequestMapping(path = "/perfil", method = RequestMethod.GET)
@@ -49,10 +60,17 @@ public class ControladorPerfil {
 
     List<Reporte> reportes = servicioReporte.buscarPorUsuarioId(usuarioId);
 
-    Map<String, Object> modelo = new java.util.HashMap<>();
+    Comercio comercio = null;
+
+    if (ROL_COMERCIO.equals(usuario.getRol())) {
+      comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
+    }
+
+    Map<String, Object> modelo = new HashMap<>();
     modelo.put("usuario", usuario);
     modelo.put("reportes", reportes);
     modelo.put("cantidadReportes", reportes.size());
+    modelo.put("comercio", comercio);
 
     return new ModelAndView("perfil", modelo);
   }
@@ -124,9 +142,11 @@ public class ControladorPerfil {
 
     try {
       java.time.LocalDate fecha = null;
+
       if (fechaNacimiento != null && !fechaNacimiento.isBlank()) {
         fecha = java.time.LocalDate.parse(fechaNacimiento);
       }
+
       servicioLogin.actualizarDatosPersonales(usuarioId, nombre, apellido, fecha);
     } catch (DatosInvalidos e) {
       redirectAttrs.addFlashAttribute("errorDatos", e.getMessage());

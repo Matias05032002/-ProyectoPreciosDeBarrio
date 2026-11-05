@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Admin.ServicioAdmin;
+import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.presentacion.ControladorAdmin;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
@@ -16,13 +17,16 @@ public class ControladorAdminTest {
 
   private ControladorAdmin controladorAdmin;
   private ServicioAdmin servicioAdminMock;
+  private ServicioComercio servicioComercioMock;
   private HttpSession sessionMock;
 
   @BeforeEach
   public void init() {
     servicioAdminMock = mock(ServicioAdmin.class);
+    servicioComercioMock = mock(ServicioComercio.class);
     sessionMock = mock(HttpSession.class);
-    controladorAdmin = new ControladorAdmin(servicioAdminMock);
+
+    controladorAdmin = new ControladorAdmin(servicioAdminMock, servicioComercioMock);
   }
 
   @Test
@@ -58,6 +62,7 @@ public class ControladorAdminTest {
   @Test
   public void conRolAdminDeberiaMostrarVistaEstadisticas() {
     when(sessionMock.getAttribute("ROL")).thenReturn("ADMIN");
+
     when(servicioAdminMock.totalUsuarios()).thenReturn(10L);
     when(servicioAdminMock.totalReportes()).thenReturn(50L);
     when(servicioAdminMock.productosMasReportados()).thenReturn(new ArrayList<>());
@@ -77,6 +82,7 @@ public class ControladorAdminTest {
   @Test
   public void conRolAdminDeberiaPedirTodosLosDatosAlServicio() {
     when(sessionMock.getAttribute("ROL")).thenReturn("ADMIN");
+
     when(servicioAdminMock.totalUsuarios()).thenReturn(5L);
     when(servicioAdminMock.totalReportes()).thenReturn(20L);
     when(servicioAdminMock.productosMasReportados()).thenReturn(new ArrayList<>());

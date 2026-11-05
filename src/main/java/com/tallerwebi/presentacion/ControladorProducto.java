@@ -122,8 +122,21 @@ public class ControladorProducto {
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId != null) {
       mav.addObject("listas", servicioLista.obtenerListasDeUsuario(usuarioId));
+      agregarNotificacionDeValoracion(mav, productos);
     }
     return mav;
+  }
+
+  private void agregarNotificacionDeValoracion(
+    ModelAndView mav,
+    List<ProductoConPrecio> productos
+  ) {
+    for (ProductoConPrecio producto : productos) {
+      if (producto.getReporteId() != null && !producto.isYaMarcoDudoso()) {
+        mav.addObject("productoAValorar", producto);
+        return;
+      }
+    }
   }
 
   @RequestMapping(path = "/buscar/{id}", method = RequestMethod.GET)

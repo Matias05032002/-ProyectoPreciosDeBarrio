@@ -128,6 +128,26 @@ public class ServicioComercioImpl implements ServicioComercio {
   }
 
   @Override
+  public void solicitarVerificacion(Long comercioId) {
+    Comercio comercio = repositorioComercio.buscarComercio(comercioId);
+
+    if (comercio == null) {
+      return;
+    }
+
+    if (Boolean.TRUE.equals(comercio.getVerificado())) {
+      return;
+    }
+
+    if (Boolean.TRUE.equals(comercio.getSolicitudVerificacion())) {
+      return;
+    }
+
+    comercio.setSolicitudVerificacion(true);
+    repositorioComercio.actualizarComercio(comercio);
+  }
+
+  @Override
   public void actualizarDatosDelComercio(
     Comercio existente,
     Comercio datos,
@@ -266,6 +286,29 @@ public class ServicioComercioImpl implements ServicioComercio {
     if (comercio == null) return;
     comercio.setFoto(foto);
     comercio.setFotoTipo(fotoTipo);
+    repositorioComercio.actualizarComercio(comercio);
+  }
+
+  @Override
+  public List<Comercio> listarSolicitudesVerificacion() {
+    return repositorioComercio.listarSolicitudesVerificacion();
+  }
+
+  @Override
+  public void aprobarVerificacion(Long comercioId) {
+    Comercio comercio = repositorioComercio.buscarComercio(comercioId);
+
+    if (comercio == null) {
+      return;
+    }
+
+    if (!Boolean.TRUE.equals(comercio.getSolicitudVerificacion())) {
+      return;
+    }
+
+    comercio.setVerificado(true);
+    comercio.setSolicitudVerificacion(false);
+
     repositorioComercio.actualizarComercio(comercio);
   }
 }

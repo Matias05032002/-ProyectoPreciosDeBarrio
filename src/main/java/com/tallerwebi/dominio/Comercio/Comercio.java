@@ -37,6 +37,13 @@ public class Comercio {
   private String fotoTipo;
 
   private Boolean activo;
+
+  @Column(name = "verificado", nullable = false)
+  private Boolean verificado = false;
+
+  @Column(name = "solicitud_verificacion", nullable = false)
+  private Boolean solicitudVerificacion = false;
+
   private LocalDateTime fechaRegistro;
   private Double latitud;
   private Double longitud;
@@ -106,6 +113,22 @@ public class Comercio {
 
   public void setActivo(Boolean activo) {
     this.activo = activo;
+  }
+
+  public Boolean getVerificado() {
+    return verificado;
+  }
+
+  public void setVerificado(Boolean verificado) {
+    this.verificado = verificado;
+  }
+
+  public Boolean getSolicitudVerificacion() {
+    return solicitudVerificacion;
+  }
+
+  public void setSolicitudVerificacion(Boolean solicitudVerificacion) {
+    this.solicitudVerificacion = solicitudVerificacion;
   }
 
   public String getTipo() {

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Solicitudes de verificación | Precios de Barrio</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+          rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<div class="container mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-patch-check me-2"></i>
+                Solicitudes de verificación
+            </h2>
+            <p class="text-muted">
+                Revisá las solicitudes de los comercios.
+            </p>
+        </div>
+
+        <a th:href="@{/admin/estadisticas}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Volver al panel
+        </a>
+    </div>
+
+    <!-- Mensaje de aprobación -->
+    <div th:if="${param.verificacionAprobada}"
+         class="alert alert-success alert-dismissible fade show"
+         role="alert">
+
+        <i class="bi bi-check-circle me-1"></i>
+        Comercio verificado correctamente.
+
+        <button type="button" class="btn-close"
+                data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- No hay solicitudes -->
+    <div th:if="${#lists.isEmpty(solicitudesVerificacion)}"
+         class="alert alert-info">
+
+        <i class="bi bi-info-circle me-2"></i>
+        No hay solicitudes de verificación pendientes.
+    </div>
+
+    <!-- Tabla de solicitudes -->
+    <div th:unless="${#lists.isEmpty(solicitudesVerificacion)}"
+         class="card shadow-sm">
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-dark">
+                    <tr>
+                        <th>Comercio</th>
+                        <th>Tipo</th>
+                        <th>Dirección</th>
+                        <th>Localidad</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+
+                    <tr th:each="comercio : ${solicitudesVerificacion}">
+
+                        <td>
+                            <strong th:text="${comercio.nombre}"></strong>
+                        </td>
+
+                        <td th:text="${comercio.tipo}"></td>
+
+                        <td th:text="${comercio.direccion}"></td>
+
+                        <td th:text="${comercio.localidad}"></td>
+
+                        <td>
+                            <span class="badge bg-warning text-dark">
+                                Pendiente
+                            </span>
+                        </td>
+
+                        <td>
+                            <form th:action="@{/admin/verificacion/{id}/aprobar(id=${comercio.id})}"
+                                  method="POST">
+
+                                <button type="submit"
+                                        class="btn btn-success btn-sm"
+                                        onclick="return confirm('¿Confirmás que querés verificar este comercio?')">
+
+                                    <i class="bi bi-patch-check-fill me-1"></i>
+                                    Aprobar
+                                </button>
+
+                            </form>
+                        </td>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

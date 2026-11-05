@@ -212,6 +212,65 @@
     modal.show();
 </script>
 
+<div th:if="${productoAValorar != null}"
+     class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="notificacion-valorar-producto"
+         class="toast border-primary"
+         role="alert"
+         aria-live="polite"
+         aria-atomic="true"
+         data-bs-autohide="false">
+        <div class="toast-header bg-primary text-white">
+            <strong class="me-auto">Ayudá a tu barrio</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"
+                    aria-label="Cerrar"></button>
+        </div>
+        <div class="toast-body">
+            ¿El precio de <strong th:text="${productoAValorar.nombre}"></strong> sigue siendo correcto?
+            Valorá esta publicación para mantener la información actualizada.
+            <button type="button"
+                    class="btn btn-outline-primary btn-sm mt-2 d-block"
+                    th:attr="data-reporte-id=${productoAValorar.reporteId}"
+                    onclick="irAValorarProducto(this)">
+                Valorar publicación
+            </button>
+        </div>
+    </div>
+</div>
+
+<div th:if="${productoAValorar != null}" class="modal fade" id="modalValorarProducto"
+     tabindex="-1" aria-labelledby="titulo-modal-valorar" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="titulo-modal-valorar">Valorá esta publicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿El precio publicado de <strong th:text="${productoAValorar.nombre}"></strong> sigue siendo correcto?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-success" onclick="confirmarPrecioCorrecto()">
+                    Sí, parece correcto
+                </button>
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        th:attr="data-reporte-id=${productoAValorar.reporteId}"
+                        onclick="marcarPrecioDudoso(this)">
+                    No, cambió
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:if="${productoAValorar != null}">
+    var notificacionValoracion = new bootstrap.Toast(
+        document.getElementById('notificacion-valorar-producto')
+    );
+    notificacionValoracion.show();
+</script>
+
 <script>
     document.getElementById('form-buscar').addEventListener('submit', function(e) {
         var orden = document.getElementById('orden-productos').value;
@@ -285,6 +344,26 @@
 <script>
     function seleccionarReporte(btn) {
         document.getElementById('input-reporte-id').value = btn.getAttribute('data-reporte-id');
+    }
+
+    function irAValorarProducto(boton) {
+        bootstrap.Toast.getInstance(document.getElementById('notificacion-valorar-producto')).hide();
+        new bootstrap.Modal(document.getElementById('modalValorarProducto')).show();
+    }
+
+    function confirmarPrecioCorrecto() {
+        bootstrap.Modal.getInstance(document.getElementById('modalValorarProducto')).hide();
+        alert('¡Gracias! Tu valoración ayuda a mantener los precios actualizados.');
+    }
+
+    function marcarPrecioDudoso(boton) {
+        var reporteId = boton.getAttribute('data-reporte-id');
+        var botonValoracion = document.getElementById('btn-marcar-dudoso-' + reporteId);
+        bootstrap.Modal.getInstance(document.getElementById('modalValorarProducto')).hide();
+        if (botonValoracion) {
+            botonValoracion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            botonValoracion.focus();
+        }
     }
 
     function abrirFoto(img) {
