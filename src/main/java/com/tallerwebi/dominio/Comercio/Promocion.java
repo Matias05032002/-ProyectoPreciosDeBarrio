@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Promocion")
+@SuppressWarnings("PMD.TooManyFields")
 public class Promocion {
 
   @Id
@@ -17,8 +18,23 @@ public class Promocion {
   @Column(length = 500)
   private String descripcion;
 
-  @Column(nullable = false)
+  // Las promociones viejas no tienen tipo: se leen como promociones de producto
+  @Enumerated(EnumType.STRING)
+  @Column(length = 20)
+  private TipoPromocion tipo = TipoPromocion.PRODUCTO;
+
+  // Solo las de tipo PRODUCTO llevan producto y precio
+  @Column(length = 150)
+  private String productoNombre;
+
   private Double precioPromocional;
+
+  // Solo las de tipo METODO_PAGO llevan medio de pago y porcentaje
+  @Enumerated(EnumType.STRING)
+  @Column(length = 30)
+  private MetodoPago metodoPago;
+
+  private Integer porcentajeDescuento;
 
   @Column(nullable = false)
   private LocalDateTime fechaInicio;
@@ -57,6 +73,38 @@ public class Promocion {
 
   public void setDescripcion(String descripcion) {
     this.descripcion = descripcion;
+  }
+
+  public TipoPromocion getTipo() {
+    return tipo == null ? TipoPromocion.PRODUCTO : tipo;
+  }
+
+  public void setTipo(TipoPromocion tipo) {
+    this.tipo = tipo;
+  }
+
+  public String getProductoNombre() {
+    return productoNombre;
+  }
+
+  public void setProductoNombre(String productoNombre) {
+    this.productoNombre = productoNombre;
+  }
+
+  public MetodoPago getMetodoPago() {
+    return metodoPago;
+  }
+
+  public void setMetodoPago(MetodoPago metodoPago) {
+    this.metodoPago = metodoPago;
+  }
+
+  public Integer getPorcentajeDescuento() {
+    return porcentajeDescuento;
+  }
+
+  public void setPorcentajeDescuento(Integer porcentajeDescuento) {
+    this.porcentajeDescuento = porcentajeDescuento;
   }
 
   public Double getPrecioPromocional() {

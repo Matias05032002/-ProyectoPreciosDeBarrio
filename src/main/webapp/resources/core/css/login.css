@@ -1,4 +1,3 @@
-
 :root {
     --green: #087f5b;
     --green-dark: #066747;
@@ -20,7 +19,7 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: "DM Sans", sans-serif;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
     color: var(--text);
     background: var(--background);
 }
@@ -85,7 +84,7 @@ a:hover {
     align-items: center;
     gap: 12px;
     color: white;
-    font-family: "Manrope", sans-serif;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-size: 1.2rem;
     font-weight: 800;
 }
@@ -142,7 +141,7 @@ a:hover {
 
 .aside-content h1 {
     margin: 25px 0 18px;
-    font-family: "Manrope", sans-serif;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-size: clamp(2.5rem, 4vw, 4rem);
     font-weight: 800;
     line-height: 1.12;
@@ -238,7 +237,7 @@ a:hover {
 
 .form-heading h2 {
     margin: 8px 0;
-    font-family: "Manrope", sans-serif;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-size: 2.15rem;
     font-weight: 800;
     letter-spacing: -1px;
@@ -332,12 +331,24 @@ a:hover {
     background: transparent;
     border: 0;
     outline: none;
-    font: inherit;
-    font-size: .95rem;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+/* Los puntos de la contraseña se separan un poco para que se lean bien */
+.input-wrapper input[type="password"] {
+    letter-spacing: .12em;
+}
+
+.input-wrapper input[type="password"]::placeholder {
+    letter-spacing: 0;
 }
 
 .input-wrapper input::placeholder {
     color: #a0aaa4;
+    font-weight: 400;
 }
 
 .password-toggle {
@@ -463,7 +474,7 @@ a:hover {
         align-items: center;
         gap: 10px;
         margin-bottom: 45px;
-        font-family: "Manrope", sans-serif;
+        font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
         font-size: 1.05rem;
         font-weight: 800;
     }
@@ -515,7 +526,7 @@ body:has(.recovery-card) { display: grid; min-height: 100vh; place-items: center
 .recovery-card { width: min(100%, 440px); padding: 2rem; color: #edf7f0; background: #0e1d16; border: 1px solid #2b4235; border-radius: 22px; box-shadow: 0 24px 56px rgba(0,0,0,.35); }
 .recovery-brand { display: flex; align-items: center; gap: .7rem; margin-bottom: 2rem; color: #edf7f0; font-size: 1rem; font-weight: 800; }.recovery-brand:hover { color: #edf7f0; }.recovery-brand-icon { display: grid; width: 38px; height: 38px; place-items: center; color: #07110e; background: #7bdd62; border-radius: 11px; font-size: 1.2rem; }.recovery-brand strong { color: #7bdd62; }
 .recovery-card h1 { margin: 0 0 .55rem; color: #fff; font-family: Inter, system-ui, sans-serif; font-size: 1.85rem; letter-spacing: -.04em; }.recovery-card > p { margin-bottom: 1.6rem; color: #b7c8bd; line-height: 1.55; }
-.recovery-field { margin-bottom: 1rem; }.recovery-field label { display: block; margin-bottom: .45rem; color: #edf7f0; font-size: .85rem; font-weight: 700; }.recovery-field input { width: 100%; min-height: 52px; padding: .7rem .85rem; color: #edf7f0; background: #101f19; border: 1px solid #344b3d; border-radius: 11px; outline: 0; }.recovery-field input:focus { border-color: #7bdd62; box-shadow: 0 0 0 4px rgba(123,221,98,.12); }.recovery-field input:-webkit-autofill { -webkit-text-fill-color: #edf7f0; -webkit-box-shadow: 0 0 0 1000px #101f19 inset; box-shadow: 0 0 0 1000px #101f19 inset; }
+.recovery-field { margin-bottom: 1rem; }.recovery-field label { display: block; margin-bottom: .45rem; color: #edf7f0; font-size: .85rem; font-weight: 700; }.recovery-field input { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 1rem; width: 100%; min-height: 52px; padding: .7rem .85rem; color: #edf7f0; background: #101f19; border: 1px solid #344b3d; border-radius: 11px; outline: 0; }.recovery-field input:focus { border-color: #7bdd62; box-shadow: 0 0 0 4px rgba(123,221,98,.12); }.recovery-field input:-webkit-autofill { -webkit-text-fill-color: #edf7f0; -webkit-box-shadow: 0 0 0 1000px #101f19 inset; box-shadow: 0 0 0 1000px #101f19 inset; }
 .recovery-action { display: block; width: 100%; min-height: 52px; padding: .7rem 1rem; color: #07110e; background: #7bdd62; border: 0; border-radius: 11px; font: inherit; font-weight: 800; text-align: center; text-decoration: none; }.recovery-action:hover { color: #07110e; background: #63c94e; }.recovery-back { display: block; margin-top: 1.4rem; color: #b7c8bd; text-align: center; font-size: .88rem; text-decoration: none; }.recovery-back:hover { color: #7bdd62; }
 
 /* Accesibilidad: movimiento reducido */

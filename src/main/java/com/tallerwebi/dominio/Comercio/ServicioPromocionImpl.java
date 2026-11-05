@@ -13,6 +13,9 @@ public class ServicioPromocionImpl implements ServicioPromocion {
   private static final double PRECIO_MAXIMO = 10_000_000.0;
   private static final int LARGO_MAXIMO_TITULO = 100;
   private static final int LARGO_MAXIMO_DESCRIPCION = 500;
+  private static final int LARGO_MAXIMO_PRODUCTO = 150;
+  private static final int DESCUENTO_MINIMO = 1;
+  private static final int DESCUENTO_MAXIMO = 90;
 
   private final RepositorioPromocion repositorioPromocion;
   private final RepositorioComercio repositorioComercio;
@@ -73,7 +76,11 @@ public class ServicioPromocionImpl implements ServicioPromocion {
 
     existente.setTitulo(promocion.getTitulo());
     existente.setDescripcion(promocion.getDescripcion());
+    existente.setTipo(promocion.getTipo());
+    existente.setProductoNombre(promocion.getProductoNombre());
     existente.setPrecioPromocional(promocion.getPrecioPromocional());
+    existente.setMetodoPago(promocion.getMetodoPago());
+    existente.setPorcentajeDescuento(promocion.getPorcentajeDescuento());
     existente.setFechaInicio(promocion.getFechaInicio());
     existente.setFechaFin(promocion.getFechaFin());
 
@@ -104,12 +111,50 @@ public class ServicioPromocionImpl implements ServicioPromocion {
 
   private void validarPromocion(Promocion promocion) {
     validarTitulo(promocion);
-    validarPrecio(promocion);
+    if (promocion.getTipo() == TipoPromocion.METODO_PAGO) {
+      validarMetodoPago(promocion);
+    } else {
+      validarProducto(promocion);
+      validarPrecio(promocion);
+    }
     validarFechas(promocion);
+  }
+
+  private void validarProducto(Promocion promocion) {
+    String producto = promocion.getProductoNombre();
+    if (producto == null || producto.isBlank()) {
+      throw new IllegalArgumentException("Indicá a qué producto aplica la promoción.");
+    }
+    if (producto.trim().length() > LARGO_MAXIMO_PRODUCTO) {
+      throw new IllegalArgumentException(
+        "El nombre del producto no puede superar los " + LARGO_MAXIMO_PRODUCTO + " caracteres."
+      );
+    }
+  }
+
+  private void validarMetodoPago(Promocion promocion) {
+    if (promocion.getMetodoPago() == null) {
+      throw new IllegalArgumentException("Elegí el método de pago de la promoción.");
+    }
+    Integer porcentaje = promocion.getPorcentajeDescuento();
+    if (porcentaje == null || porcentaje < DESCUENTO_MINIMO || porcentaje > DESCUENTO_MAXIMO) {
+      throw new IllegalArgumentException(
+        "El descuento debe ser de entre " + DESCUENTO_MINIMO + "% y " + DESCUENTO_MAXIMO + "%."
+      );
+    }
   }
 
   private void normalizarTextos(Promocion promocion) {
     promocion.setTitulo(promocion.getTitulo().trim());
+    // Cada tipo guarda solo sus datos: lo que sobra del otro formulario no se persiste
+    if (promocion.getTipo() == TipoPromocion.METODO_PAGO) {
+      promocion.setProductoNombre(null);
+      promocion.setPrecioPromocional(null);
+    } else {
+      promocion.setProductoNombre(promocion.getProductoNombre().trim());
+      promocion.setMetodoPago(null);
+      promocion.setPorcentajeDescuento(null);
+    }
     if (promocion.getDescripcion() != null) {
       String descripcion = promocion.getDescripcion().trim();
       promocion.setDescripcion(descripcion.isEmpty() ? null : descripcion);

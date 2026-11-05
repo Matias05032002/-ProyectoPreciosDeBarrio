@@ -32,15 +32,50 @@ public class VistaPromociones extends VistaWeb {
     return this.obtenerTextoDelElemento("#titulo-pagina");
   }
 
-  public void completarFormulario(
+  public boolean muestraLosDosTiposDePromocion() {
+    return (
+      page.locator("#btn-promocion-producto").isVisible() &&
+      page.locator("#btn-promocion-metodo-pago").isVisible()
+    );
+  }
+
+  public void elegirPromocionPorProducto() {
+    page.locator("#btn-promocion-producto").click();
+    page.waitForLoadState();
+  }
+
+  public void elegirPromocionPorMetodoPago() {
+    page.locator("#btn-promocion-metodo-pago").click();
+    page.waitForLoadState();
+  }
+
+  public void completarFormularioDeProducto(
     String titulo,
+    String producto,
     String precio,
     String descripcion,
     String fechaInicio,
     String fechaFin
   ) {
     page.locator("#titulo").fill(titulo);
+    page.locator("#productoNombre").fill(producto);
     page.locator("#precioPromocional").fill(precio);
+    page.locator("#descripcion").fill(descripcion);
+    page.locator("#fechaInicio").fill(fechaInicio);
+    page.locator("#fechaFin").fill(fechaFin);
+  }
+
+  public void completarFormularioDeMetodoPago(
+    String titulo,
+    String metodo,
+    String porcentaje,
+    String descripcion,
+    String fechaInicio,
+    String fechaFin
+  ) {
+    page.locator("#titulo").fill(titulo);
+    page.locator("#metodo-" + metodo).check();
+    page.locator("#porcentajeDescuento").fill(porcentaje);
     page.locator("#descripcion").fill(descripcion);
     page.locator("#fechaInicio").fill(fechaInicio);
     page.locator("#fechaFin").fill(fechaFin);
@@ -67,6 +102,10 @@ public class VistaPromociones extends VistaWeb {
     return page.locator("#error-promocion").isVisible();
   }
 
+  public String obtenerTextoDeLaPrimeraPromocion() {
+    return page.locator("[id^='card-promocion-']").first().textContent();
+  }
+
   public String obtenerEstadoDeLaPrimeraPromocion() {
     return page.locator("[id^='estado-promocion-']").first().textContent().trim();
   }
@@ -78,5 +117,9 @@ public class VistaPromociones extends VistaWeb {
 
   public boolean hayBotonDesactivar() {
     return page.locator("[id^='btn-desactivar-promocion-']").count() > 0;
+  }
+
+  public String urlActual() {
+    return page.url();
   }
 }

@@ -3,87 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis promociones</title>
+    <title>Mis promociones — Precios de Barrio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/comercio-panel.css}">
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
-<main class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 id="titulo-pagina" class="mb-1">Mis promociones</h1>
-            <p class="text-muted mb-0">Creá y administrá las promociones de tu comercio.</p>
+
+<header class="cm-cabecera">
+    <div class="container">
+        <div class="cm-cabecera-fila">
+            <div class="cm-cabecera-texto">
+                <p class="cm-sobretitulo"><i class="bi bi-shop" aria-hidden="true"></i> Mi comercio</p>
+                <h1 id="titulo-pagina">Mis promociones</h1>
+                <p class="cm-subtitulo">Creá y administrá las promociones de tu comercio.</p>
+            </div>
+            <div class="cm-cabecera-acciones">
+                <a th:href="@{/comercio/dashboard}" class="cm-btn cm-btn-neutro">
+                    <i class="bi bi-speedometer2" aria-hidden="true"></i> Volver al dashboard
+                </a>
+            </div>
         </div>
-        <a th:href="@{/comercio/dashboard}" class="btn btn-outline-primary">Volver al dashboard</a>
+    </div>
+</header>
+
+<main class="container cm-principal">
+
+    <div th:if="${error}" class="cm-alerta cm-alerta-error" role="alert" id="error-promocion">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div class="cm-alerta-texto" th:text="${error}">Error</div>
     </div>
 
-    <div th:if="${error}" class="alert alert-danger" role="alert" id="error-promocion" th:text="${error}"></div>
+    <!-- Elegir el tipo de promoción -->
+    <section class="pr-zona-elegir" aria-labelledby="titulo-elegir">
+        <div>
+            <h2 id="titulo-elegir">¿Qué promoción querés crear?</h2>
+            <p>Elegí una opción y completá el formulario.</p>
+        </div>
 
-    <section class="card shadow-sm border-0 mb-4">
-        <div class="card-body p-4">
-            <h2 class="h4 mb-4">Crear promoción</h2>
-
-            <form th:action="@{/promociones/crear}" th:object="${promocion}" method="post" class="row g-3">
-                <div class="col-md-6">
-                    <label for="titulo" class="form-label">Título</label>
-                    <input id="titulo" type="text" th:field="*{titulo}" class="form-control" maxlength="100" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="precioPromocional" class="form-label">Precio promocional</label>
-                    <input id="precioPromocional" type="number" th:field="*{precioPromocional}"
-                           class="form-control" min="0.01" max="10000000" step="0.01" required>
-                </div>
-                <div class="col-12">
-                    <label for="descripcion" class="form-label">Descripción</label>
-                    <textarea id="descripcion" th:field="*{descripcion}" class="form-control" rows="3" maxlength="500"></textarea>
-                </div>
-                <div class="col-md-6">
-                    <label for="fechaInicio" class="form-label">Fecha de inicio</label>
-                    <input id="fechaInicio" type="datetime-local" th:field="*{fechaInicio}" class="form-control" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="fechaFin" class="form-label">Fecha de finalización</label>
-                    <input id="fechaFin" type="datetime-local" th:field="*{fechaFin}" class="form-control" required>
-                </div>
-                <div class="col-12">
-                    <button type="submit" id="btn-crear-promocion" class="btn btn-primary">Crear promoción</button>
-                </div>
-            </form>
+        <div class="pr-elegir">
+            <a th:href="@{/promociones/nueva/producto}" id="btn-promocion-producto" class="pr-opcion">
+                <span class="pr-opcion-icono" aria-hidden="true"><i class="bi bi-box-seam"></i></span>
+                <span class="pr-opcion-titulo">Por producto</span>
+                <span class="pr-opcion-texto">Un precio especial para un producto en particular.</span>
+            </a>
+            <a th:href="@{/promociones/nueva/metodo-pago}" id="btn-promocion-metodo-pago" class="pr-opcion">
+                <span class="pr-opcion-icono" aria-hidden="true"><i class="bi bi-credit-card-2-front"></i></span>
+                <span class="pr-opcion-titulo">Por método de pago</span>
+                <span class="pr-opcion-texto">Un descuento al pagar con efectivo, tarjeta o QR.</span>
+            </a>
         </div>
     </section>
 
-    <section>
-        <h2 class="h4 mb-3">Promociones registradas</h2>
-        <div th:if="${#lists.isEmpty(promociones)}" id="mensaje-sin-promociones" class="alert alert-info">
-            Todavía no tenés promociones registradas.
+    <!-- Promociones registradas -->
+    <section aria-labelledby="titulo-registradas">
+        <h2 class="cm-lista-titulo" id="titulo-registradas">
+            Promociones registradas
+            <small th:if="${!#lists.isEmpty(promociones)}"
+                   th:text="${#lists.size(promociones)} + (${#lists.size(promociones)} == 1 ? ' promoción' : ' promociones')">2 promociones</small>
+        </h2>
+
+        <div th:if="${#lists.isEmpty(promociones)}" id="mensaje-sin-promociones" class="cm-vacio">
+            <span class="cm-icono" aria-hidden="true"><i class="bi bi-megaphone"></i></span>
+            <h3 class="h6 fw-bold m-0">Todavía no tenés promociones registradas</h3>
+            <p>Cuando crees una, los vecinos la ven en la sección Promociones mientras esté vigente.</p>
         </div>
 
-        <div class="row g-3">
-            <article th:each="item : ${promociones}" th:id="'card-promocion-' + ${item.id}" class="col-md-6">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between gap-2 mb-2">
-                            <h3 class="h5 mb-0" th:id="'titulo-promocion-' + ${item.id}" th:text="${item.titulo}"></h3>
-                            <span class="badge" th:id="'estado-promocion-' + ${item.id}" th:classappend="${item.activa ? ' text-bg-success' : ' text-bg-secondary'}"
-                                  th:text="${item.activa ? 'Activa' : 'Inactiva'}"></span>
-                        </div>
-                        <p class="text-muted" th:text="${item.descripcion}"></p>
-                        <p class="mb-1">Precio promocional:
-                            <strong th:text="${'$' + #numbers.formatDecimal(item.precioPromocional, 1, 'POINT', 2, 'COMMA')}"></strong></p>
-                        <p class="text-muted small mb-3">
-                            Del <span th:text="${#temporals.format(item.fechaInicio, 'dd/MM/yyyy HH:mm')}"></span>
-                            al <span th:text="${#temporals.format(item.fechaFin, 'dd/MM/yyyy HH:mm')}"></span>
-                        </p>
-                        <form th:if="${item.activa}" th:action="@{/promociones/{id}/desactivar(id=${item.id})}" method="post">
-                            <button type="submit" th:id="'btn-desactivar-promocion-' + ${item.id}" class="btn btn-outline-danger btn-sm">Desactivar promoción</button>
-                        </form>
-                    </div>
+        <div class="cm-grilla cm-grilla-3">
+            <article th:each="item : ${promociones}" th:id="'card-promocion-' + ${item.id}"
+                     class="cm-promo" th:classappend="${item.activa} ? '' : 'cm-promo-inactiva pr-promo-inactiva'">
+                <div class="cm-promo-cabecera">
+                    <h3 th:id="'titulo-promocion-' + ${item.id}" th:text="${item.titulo}">Título</h3>
+                    <span class="cm-chip" th:id="'estado-promocion-' + ${item.id}"
+                          th:classappend="${item.activa} ? 'cm-chip-ok' : 'cm-chip-neutro'"
+                          th:text="${item.activa ? 'Activa' : 'Inactiva'}">Activa</span>
                 </div>
+
+                <p class="pr-tipo" th:if="${item.tipo.name() == 'METODO_PAGO'}">
+                    <i class="bi" th:classappend="${item.metodoPago.icono}" aria-hidden="true"></i>
+                    <span th:text="${item.metodoPago.etiqueta}">Tarjeta de débito</span>
+                </p>
+                <p class="pr-tipo" th:unless="${item.tipo.name() == 'METODO_PAGO'}">
+                    <i class="bi bi-box-seam" aria-hidden="true"></i>
+                    <span>Producto</span>
+                </p>
+
+                <p class="cm-promo-descripcion" th:if="${item.descripcion != null and !#strings.isEmpty(item.descripcion)}"
+                   th:text="${item.descripcion}">Descripción</p>
+
+                <p class="pr-descuento" th:if="${item.tipo.name() == 'METODO_PAGO'}">
+                    <span th:text="${item.porcentajeDescuento} + '% OFF'">20% OFF</span>
+                </p>
+                <th:block th:unless="${item.tipo.name() == 'METODO_PAGO'}">
+                    <p class="pr-producto" th:text="${item.productoNombre}">Leche entera 1l</p>
+                    <p class="cm-precio"
+                       th:text="${'$' + #numbers.formatDecimal(item.precioPromocional, 1, 'POINT', 2, 'COMMA')}">$0,00</p>
+                </th:block>
+
+                <p class="cm-vigencia">
+                    <i class="bi bi-calendar-event" aria-hidden="true"></i>
+                    <span>Del <span th:text="${#temporals.format(item.fechaInicio, 'dd/MM/yyyy HH:mm')}"></span>
+                    al <span th:text="${#temporals.format(item.fechaFin, 'dd/MM/yyyy HH:mm')}"></span></span>
+                </p>
+                <form th:if="${item.activa}" th:action="@{/promociones/{id}/desactivar(id=${item.id})}" method="post">
+                    <button type="submit" th:id="'btn-desactivar-promocion-' + ${item.id}"
+                            class="cm-btn cm-btn-peligro cm-btn-chico">
+                        <i class="bi bi-slash-circle" aria-hidden="true"></i> Desactivar promoción
+                    </button>
+                </form>
             </article>
         </div>
     </section>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>

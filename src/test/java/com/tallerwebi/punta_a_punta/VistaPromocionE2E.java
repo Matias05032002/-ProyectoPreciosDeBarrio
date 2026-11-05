@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 public class VistaPromocionE2E {
 
   private static final String TITULO = "2x1 en leche";
+  private static final String TITULO_METODO_PAGO = "20% con débito";
+  private static final String PRODUCTO = "Leche entera 1l";
   private static final DateTimeFormatter FORMATO = DateTimeFormatter.ofPattern(
     "yyyy-MM-dd'T'HH:mm"
   );
@@ -59,6 +61,69 @@ public class VistaPromocionE2E {
 
     assertThat(vistaPromociones.obtenerTitulo(), containsString("Mis promociones"));
     assertThat(vistaPromociones.muestraMensajeSinPromociones(), is(true));
+  }
+
+  @Test
+  void deberiaMostrarLosDosTiposDePromocionAlEntrarAMisPromociones() {
+    dadoQueEstoyLogueadoComoComercio();
+    vistaPromociones.irAMisPromociones();
+
+    assertThat(vistaPromociones.muestraLosDosTiposDePromocion(), is(true));
+  }
+
+  @Test
+  void deberiaLlevarAlFormularioDeCadaTipoDePromocion() {
+    dadoQueEstoyLogueadoComoComercio();
+    vistaPromociones.irAMisPromociones();
+
+    vistaPromociones.elegirPromocionPorProducto();
+    assertThat(vistaPromociones.urlActual(), containsString("/promociones/nueva/producto"));
+
+    vistaPromociones.irAMisPromociones();
+    vistaPromociones.elegirPromocionPorMetodoPago();
+    assertThat(vistaPromociones.urlActual(), containsString("/promociones/nueva/metodo-pago"));
+  }
+
+  @Test
+  void deberiaCrearUnaPromocionPorMetodoDePagoYVerlaEnMisPromociones() {
+    dadoQueEstoyLogueadoComoComercio();
+    vistaPromociones.irAMisPromociones();
+    vistaPromociones.elegirPromocionPorMetodoPago();
+
+    LocalDateTime ahora = LocalDateTime.now();
+    vistaPromociones.completarFormularioDeMetodoPago(
+      TITULO_METODO_PAGO,
+      "DEBITO",
+      "20",
+      "Todos los martes",
+      ahora.minusDays(1).format(FORMATO),
+      ahora.plusDays(7).format(FORMATO)
+    );
+    vistaPromociones.darClickEnCrearPromocion();
+
+    assertThat(vistaPromociones.hayPromocionConTitulo(TITULO_METODO_PAGO), is(true));
+    assertThat(vistaPromociones.obtenerTextoDeLaPrimeraPromocion(), containsString("20% OFF"));
+  }
+
+  @Test
+  void deberiaMostrarErrorSiElDescuentoPorMetodoDePagoEstaFueraDeRango() {
+    dadoQueEstoyLogueadoComoComercio();
+    vistaPromociones.irAMisPromociones();
+    vistaPromociones.elegirPromocionPorMetodoPago();
+
+    LocalDateTime ahora = LocalDateTime.now();
+    vistaPromociones.completarFormularioDeMetodoPago(
+      TITULO_METODO_PAGO,
+      "EFECTIVO",
+      "95",
+      "Descuento demasiado alto",
+      ahora.minusDays(1).format(FORMATO),
+      ahora.plusDays(7).format(FORMATO)
+    );
+    vistaPromociones.darClickEnCrearPromocion();
+
+    assertThat(vistaPromociones.muestraErrorDePromocion(), is(true));
+    assertThat(vistaPromociones.hayPromocionConTitulo(TITULO_METODO_PAGO), is(false));
   }
 
   @Test
@@ -105,9 +170,12 @@ public class VistaPromocionE2E {
     dadoQueEstoyLogueadoComoComercio();
     vistaPromociones.irAMisPromociones();
 
+    vistaPromociones.elegirPromocionPorProducto();
+
     LocalDateTime ahora = LocalDateTime.now();
-    vistaPromociones.completarFormulario(
+    vistaPromociones.completarFormularioDeProducto(
       TITULO,
+      PRODUCTO,
       "1500",
       "Llevás dos y pagás uno",
       ahora.minusDays(5).format(FORMATO),
@@ -132,9 +200,12 @@ public class VistaPromocionE2E {
   }
 
   private void cuandoCreaUnaPromocionVigente() {
+    vistaPromociones.elegirPromocionPorProducto();
+
     LocalDateTime ahora = LocalDateTime.now();
-    vistaPromociones.completarFormulario(
+    vistaPromociones.completarFormularioDeProducto(
       TITULO,
+      PRODUCTO,
       "1500",
       "Llevás dos y pagás uno",
       ahora.minusDays(1).format(FORMATO),
