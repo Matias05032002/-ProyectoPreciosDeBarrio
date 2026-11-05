@@ -217,6 +217,66 @@ public class ControladorReporte {
     return ResponseEntity.ok(servicioComercio.sugerirUbicaciones(direccion, localidad));
   }
 
+  // Lo usa el inicio del vecino: los últimos precios reportados, sin los marcados como dudosos
+  @RequestMapping(path = "/ultimos", method = RequestMethod.GET)
+  @ResponseBody
+  public List<Map<String, Object>> ultimosReportes() {
+    return reportesVisiblesEnElInicio()
+      .stream()
+      .sorted((a, b) -> b.getFechaDeReporte().compareTo(a.getFechaDeReporte()))
+      .limit(6)
+      .map(r -> {
+        Map<String, Object> reporte = new java.util.LinkedHashMap<>();
+        reporte.put("id", r.getId());
+        reporte.put("producto", r.getProducto().getNombre());
+        reporte.put("marca", r.getProducto().getMarca());
+        reporte.put("unidad", r.getProducto().getUnidad());
+        reporte.put("precio", r.getPrecio());
+        reporte.put("comercio", r.getComercio().getNombre());
+        reporte.put("localidad", r.getComercio().getLocalidad());
+        reporte.put("tieneFoto", r.getFoto() != null && r.getFoto().length > 0);
+        reporte.put("fecha", r.getFechaDeReporte().toString());
+        return reporte;
+      })
+      .collect(java.util.stream.Collectors.toList());
+  }
+
+  // Números de confianza del inicio: cuánto se reportó esta semana y en cuántos comercios hay precios
+  @RequestMapping(path = "/resumen", method = RequestMethod.GET)
+  @ResponseBody
+  public Map<String, Object> resumenDeReportes() {
+    List<Reporte> visibles = reportesVisiblesEnElInicio();
+    java.time.LocalDateTime haceUnaSemana = java.time.LocalDateTime.now().minusDays(7);
+    long reportesDeLaSemana = visibles
+      .stream()
+      .filter(r -> r.getFechaDeReporte().isAfter(haceUnaSemana))
+      .count();
+    long comerciosConPrecios = visibles
+      .stream()
+      .map(r -> r.getComercio().getId())
+      .filter(java.util.Objects::nonNull)
+      .distinct()
+      .count();
+    Map<String, Object> resumen = new java.util.LinkedHashMap<>();
+    resumen.put("reportesSemana", reportesDeLaSemana);
+    resumen.put("comercios", comerciosConPrecios);
+    return resumen;
+  }
+
+  private List<Reporte> reportesVisiblesEnElInicio() {
+    return servicioReporte
+      .listarTodos()
+      .stream()
+      .filter(r ->
+        r.getFechaDeReporte() != null &&
+        r.getPrecio() != null &&
+        r.getProducto() != null &&
+        r.getComercio() != null
+      )
+      .filter(r -> r.getPuntuacion() == null || r.getPuntuacion() <= Reporte.PUNTUACION_DUDOSO)
+      .collect(java.util.stream.Collectors.toList());
+  }
+
   @RequestMapping(path = "/mis-reportes", method = RequestMethod.GET)
   public ModelAndView misReportes(
     HttpServletRequest request,
