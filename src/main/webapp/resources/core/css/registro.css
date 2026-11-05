@@ -160,3 +160,55 @@ form {
     .form-title { font-size: 20px; }
     .row-2 { grid-template-columns: 1fr; gap: 0; }
 }
+
+/* Registro como segundo estado del acceso. */
+.register-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); width: 100%; min-height: 100vh; overflow-x: hidden; }
+.register-aside { display: flex; flex-direction: column; justify-content: space-between; padding: 3rem 8%; color: #edf7f0; background: radial-gradient(circle at 8% 8%, rgba(112,221,103,.22), transparent 25%), linear-gradient(145deg, #08120f, #0d2118); }
+.register-brand { display: flex; align-items: center; gap: .75rem; color: #edf7f0; font-size: 1.2rem; font-weight: 800; }.register-brand:hover { color: #edf7f0; }.register-brand strong, .register-aside h1 span { color: #7bdd62; }
+.register-aside .brand-icon { display: grid; width: 42px; height: 42px; place-items: center; color: #07110e; background: #7bdd62; border-radius: 13px; font-size: 1.4rem; }.register-aside-content { max-width: 440px; margin: auto 0; }.register-eyebrow { color: #b7c8bd; font-size: .85rem; font-weight: 700; }.register-aside h1 { margin: 1.3rem 0 1rem; color: #fff; font-family: 'Syne', sans-serif; font-size: clamp(2.4rem, 4vw, 3.7rem); line-height: 1.12; }.register-aside p { color: #b7c8bd; font-size: 1.05rem; line-height: 1.7; }.register-aside small { color: #b7c8bd; }
+.register-main { display: flex; align-items: center; justify-content: center; padding: 2rem; background: #0a1511; }.register-main .card { width: 100%; margin: 0; }.access-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; margin: 1.25rem 0 1rem; padding: .3rem; background: #102019; border: 1px solid #2b4235; border-radius: 12px; }.access-tabs a, .access-tabs span { display: flex; min-height: 40px; align-items: center; justify-content: center; border-radius: 9px; font-size: .82rem; font-weight: 700; }.access-tabs a { color: #b7c8bd; }.access-tabs span { color: #07110e; background: #7bdd62; }
+.register-mobile-intro { display: none; }
+
+/* Evita estilos por defecto y mantiene tipografía legible en toda la vista. */
+.register-brand, .access-tabs a, .bottom-link a, .tab { text-decoration: none; }
+.register-brand { color: #edf7f0; }.register-brand:hover { color: #edf7f0; }
+.form-title, .brand-text { font-family: Inter, system-ui, sans-serif; letter-spacing: -.03em; }
+.form-title { font-size: 1.8rem; line-height: 1.15; }.brand-text { font-size: 1rem; }
+.access-tabs a:hover, .bottom-link a:hover { color: #7bdd62; text-decoration: none; }
+.field input:-webkit-autofill, .field select:-webkit-autofill,
+.field input:-webkit-autofill:hover, .field input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #edf7f0;
+    -webkit-box-shadow: 0 0 0 1000px #101f19 inset;
+    box-shadow: 0 0 0 1000px #101f19 inset;
+    caret-color: #edf7f0;
+    transition: background-color 9999s ease-out 0s;
+}
+
+@media (max-width: 760px) { .register-layout { display: block; }.register-aside { display: none; }.register-main { display: block; min-height: 100dvh; padding: 1.5rem 1rem; background: radial-gradient(circle at top right, #173a27, transparent 42%), #07110e; }.register-mobile-intro { display: block; max-width: 500px; margin: 0 auto 1.5rem; }.register-mobile-intro span { color: #7bdd62; font-size: .8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }.register-mobile-intro h1 { margin: .45rem 0 .55rem; color: #fff; font-family: Inter, system-ui, sans-serif; font-size: clamp(2rem, 9vw, 2.65rem); line-height: 1.02; letter-spacing: -.06em; }.register-mobile-intro h1 strong { color: #7bdd62; }.register-mobile-intro p { margin: 0; color: #b7c8bd; font-size: .94rem; }.register-main .card { max-width: 500px; } }
+
+/* Registro: misma identidad visual que el acceso, sin fondo decorativo pesado. */
+body { padding: 0; color: #edf7f0; background: radial-gradient(circle at top right, #173a27, transparent 42%), #07110e; overflow-x: hidden; overflow-y: auto; }
+.map-bg, .map-overlay { display: none; }
+.card { max-width: 500px; max-height: none; margin: 1.5rem 0; color: #edf7f0; background: #0e1d16; border: 1px solid #2b4235; box-shadow: 0 24px 56px rgba(0,0,0,.35); }
+.card-header, .card-footer { background: #0e1d16; border-color: #2b4235; }
+.brand-icon { color: #07110e; background: #7bdd62; }
+.brand-text, .form-title { color: #edf7f0; }
+.brand-text span, .form-sub, .pass-hint, .bottom-link { color: #b7c8bd; }
+.tabs { background: #102019; border-color: #2b4235; }
+.tab { color: #b7c8bd; }
+.tab.active { color: #07110e; background: #7bdd62; }
+.field label { color: #edf7f0; }
+.field input, .field select { color: #edf7f0; background: #101f19; border-color: #344b3d; }
+.field input:focus, .field select:focus { border-color: #7bdd62; background: #101f19; }
+.section-label { color: #b7c8bd; }.section-label::after { background: #2b4235; }
+.strength-seg { background: #2b4235; }
+.btn-primary { color: #07110e; background: #7bdd62; }.btn-primary:hover { color: #07110e; background: #63c94e; }
+.bottom-link a { color: #7bdd62; }
+
+@media (max-width: 480px) {
+    body { padding: 1rem; }
+    .card { margin: 0; }
+    .card-header { padding: 1.5rem 1.25rem 0; }
+    .card-body { padding: 1rem 1.25rem .5rem; }
+    .card-footer { padding: .9rem 1.25rem 1.25rem; }
+}
