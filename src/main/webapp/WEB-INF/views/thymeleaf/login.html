@@ -3,63 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar sesión — Precios de Barrio</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap">
-    <link rel="stylesheet" th:href="@{/css/login.css}">
+
+    <title>Iniciar sesión | Precios de Barrio</title>
+
+    <meta name="theme-color" content="#087f5b">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" th:href="@{/css/login.css(v='20261104')}">
 </head>
+
 <body>
 
-<!-- Mapa como fondo full pantalla -->
-<div th:replace="~{fragmentos/mapa-svg :: mapa}"></div>
-<div class="map-overlay"></div>
+<div class="login-layout">
 
-<!-- Card del formulario -->
-<div class="card">
-    <div class="brand-bar">
-        <div class="brand-icon">
-            <svg viewBox="0 0 24 24" fill="white" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-            </svg>
-        </div>
-        <div class="brand-text">
-            Precios de Barrio
-            <span>Barrio · Comunidad</span>
-        </div>
-    </div>
+    <!-- Panel visual -->
+    <aside class="login-aside">
+        <a th:href="@{/home}" class="brand">
+            <span class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 21s7-5.2 7-12a7 7 0 1 0-14 0c0 6.8 7 12 7 12Z"
+                          stroke="currentColor" stroke-width="2"/>
+                    <circle cx="12" cy="9" r="2.5"
+                            stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </span>
 
-    <div class="form-title">¡Hola, vecino!</div>
-    <div class="form-sub">Accedé o creá tu cuenta</div>
+            <span>Precios <strong>de Barrio</strong></span>
+        </a>
 
-    <div class="tabs">
-        <a class="tab active" th:href="@{/login}">Ingresar</a>
-        <a class="tab" id="btn-register" th:href="@{/nuevo-usuario}">Registrarme</a>
-    </div>
+        <div class="aside-content">
+            <span class="eyebrow">
+                <span class="eyebrow-dot"></span>
+                Tu comunidad, más cerca
+            </span>
 
-    <p th:if="${contrasenaRestablecida != null}" id="contrasena-restablecida" class="alert alert-success"
-       th:text="${contrasenaRestablecida}"></p>
-    <p th:if="${registroExitoso != null}" id="registro-exitoso" class="alert alert-success"
-       th:text="${registroExitoso}"></p>
-    <p th:if="${error != null}" id="error-login" class="alert alert-danger" th:text="${error}"></p>
+            <h1>Comprar mejor empieza <span>en tu barrio.</span></h1>
 
-    <form th:action="@{/validar-login}" th:object="${datosLogin}" method="post">
-        <div class="field">
-            <label>Email</label>
-            <input type="email" th:field="*{email}" id="email" placeholder="vos@barrio.com">
-        </div>
-        <div class="field">
-            <label>Contraseña</label>
-            <input type="password" th:field="*{password}" id="password" placeholder="••••••••">
+            <p>
+                Compará precios, descubrí comercios cercanos
+                y ayudá a tus vecinos a ahorrar.
+            </p>
+
+            <div class="community-card">
+                <div class="community-icon">✦</div>
+                <div>
+                    <strong>El ahorro se construye entre todos.</strong>
+                    <span>Compartí información. Elegí mejor.</span>
+                </div>
+            </div>
         </div>
 
-        <div class="forgot"><a id="link-olvide-contrasena" th:href="@{/olvide-contrasena}">¿Olvidaste tu contraseña?</a></div>
+        <div class="aside-footer">
+            Precios de Barrio · Comunidad que ahorra
+        </div>
+    </aside>
 
-        <button type="submit" id="btn-login" class="btn-primary">Entrar al barrio →</button>
-    </form>
+    <!-- Formulario -->
+    <main class="login-main">
 
-    <div class="bottom-link">
-        ¿Primera vez? <a th:href="@{/nuevo-usuario}">Registrate gratis</a>
-    </div>
+        <div class="mobile-brand">
+            <span class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 21s7-5.2 7-12a7 7 0 1 0-14 0c0 6.8 7 12 7 12Z"
+                          stroke="currentColor" stroke-width="2"/>
+                    <circle cx="12" cy="9" r="2.5"
+                            stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </span>
+            <span>Precios <strong>de Barrio</strong></span>
+        </div>
+
+        <div class="mobile-intro">
+            <span>Tu comunidad, más cerca</span>
+            <h1>Comprá mejor.<br><strong>Ahorrá en tu barrio.</strong></h1>
+            <p>Compará precios reales antes de salir de casa.</p>
+        </div>
+
+        <section class="login-box">
+
+            <div class="form-heading">
+                <span class="welcome-label">¡Qué bueno verte!</span>
+                <h2>Iniciá sesión</h2>
+                <p>Ingresá a tu cuenta para continuar.</p>
+            </div>
+
+            <div class="auth-tabs">
+                <a th:href="@{/login}" class="auth-tab active">Iniciar sesión</a>
+                <a th:href="@{/nuevo-usuario}" class="auth-tab">Crear cuenta</a>
+            </div>
+
+            <div th:if="${contrasenaRestablecida != null}"
+                 class="alert alert-success"
+                 th:text="${contrasenaRestablecida}"
+                 role="status">
+            </div>
+
+            <div th:if="${registroExitoso != null}"
+                 class="alert alert-success"
+                 th:text="${registroExitoso}"
+                 role="status">
+            </div>
+
+            <div th:if="${error != null}"
+                 class="alert alert-danger"
+                 th:text="${error}"
+                 role="alert">
+            </div>
+
+            <form th:action="@{/validar-login}"
+                  th:object="${datosLogin}"
+                  method="post">
+
+                <div class="form-field">
+                    <label for="email">Correo electrónico</label>
+
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24"
+                             fill="none" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="14" rx="3"
+                                  stroke="currentColor" stroke-width="1.8"/>
+                            <path d="m4 7 8 6 8-6"
+                                  stroke="currentColor" stroke-width="1.8"/>
+                        </svg>
+
+                        <input type="email"
+                               th:field="*{email}"
+                               id="email"
+                               placeholder="nombre@correo.com"
+                               autocomplete="email"
+                               required>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <div class="label-row">
+                        <label for="password">Contraseña</label>
+
+                        <a th:href="@{/olvide-contrasena}"
+                           id="link-olvide-contrasena">
+                            ¿La olvidaste?
+                        </a>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24"
+                             fill="none" aria-hidden="true">
+                            <rect x="4" y="10" width="16" height="11" rx="2"
+                                  stroke="currentColor" stroke-width="1.8"/>
+                            <path d="M8 10V7a4 4 0 0 1 8 0v3"
+                                  stroke="currentColor" stroke-width="1.8"/>
+                        </svg>
+
+                        <input type="password"
+                               th:field="*{password}"
+                               id="password"
+                               placeholder="Ingresá tu contraseña"
+                               autocomplete="current-password"
+                               required>
+
+                        <button type="button"
+                                class="password-toggle"
+                                id="toggle-password"
+                                aria-label="Mostrar contraseña">
+                            Mostrar
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-login" class="btn-login">
+                    <span>Ingresar a mi cuenta</span>
+                    <span aria-hidden="true">→</span>
+                </button>
+
+            </form>
+
+            <div class="social-divider"><span>o continuá con</span></div>
+            <div class="social-login" aria-label="Opciones de acceso social">
+                <button type="button" class="social-button" data-provider="Google" aria-label="Continuar con Google">
+                    <img class="social-provider-logo" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
+                </button>
+                <button type="button" class="social-button" data-provider="Apple" aria-label="Continuar con Apple">
+                    <i class="bi bi-apple" aria-hidden="true"></i>
+                </button>
+            </div>
+            <p id="social-login-notice" class="social-login-notice" role="status" aria-live="polite"></p>
+
+            <div class="register-prompt">
+                ¿Todavía no tenés cuenta?
+                <a th:href="@{/nuevo-usuario}">Registrate gratis</a>
+            </div>
+
+            <div class="login-bottom">
+                <a th:href="@{/home}">← Volver al inicio</a>
+            </div>
+
+        </section>
+
+        <footer class="mobile-footer">
+            Hecho para ahorrar en comunidad 💚
+        </footer>
+
+    </main>
+
 </div>
+
+<script>
+    const passwordInput = document.getElementById("password");
+    const togglePassword = document.getElementById("toggle-password");
+
+    togglePassword.addEventListener("click", function () {
+        const isPassword = passwordInput.type === "password";
+
+        passwordInput.type = isPassword ? "text" : "password";
+        togglePassword.textContent = isPassword ? "Ocultar" : "Mostrar";
+        togglePassword.setAttribute(
+            "aria-label",
+            isPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+        );
+    });
+
+    document.querySelectorAll(".social-button").forEach(function (button) {
+        button.addEventListener("click", function () {
+            document.getElementById("social-login-notice").textContent =
+                "El acceso con " + button.dataset.provider + " estará disponible próximamente.";
+        });
+    });
+</script>
 
 </body>
 </html>

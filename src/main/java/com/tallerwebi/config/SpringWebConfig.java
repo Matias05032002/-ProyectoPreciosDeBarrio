@@ -69,9 +69,8 @@ public class SpringWebConfig implements WebMvcConfigurer {
     templateResolver.setTemplateMode(TemplateMode.HTML);
     // Los .html se leen siempre como UTF-8, sin depender de la codificación del sistema
     templateResolver.setCharacterEncoding("UTF-8");
-    // Template cache is true by default. Set to false if you want
-    // templates to be automatically updated when modified.
-    templateResolver.setCacheable(true);
+    // Durante el desarrollo, las vistas se actualizan al recargar el navegador.
+    templateResolver.setCacheable(false);
     return templateResolver;
   }
 

@@ -10,603 +10,95 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <link rel="preload" as="image" th:href="@{/css/hero-gondolas.jpg}" th:if="${session['ROL'] == 'USER'}">
   <link rel="stylesheet" th:href="@{/css/main.css}" />
 </head>
 
 <body>
-<div class="inicio-progreso" aria-hidden="true"></div>
-
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<!-- ============ Vista para USER (vecino) ============ -->
-<th:block th:if="${session['ROL'] == 'USER'}">
+<main role="main" class="container">
+  <div class="text-center mt-5">
+    <h1 class="fw-bold" style="color: var(--mp-dark)">Precios de Barrio</h1>
+    <p class="lead mt-3">
+      Los vecinos reportan los precios de los productos en los comercios del barrio.
+      Buscá antes de salir a comprar y ahorrá tiempo y plata.
+    </p>
+    <hr class="my-4">
 
-  <!-- La foto de fondo se precarga desde el <head>; el video la reemplaza apenas arranca -->
-  <section class="hero-inicio hero-claro hero-foto"
-           th:style="'--foto:url(' + @{/css/hero-gondolas.jpg} + ')'">
-    <video id="video-hero" class="video-hero" autoplay muted loop playsinline preload="auto"
-           th:poster="@{/css/hero-gondolas.jpg}" aria-hidden="true" tabindex="-1">
-      <source th:src="@{/css/hero-gondolas.mp4}" type="video/mp4">
-    </video>
-
-    <div class="container hero-contenido">
-      <div class="row g-4 align-items-start">
-
-        <div class="col-lg-8">
-          <p class="saludo-inicio aparece" th:if="${session['NOMBRE'] != null}"
-             th:text="'Hola, ' + ${session['NOMBRE']}">Hola</p>
-          <h1 id="titulo-pagina" class="aparece mb-3">Encontrá el mejor precio <span class="verde">de tu barrio</span></h1>
-          <p class="hero-texto aparece mb-4" style="--d:.08s">
-            Compará precios reales reportados por vecinos y ahorrá en tus compras diarias.
-          </p>
-
-          <form class="buscador-claro buscador-ancho aparece" style="--d:.16s"
-                th:action="@{/producto/buscar}" method="get" role="search">
-            <label for="buscador-inicio" class="visually-hidden">Buscar producto</label>
-            <div class="campo">
-              <i class="bi bi-search" aria-hidden="true"></i>
-              <input id="buscador-inicio" type="search" name="nombre" required maxlength="100"
-                     placeholder="¿Qué producto estás buscando?" autocomplete="off">
-            </div>
-            <button id="btn-buscar-inicio" type="submit" class="btn btn-verde">Buscar</button>
-          </form>
-
-          <p class="ejemplos-inicio aparece mb-0" style="--d:.24s">
-            <span>Probá con</span>
-            <a th:href="@{/producto/buscar(nombre='leche')}">leche</a>
-            <a th:href="@{/producto/buscar(nombre='aceite')}">aceite</a>
-            <a th:href="@{/producto/buscar(nombre='arroz')}">arroz</a>
-            <a th:href="@{/producto/buscar(nombre='fideos')}">fideos</a>
-            <a th:href="@{/producto/buscar(nombre='detergente')}">detergente</a>
-          </p>
+    <!-- Vista para USER -->
+    <div class="row mt-4" th:if="${session['ROL'] == 'USER'}">
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-search"></i> Buscá productos</h4>
+          <p>Encontrá el precio más barato en los comercios de tu barrio.</p>
+          <a th:href="@{/producto}" class="btn btn-primary">Ver productos</a>
         </div>
-
+      </div>
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-shop"></i> Comercios</h4>
+          <p>Conocé los comercios del barrio y sus precios reportados.</p>
+          <a th:href="@{/comercio}" class="btn btn-primary">Ver comercios</a>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-clipboard-plus"></i> Reportar precio</h4>
+          <p>Ayudá a tu comunidad reportando los precios que encontrás.</p>
+          <a th:href="@{/reporte}" class="btn btn-primary">Reportar</a>
+        </div>
       </div>
     </div>
 
-    <button id="video-toggle" type="button" class="video-toggle" aria-label="Pausar el video de fondo">
-      <i class="bi bi-pause-fill" aria-hidden="true"></i>
-    </button>
-  </section>
-
-  <main role="main" class="container pt-4 pb-5">
-
-    <section class="acciones-inicio acciones-fila" aria-label="Accesos rápidos">
-      <a id="btn-reportar-inicio" th:href="@{/reporte}" class="accion-inicio principal entra-scroll">
-        <span class="icono"><i class="bi bi-file-earmark-plus-fill" aria-hidden="true"></i></span>
-        <span class="texto">
-          <strong>Reportar un precio</strong>
-          <span class="desc">¿Viste un precio en tu barrio? Compartilo y ayudá a tus vecinos a ahorrar.</span>
-        </span>
-        <span class="flecha"><i class="bi bi-arrow-right" aria-hidden="true"></i></span>
-      </a>
-      <a id="btn-ticket-inicio" th:href="@{/reporte/ticket}" class="accion-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-receipt" aria-hidden="true"></i></span>
-        <span class="texto">
-          <strong>Subir un ticket</strong>
-          <span class="desc">Sacale una foto y cargamos los precios por vos.</span>
-        </span>
-        <span class="flecha"><i class="bi bi-arrow-right" aria-hidden="true"></i></span>
-      </a>
-      <a id="btn-listas-inicio" th:href="@{/mis-listas}" class="accion-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-list-check" aria-hidden="true"></i></span>
-        <span class="texto">
-          <strong>Mis listas</strong>
-          <span class="desc">Armá tu lista de compras y mirá cuánto te sale.</span>
-        </span>
-        <span class="flecha"><i class="bi bi-arrow-right" aria-hidden="true"></i></span>
-      </a>
-    </section>
-
-    <div class="row g-4 mt-1">
-
-      <section class="col-lg-8 seccion-inicio">
-        <div class="d-flex align-items-start justify-content-between gap-2 mb-3 entra-scroll-izq">
-          <div>
-            <h2 class="mb-1">Últimos precios reportados</h2>
-            <p class="text-muted mb-0">Precios actualizados por vecinos de tu barrio.</p>
-            <p id="resumen-inicio" class="resumen-inicio" hidden></p>
-          </div>
-          <a th:href="@{/reporte}" class="ver-todos">Ver todos <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    <!-- Vista para COMERCIO -->
+    <div class="row mt-4" th:if="${session['ROL'] == 'COMERCIO'}">
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-shop"></i> Mi comercio</h4>
+          <p>Gestioná la información de tu local.</p>
+          <a th:href="@{/comercio/perfil}" class="btn btn-primary">Ver mi comercio</a>
         </div>
-        <div id="ultimos-precios" class="ultimos-grid" aria-live="polite"
-             th:attr="data-url-ultimos=@{/reporte/ultimos},data-url-resumen=@{/reporte/resumen},data-url-reportar=@{/reporte},data-url-buscar=@{/producto/buscar},data-url-reporte=@{/reporte/}"></div>
-      </section>
-
-      <section class="col-lg-4 seccion-inicio">
-        <div class="panel-mapa">
-          <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-            <h2 class="h5 mb-0">Comercios cercanos</h2>
-            <a th:href="@{/comercio}" class="ver-todos">Ver todos <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-          </div>
-          <div class="ubicacion-inicio">
-            <button id="btn-ubicacion" type="button" class="btn-ubicacion">
-              <i class="bi bi-crosshair" aria-hidden="true"></i><span>Usar mi ubicación</span>
-            </button>
-            <p id="estado-ubicacion" class="estado-ubicacion mb-0" role="status"></p>
-          </div>
-          <div class="mapa-inicio-caja">
-            <div id="mapa-inicio" role="region" aria-label="Mapa de comercios cercanos"></div>
-            <div id="mensaje-mapa-vacio" class="mapa-inicio-aviso">
-              Todavía no hay comercios con ubicación para mostrar en el mapa.
-            </div>
-            <div id="tarjeta-comercio-seleccionado" class="tarjeta-seleccionada" hidden>
-              <div class="flex-grow-1 min-w-0" style="min-width:0">
-                <small id="detalle-comercio-seleccionado"></small>
-                <strong id="nombre-comercio-seleccionado"></strong>
-              </div>
-              <a id="enlace-comercio-seleccionado" href="#" class="btn btn-primary">Ver precios</a>
-            </div>
-          </div>
-          <div id="lista-comercios-cercanos" class="comercios-cerca"></div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-clipboard-plus"></i> Mis reportes</h4>
+          <p>Administrá los precios que publicaste.</p>
+          <a th:href="@{/reporte/mis-reportes}" class="btn btn-primary">Ver mis reportes</a>
         </div>
-      </section>
-
+      </div>
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-box-seam"></i> Mis productos</h4>
+          <p>Gestioná el catálogo de productos de tu comercio.</p>
+          <a th:href="@{/reporte/mis-productos}" class="btn btn-primary">Ver productos</a>
+        </div>
+      </div>
+    </div>
+    <!-- Vista para ADMIN -->
+    <div class="row mt-4 justify-content-center" th:if="${session['ROL'] == 'ADMIN'}">
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-bar-chart-fill"></i> Estadísticas</h4>
+          <p>Visualizá métricas de uso: usuarios, reportes, productos más buscados y más.</p>
+          <a th:href="@{/admin/estadisticas}" class="btn btn-primary">Ver estadísticas</a>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-chat-left-text"></i> Consultas recibidas</h4>
+          <p>Revisá los mensajes y consultas enviados por los vecinos.</p>
+          <a th:href="@{/admin/consultas}" class="btn btn-primary">Ver consultas</a>
+        </div>
+      </div>
     </div>
 
-  </main>
-</th:block>
 
-<!-- ============ Vista para COMERCIO ============ -->
-<th:block th:if="${session['ROL'] == 'COMERCIO'}">
-  <section class="hero-inicio">
-    <div class="container hero-contenido">
-      <h1 th:id="'titulo-pagina'" class="aparece mb-2">Tu comercio en el barrio</h1>
-      <p class="hero-texto aparece mb-0" style="--d:.08s">Gestioná tu local, tus productos y tus promociones.</p>
-    </div>
-  </section>
-  <main role="main" class="container pt-4 pb-5">
-    <div class="atajos-inicio">
-      <a th:href="@{/comercio/perfil}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-shop" aria-hidden="true"></i></span>
-        <span><strong>Mi comercio</strong><span class="desc">Gestioná la información de tu local.</span></span>
-      </a>
-      <a th:href="@{/reporte/mis-reportes}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-clipboard-plus" aria-hidden="true"></i></span>
-        <span><strong>Mis reportes</strong><span class="desc">Administrá los precios que publicaste.</span></span>
-      </a>
-      <a th:href="@{/reporte/mis-productos}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
-        <span><strong>Mis productos</strong><span class="desc">Gestioná el catálogo de productos de tu comercio.</span></span>
-      </a>
-      <a th:href="@{/promociones/mis-promociones}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-tag" aria-hidden="true"></i></span>
-        <span><strong>Mis promociones</strong><span class="desc">Creá y desactivá tus ofertas.</span></span>
-      </a>
-      <a th:href="@{/comercio/dashboard}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
-        <span><strong>Dashboard</strong><span class="desc">Mirá cómo le va a tu comercio.</span></span>
-      </a>
-    </div>
-  </main>
-</th:block>
-
-<!-- ============ Vista para ADMIN ============ -->
-<th:block th:if="${session['ROL'] == 'ADMIN'}">
-  <section class="hero-inicio">
-    <div class="container hero-contenido">
-      <h1 th:id="'titulo-pagina'" class="aparece mb-2">Panel de administración</h1>
-      <p class="hero-texto aparece mb-0" style="--d:.08s">Consultá estadísticas de uso y los mensajes de los vecinos.</p>
-    </div>
-  </section>
-  <main role="main" class="container pt-4 pb-5">
-    <div class="atajos-inicio">
-      <a th:href="@{/admin/estadisticas}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-bar-chart-fill" aria-hidden="true"></i></span>
-        <span><strong>Estadísticas</strong><span class="desc">Usuarios, reportes, productos más buscados y más.</span></span>
-      </a>
-      <a th:href="@{/admin/consultas}" class="atajo-inicio entra-scroll">
-        <span class="icono"><i class="bi bi-chat-left-text" aria-hidden="true"></i></span>
-        <span><strong>Consultas recibidas</strong><span class="desc">Revisá los mensajes enviados por los vecinos.</span></span>
-      </a>
-    </div>
-  </main>
-</th:block>
+  </div>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
         crossorigin="anonymous"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script th:if="${session['ROL'] == 'USER'}" th:inline="javascript">
-  // Mapa chico del inicio: marca los comercios que tienen ubicación. La ubicación del vecino
-  // se pide solo cuando toca el botón (o si ya había dado permiso antes) y ordena por cercanía.
-  (function () {
-    var URL_MAPA = /*[[@{/comercio/mapa}]]*/ '/comercio/mapa';
-    var URL_COMERCIO = /*[[@{/comercio/}]]*/ '/comercio/';
-    var elMapa = document.getElementById('mapa-inicio');
-    if (!elMapa || !window.L) { return; }
-
-    var mapa = L.map(elMapa, {
-      zoomControl: false,
-      scrollWheelZoom: false,
-      dragging: !L.Browser.mobile
-    }).setView([-34.6037, -58.3816], 12);
-    L.control.zoom({ position: 'topright' }).addTo(mapa);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap'
-    }).addTo(mapa);
-
-    var tarjeta = document.getElementById('tarjeta-comercio-seleccionado');
-    var nombreSel = document.getElementById('nombre-comercio-seleccionado');
-    var detalleSel = document.getElementById('detalle-comercio-seleccionado');
-    var enlaceSel = document.getElementById('enlace-comercio-seleccionado');
-    var lista = document.getElementById('lista-comercios-cercanos');
-    var aviso = document.getElementById('mensaje-mapa-vacio');
-    var boton = document.getElementById('btn-ubicacion');
-    var estado = document.getElementById('estado-ubicacion');
-    var comercios = [];
-    var marcadores = {};
-    var tarjetas = {};
-    var posicion = null;
-    var marcadorVos = null;
-
-    function distanciaKm(a, b, c, d) {
-      var rad = Math.PI / 180;
-      var dLat = (c - a) * rad;
-      var dLng = (d - b) * rad;
-      var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(a * rad) * Math.cos(c * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-      return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-    }
-
-    function distanciaTexto(c) {
-      if (!posicion) { return ''; }
-      var km = distanciaKm(posicion[0], posicion[1], c.latitud, c.longitud);
-      if (km < 1) { return 'a ' + (Math.max(1, Math.round(km * 100)) * 10) + ' m'; }
-      return 'a ' + km.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + ' km';
-    }
-
-    function detalleDe(c) {
-      return distanciaTexto(c) || c.localidad || c.tipo || 'Comercio';
-    }
-
-    function iconoPin(activo) {
-      return L.divIcon({
-        className: '',
-        html: '<span class="pin-inicio' + (activo ? ' activo' : '') + '"><i class="bi bi-shop"></i></span>',
-        iconSize: [44, 44],
-        iconAnchor: [22, 40]
-      });
-    }
-
-    function seleccionar(comercio) {
-      Object.keys(marcadores).forEach(function (id) {
-        var activo = String(id) === String(comercio.id);
-        marcadores[id].setIcon(iconoPin(activo));
-        if (tarjetas[id]) { tarjetas[id].classList.toggle('activo', activo); }
-      });
-      nombreSel.textContent = comercio.nombre;
-      detalleSel.textContent = detalleDe(comercio);
-      enlaceSel.href = URL_COMERCIO + comercio.id;
-      tarjeta.hidden = false;
-      mapa.panTo([comercio.latitud, comercio.longitud]);
-    }
-
-    function tarjetaDe(c) {
-      var el = document.createElement('button');
-      el.type = 'button';
-      el.className = 'comercio-cerca';
-      el.id = 'comercio-cerca-' + c.id;
-      var icono = document.createElement('span');
-      icono.className = 'icono';
-      icono.innerHTML = '<i class="bi bi-shop" aria-hidden="true"></i>';
-      var nombre = document.createElement('strong');
-      nombre.textContent = c.nombre;
-      var tipo = document.createElement('small');
-      tipo.textContent = c.tipo || 'Comercio';
-      el.appendChild(icono);
-      el.appendChild(nombre);
-      el.appendChild(tipo);
-      var distancia = distanciaTexto(c);
-      if (distancia) {
-        var d = document.createElement('span');
-        d.className = 'distancia';
-        d.textContent = distancia;
-        el.appendChild(d);
-      }
-      el.addEventListener('click', function () { seleccionar(c); });
-      return el;
-    }
-
-    function dibujar() {
-      Object.keys(marcadores).forEach(function (id) { mapa.removeLayer(marcadores[id]); });
-      marcadores = {};
-      tarjetas = {};
-      lista.textContent = '';
-
-      if (comercios.length === 0) {
-        aviso.style.display = 'flex';
-        var vacio = document.createElement('p');
-        vacio.className = 'vacio-inicio mb-0';
-        vacio.textContent = 'Cuando los comercios carguen su ubicación, los vas a ver acá.';
-        lista.appendChild(vacio);
-        return;
-      }
-
-      var ordenados = comercios.slice();
-      if (posicion) {
-        ordenados.sort(function (x, y) {
-          return distanciaKm(posicion[0], posicion[1], x.latitud, x.longitud) -
-                  distanciaKm(posicion[0], posicion[1], y.latitud, y.longitud);
-        });
-      }
-      ordenados.forEach(function (c) {
-        var marcador = L.marker([c.latitud, c.longitud], { icon: iconoPin(false), title: c.nombre }).addTo(mapa);
-        marcador.on('click', function () { seleccionar(c); });
-        marcadores[c.id] = marcador;
-      });
-      var cercanos = ordenados.slice(0, 8);
-      cercanos.forEach(function (c) {
-        var el = tarjetaDe(c);
-        lista.appendChild(el);
-        tarjetas[c.id] = el;
-      });
-      var puntos = cercanos.map(function (c) { return [c.latitud, c.longitud]; });
-      if (posicion) { puntos.push(posicion); }
-      mapa.fitBounds(L.latLngBounds(puntos), { padding: [40, 40], maxZoom: 16 });
-      seleccionar(ordenados[0]);
-    }
-
-    function pedirUbicacion() {
-      if (!navigator.geolocation) {
-        estado.textContent = 'Tu navegador no permite usar la ubicación.';
-        return;
-      }
-      boton.disabled = true;
-      estado.textContent = 'Buscando tu ubicación…';
-      navigator.geolocation.getCurrentPosition(function (p) {
-        posicion = [p.coords.latitude, p.coords.longitude];
-        if (marcadorVos) { mapa.removeLayer(marcadorVos); }
-        marcadorVos = L.marker(posicion, {
-          icon: L.divIcon({ className: '', html: '<span class="punto-vos"></span>', iconSize: [22, 22] }),
-          title: 'Vos', keyboard: false
-        }).addTo(mapa);
-        boton.disabled = false;
-        boton.querySelector('span').textContent = 'Actualizar mi ubicación';
-        estado.textContent = 'Ordenados del más cercano al más lejano.';
-        dibujar();
-      }, function (error) {
-        boton.disabled = false;
-        estado.textContent = error && error.code === 1
-                ? 'No tenemos permiso para ver tu ubicación. Habilitalo en el navegador y probá de nuevo.'
-                : 'No pudimos obtener tu ubicación. Probá de nuevo.';
-      }, { timeout: 8000, maximumAge: 60000 });
-    }
-
-    boton.addEventListener('click', pedirUbicacion);
-
-    fetch(URL_MAPA, { headers: { 'Accept': 'application/json' } })
-            .then(function (r) { return r.ok ? r.json() : []; })
-            .catch(function () { return []; })
-            .then(function (datos) {
-              comercios = datos;
-              dibujar();
-              // Si el vecino ya había dado permiso, no hace falta volver a pedírselo
-              if (navigator.permissions && navigator.permissions.query) {
-                navigator.permissions.query({ name: 'geolocation' }).then(function (permiso) {
-                  if (permiso.state === 'granted') { pedirUbicacion(); }
-                }).catch(function () { });
-              }
-            });
-  })();
-</script>
-
-<script th:if="${session['ROL'] == 'USER'}">
-  // Últimos precios reportados: los trae de /reporte/ultimos y arma las tarjetas con la foto del
-  // reporte (o el ícono sin foto). Si sobra lugar en la última fila, la completa una invitación a reportar.
-  (function () {
-    var grilla = document.getElementById('ultimos-precios');
-    if (!grilla) { return; }
-    var URL_ULTIMOS = grilla.getAttribute('data-url-ultimos');
-    var URL_RESUMEN = grilla.getAttribute('data-url-resumen');
-    var URL_REPORTAR = grilla.getAttribute('data-url-reportar');
-    var URL_BUSCAR = grilla.getAttribute('data-url-buscar');
-    var URL_REPORTE = grilla.getAttribute('data-url-reporte');
-    var MAXIMO_TARJETAS = 5;
-    var invitacion = null;
-    var cantidad = 0;
-
-    function precio(n) {
-      return '$' + Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 });
-    }
-
-    function dias(iso) {
-      return (Date.now() - new Date(iso).getTime()) / 86400000;
-    }
-
-    function hace(iso) {
-      var minutos = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-      if (isNaN(minutos)) { return ''; }
-      if (minutos < 60) { return 'Hace ' + Math.max(1, minutos) + ' min'; }
-      var horas = Math.round(minutos / 60);
-      if (horas < 24) { return 'Hace ' + horas + (horas === 1 ? ' hora' : ' horas'); }
-      var d = Math.round(horas / 24);
-      return 'Hace ' + d + (d === 1 ? ' día' : ' días');
-    }
-
-    // Fresco hasta 2 días, reciente hasta una semana, después ya puede haber cambiado
-    function frescura(iso) {
-      var d = dias(iso);
-      if (isNaN(d) || d <= 2) { return 'fresco'; }
-      return d <= 7 ? 'reciente' : 'viejo';
-    }
-
-    function texto(tag, clase, contenido) {
-      var el = document.createElement(tag);
-      if (clase) { el.className = clase; }
-      el.textContent = contenido;
-      return el;
-    }
-
-    function fila(iconoBi, contenido, clase) {
-      var f = document.createElement('span');
-      f.className = 'meta' + (clase ? ' ' + clase : '');
-      var i = document.createElement('i');
-      i.className = 'bi bi-' + iconoBi;
-      i.setAttribute('aria-hidden', 'true');
-      f.appendChild(i);
-      f.appendChild(texto('span', '', contenido));
-      return f;
-    }
-
-    // Mismo ícono que se ve en el resto de la app cuando un producto no tiene foto
-    var ICONO_SIN_FOTO = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="#adb5bd" viewBox="0 0 16 16" aria-hidden="true">' +
-            '<path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>' +
-            '<path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>' +
-            '</svg>';
-
-    function imagenDe(r) {
-      var contenedor = document.createElement('span');
-      contenedor.className = 'imagen';
-      function sinFoto() {
-        contenedor.textContent = '';
-        contenedor.classList.add('sin-foto');
-        contenedor.innerHTML = ICONO_SIN_FOTO;
-      }
-      if (r.tieneFoto) {
-        var foto = document.createElement('img');
-        foto.src = URL_REPORTE + r.id + '/foto';
-        foto.alt = 'Foto de ' + r.producto;
-        foto.loading = 'lazy';
-        foto.addEventListener('error', sinFoto);
-        contenedor.appendChild(foto);
-      } else {
-        sinFoto();
-      }
-      return contenedor;
-    }
-
-    function tarjetaDe(r) {
-      var tarjeta = document.createElement('a');
-      tarjeta.className = 'precio-reportado';
-      tarjeta.href = URL_BUSCAR + '?nombre=' + encodeURIComponent(r.producto);
-
-      var cabecera = document.createElement('span');
-      cabecera.className = 'cabecera';
-      cabecera.appendChild(imagenDe(r));
-      var titulos = document.createElement('span');
-      titulos.className = 'titulos';
-      titulos.appendChild(texto('strong', 'nombre', r.producto + (r.unidad ? ' ' + r.unidad : '')));
-      if (r.marca) { titulos.appendChild(texto('span', 'detalle', r.marca)); }
-      cabecera.appendChild(titulos);
-      tarjeta.appendChild(cabecera);
-
-      tarjeta.appendChild(texto('span', 'monto', precio(r.precio)));
-      tarjeta.appendChild(fila('shop', r.comercio));
-      if (r.localidad) { tarjeta.appendChild(fila('geo-alt-fill', r.localidad)); }
-      var estado = frescura(r.fecha);
-      var cuando = hace(r.fecha) + (estado === 'viejo' ? ' · Desactualizado' : '');
-      tarjeta.appendChild(fila('clock', cuando, 'frescura ' + estado));
-      return tarjeta;
-    }
-
-    function invitacionA(sinReportes) {
-      var a = document.createElement('a');
-      a.className = 'precio-reportado invitacion';
-      a.href = URL_REPORTAR;
-      var mas = document.createElement('span');
-      mas.className = 'mas';
-      mas.innerHTML = '<i class="bi bi-plus-lg" aria-hidden="true"></i>';
-      var cuerpo = document.createElement('span');
-      cuerpo.className = 'cuerpo';
-      cuerpo.appendChild(texto('strong', '', sinReportes ? 'Todavía nadie reportó precios' : '¿Viste un precio?'));
-      cuerpo.appendChild(texto('span', 'detalle', sinReportes
-              ? 'Sé el primero en reportar uno y ayudá a tus vecinos a ahorrar.'
-              : 'Reportalo y ayudá a tus vecinos a ahorrar.'));
-      var accion = texto('span', 'accion', 'Reportar precio');
-      a.appendChild(mas);
-      a.appendChild(cuerpo);
-      a.appendChild(accion);
-      return a;
-    }
-
-    // La invitación ocupa los lugares que sobran de la última fila; si no sobra ninguno, ocupa una fila entera
-    function completarFila() {
-      if (!invitacion) { return; }
-      var columnas = getComputedStyle(grilla).gridTemplateColumns.split(' ').length;
-      var resto = cantidad % columnas;
-      var ancho = resto === 0 ? columnas : columnas - resto;
-      invitacion.style.gridColumn = 'span ' + ancho;
-      invitacion.classList.toggle('ancha', ancho > 1);
-    }
-
-    function pintar(lista) {
-      grilla.textContent = '';
-      var mostrados = lista.slice(0, MAXIMO_TARJETAS);
-      cantidad = mostrados.length;
-      mostrados.forEach(function (r) { grilla.appendChild(tarjetaDe(r)); });
-      invitacion = invitacionA(cantidad === 0);
-      grilla.appendChild(invitacion);
-      completarFila();
-    }
-
-    function pintarResumen(datos) {
-      var el = document.getElementById('resumen-inicio');
-      if (!el || !datos || (!datos.reportesSemana && !datos.comercios)) { return; }
-      var partes = [];
-      if (datos.reportesSemana) {
-        partes.push(datos.reportesSemana + (datos.reportesSemana === 1 ? ' precio reportado' : ' precios reportados') + ' esta semana');
-      }
-      if (datos.comercios) {
-        partes.push('en ' + datos.comercios + (datos.comercios === 1 ? ' comercio' : ' comercios'));
-      }
-      el.textContent = partes.join(' ');
-      el.hidden = false;
-    }
-
-    window.addEventListener('resize', completarFila);
-
-    fetch(URL_ULTIMOS, { headers: { 'Accept': 'application/json' } })
-            .then(function (r) { return r.ok ? r.json() : []; })
-            .catch(function () { return []; })
-            .then(pintar);
-
-    fetch(URL_RESUMEN, { headers: { 'Accept': 'application/json' } })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .catch(function () { return null; })
-            .then(pintarResumen);
-  })();
-</script>
-
-<script>
-  // Video de fondo del inicio: arranca solo y siempre se puede pausar con el botón de la esquina.
-  (function () {
-    var video = document.getElementById('video-hero');
-    var boton = document.getElementById('video-toggle');
-    if (!video) { return; }
-
-    function pintarBoton() {
-      if (!boton) { return; }
-      var pausado = video.paused;
-      boton.setAttribute('aria-label', pausado ? 'Reproducir el video de fondo' : 'Pausar el video de fondo');
-      boton.querySelector('i').className = 'bi ' + (pausado ? 'bi-play-fill' : 'bi-pause-fill');
-    }
-
-    video.muted = true;
-    video.defaultMuted = true;
-    video.addEventListener('error', function () {
-      console.warn('No se pudo cargar el video del inicio:', video.currentSrc);
-    });
-    video.addEventListener('play', pintarBoton);
-    video.addEventListener('pause', pintarBoton);
-
-    if (boton) {
-      boton.addEventListener('click', function () {
-        if (video.paused) { video.play(); } else { video.pause(); }
-      });
-    }
-
-    var intento = video.play();
-    if (intento && intento.catch) {
-      intento.catch(pintarBoton);
-    }
-  })();
-</script>
-
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 
