@@ -175,6 +175,27 @@ public class ControladorComercio {
     return ResponseEntity.ok(servicioComercio.sugerirUbicaciones(direccion, localidad));
   }
 
+  // Lo usa el mapa chico del inicio: solo los comercios que ya tienen ubicación
+  @RequestMapping(path = "/mapa", method = RequestMethod.GET)
+  @ResponseBody
+  public List<Map<String, Object>> comerciosParaElMapa() {
+    return servicioComercio
+      .listarTodos()
+      .stream()
+      .filter(c -> c.getLatitud() != null && c.getLongitud() != null)
+      .map(c -> {
+        Map<String, Object> punto = new java.util.LinkedHashMap<>();
+        punto.put("id", c.getId());
+        punto.put("nombre", c.getNombre());
+        punto.put("tipo", c.getTipo());
+        punto.put("latitud", c.getLatitud());
+        punto.put("longitud", c.getLongitud());
+        punto.put("localidad", c.getLocalidad());
+        return punto;
+      })
+      .collect(Collectors.toList());
+  }
+
   @RequestMapping(path = "/perfil/cambiar-contrasena", method = RequestMethod.POST)
   public ModelAndView cambiarContrasena(
     @RequestParam("contrasenaActual") String contrasenaActual,

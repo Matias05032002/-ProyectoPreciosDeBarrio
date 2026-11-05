@@ -223,6 +223,37 @@ public class ControladorComercioTest {
       .actualizarDatosDelComercio(existente, datos, -34.68, -58.54);
   }
 
+  // ── mapa del inicio ───────────────────────────────────────────────────────
+
+  @Test
+  public void comerciosParaElMapaDeberiaDevolverSoloLosQueTienenUbicacion() {
+    Comercio conUbicacion = new Comercio();
+    conUbicacion.setId(1L);
+    conUbicacion.setNombre("Almacén Don Pepe");
+    conUbicacion.setTipo("Almacén");
+    conUbicacion.setLatitud(-34.6879);
+    conUbicacion.setLongitud(-58.5482);
+    Comercio sinUbicacion = new Comercio();
+    sinUbicacion.setId(2L);
+    sinUbicacion.setNombre("Kiosco sin ubicar");
+    when(servicioComercioMock.listarTodos()).thenReturn(List.of(conUbicacion, sinUbicacion));
+
+    List<java.util.Map<String, Object>> puntos = controladorComercio.comerciosParaElMapa();
+
+    assertThat(puntos, hasSize(1));
+    assertThat(puntos.get(0).get("id"), is(1L));
+    assertThat(puntos.get(0).get("nombre"), is("Almacén Don Pepe"));
+    assertThat(puntos.get(0).get("latitud"), is(-34.6879));
+    assertThat(puntos.get(0).get("longitud"), is(-58.5482));
+  }
+
+  @Test
+  public void comerciosParaElMapaSinComerciosDeberiaDevolverListaVacia() {
+    when(servicioComercioMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    assertThat(controladorComercio.comerciosParaElMapa(), is(empty()));
+  }
+
   // ── sugerencias de ubicación ──────────────────────────────────────────────
 
   @Test

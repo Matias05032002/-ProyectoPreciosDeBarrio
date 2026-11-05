@@ -2,171 +2,236 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<nav th:fragment="navbar"
-     class="navbar navbar-expand-lg navbar-dark map-navbar sticky-top">
+<!-- Un solo fragmento con dos partes:
+     - barra superior: en computadora muestra los enlaces; en celular el botón "Menú" abre un panel lateral
+     - barra inferior: solo en celular, con los destinos principales según el rol -->
+<div th:fragment="navbar">
 
-    <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-dark map-navbar sticky-top">
 
-        <a class="navbar-brand fw-bold" th:href="@{/home}">
-            Precios <span style="color: #10B981;">de Barrio</span>
-        </a>
+        <div class="container">
 
-        <button class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarOpciones"
-                aria-controls="navbarOpciones"
-                aria-expanded="false"
-                aria-label="Abrir menú">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+            <a class="navbar-brand fw-bold" th:href="@{/home}">
+                Precios <span class="brand-acento">de Barrio</span>
+            </a>
 
-        <div class="collapse navbar-collapse" id="navbarOpciones">
+            <button class="navbar-toggler btn-menu"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#navbarOpciones"
+                    aria-controls="navbarOpciones"
+                    aria-label="Abrir menú">
+                <span class="navbar-toggler-icon"></span>
+                <span class="ms-2 fw-semibold">Menú</span>
+            </button>
 
-            <div class="navbar-nav ms-auto align-items-lg-center">
+            <div class="offcanvas offcanvas-start"
+                 tabindex="-1"
+                 id="navbarOpciones"
+                 aria-labelledby="navbarOpcionesTitulo">
 
-                <!-- Navegación general -->
-                <th:block th:if="${session['ROL'] != 'COMERCIO' and session['ROL'] != 'ADMIN'}">
-
-                    <a class="nav-link" th:href="@{/producto}">
-                        Productos
-                    </a>
-
-                    <a class="nav-link" th:href="@{/comercio}">
-                        Comercios
-                    </a>
-
-                    <!-- NUEVO: promociones públicas -->
-                    <a class="nav-link" th:href="@{/promociones}">
-                        Promociones
-                    </a>
-
-                    <a class="nav-link" th:href="@{/reporte}">
-                        Reportes
-                    </a>
-
-                    <a class="nav-link"
-                       th:if="${session['ROL'] != null}"
-                       th:href="@{/mis-listas}">
-                        Mis listas
-                    </a>
-
-                    <a class="nav-link"
-                       th:if="${session['ROL'] == 'USER'}"
-                       th:href="@{/perfil}">
-                        Mi perfil
-                    </a>
-
-                </th:block>
-
-                <!-- Navegación para comercios -->
-                <th:block th:if="${session['ROL'] == 'COMERCIO'}">
-
-                    <a class="nav-link" th:href="@{/reporte/mis-productos}">
-                        Mis productos
-                    </a>
-
-                    <a class="nav-link" th:href="@{/comercio/perfil}">
-                        Mi perfil
-                    </a>
-
-                    <!-- NUEVO: administrar promociones propias -->
-                    <a class="nav-link" th:href="@{/promociones/mis-promociones}">
-                        Mis promociones
-                    </a>
-
-                    <a class="nav-link" th:href="@{/reporte}">
-                        Agregar producto a mi comercio
-                    </a>
-
-                    <a class="nav-link" th:href="@{/comercio/dashboard}">
-                        Dashboard
-                    </a>
-
-                </th:block>
-
-                <!-- Acceso público -->
-                <a th:if="${session['ROL'] == null}"
-                   class="nav-link"
-                   th:href="@{/login}">
-                    Iniciar sesión
-                </a>
-
-                <a th:if="${session['ROL'] == null}"
-                   class="nav-link map-login-link"
-                   th:href="@{/nuevo-usuario}">
-                    Registrarse
-                </a>
-
-                <!-- Menú de opciones -->
-                <div class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle"
-                       href="#"
-                       id="menuOpciones"
-                       role="button"
-                       data-bs-toggle="dropdown"
-                       aria-expanded="false">
-                        Opciones
-                    </a>
-
-                    <ul class="dropdown-menu dropdown-menu-end"
-                        aria-labelledby="menuOpciones">
-
-                        <li th:if="${session['ROL'] != 'ADMIN'}">
-                            <a class="dropdown-item" th:href="@{/sobre-la-app}">
-                                Sobre la app
-                            </a>
-                        </li>
-
-                        <li th:if="${session['ROL'] != 'ADMIN'}">
-                            <a class="dropdown-item" th:href="@{/feedback}">
-                                Dar feedback
-                            </a>
-                        </li>
-
-                        <li th:if="${session['ROL'] == 'ADMIN'}">
-                            <a class="dropdown-item" th:href="@{/admin/consultas}">
-                                Consultas recibidas
-                            </a>
-                        </li>
-
-                        <li th:if="${session['ROL'] == 'ADMIN'}">
-                            <a class="dropdown-item" th:href="@{/admin/estadisticas}">
-                                <i class="bi bi-bar-chart-fill me-1"></i>Estadísticas
-                            </a>
-                        </li>
-
-                        <li th:if="${session['ROL'] == 'ADMIN'}">
-                            <a class="dropdown-item" th:href="@{/admin/verificaciones}">
-                                <i class="bi bi-patch-check-fill me-1"></i>Solicitudes de verificación
-                            </a>
-                        </li>
-
-                        <li th:if="${session['ROL'] != null}">
-                            <hr class="dropdown-divider">
-                        </li>
-
-                        <li th:if="${session['ROL'] != null}">
-                            <a class="dropdown-item" th:href="@{/logout}">
-                                Cerrar sesión
-                            </a>
-                        </li>
-
-                    </ul>
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="navbarOpcionesTitulo">Todo en un lugar</h5>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="offcanvas"
+                            aria-label="Cerrar menú"></button>
                 </div>
 
-                <!-- Usuario conectado -->
-                <span th:if="${session['ROL'] != null}"
-                      class="nav-link map-user-email"
-                      th:text="${session['EMAIL']}"
-                      th:title="${session['EMAIL']}">
+                <div class="offcanvas-body">
+                    <div class="navbar-nav ms-auto align-items-lg-center">
+
+                        <!-- Navegación general -->
+                        <th:block th:if="${session['ROL'] != 'COMERCIO' and session['ROL'] != 'ADMIN'}">
+
+                            <a class="nav-link" th:href="@{/producto}">
+                                Productos
+                            </a>
+
+                            <a class="nav-link" th:href="@{/comercio}">
+                                Comercios
+                            </a>
+
+                            <a class="nav-link" th:href="@{/promociones}">
+                                Promociones
+                            </a>
+
+                            <a class="nav-link" th:href="@{/reporte}">
+                                Reportes
+                            </a>
+
+                            <a class="nav-link"
+                               th:if="${session['ROL'] != null}"
+                               th:href="@{/mis-listas}">
+                                Mis listas
+                            </a>
+
+                            <a class="nav-link"
+                               th:if="${session['ROL'] == 'USER'}"
+                               th:href="@{/perfil}">
+                                Mi perfil
+                            </a>
+
+                        </th:block>
+
+                        <!-- Navegación para comercios -->
+                        <th:block th:if="${session['ROL'] == 'COMERCIO'}">
+
+                            <a class="nav-link" th:href="@{/reporte/mis-productos}">
+                                Mis productos
+                            </a>
+
+                            <a class="nav-link" th:href="@{/comercio/perfil}">
+                                Mi perfil
+                            </a>
+
+                            <a class="nav-link" th:href="@{/promociones/mis-promociones}">
+                                Mis promociones
+                            </a>
+
+                            <a class="nav-link" th:href="@{/reporte}">
+                                Agregar producto a mi comercio
+                            </a>
+
+                            <a class="nav-link" th:href="@{/comercio/dashboard}">
+                                Dashboard
+                            </a>
+
+                        </th:block>
+
+                        <!-- Acceso público -->
+                        <a th:if="${session['ROL'] == null}"
+                           class="nav-link"
+                           th:href="@{/login}">
+                            Iniciar sesión
+                        </a>
+
+                        <a th:if="${session['ROL'] == null}"
+                           class="nav-link map-login-link"
+                           th:href="@{/nuevo-usuario}">
+                            Registrarse
+                        </a>
+
+                        <!-- Menú de opciones -->
+                        <div class="nav-item dropdown">
+
+                            <a class="nav-link dropdown-toggle"
+                               href="#"
+                               id="menuOpciones"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+                                Opciones
+                            </a>
+
+                            <ul class="dropdown-menu dropdown-menu-end"
+                                aria-labelledby="menuOpciones">
+
+                                <li th:if="${session['ROL'] != 'ADMIN'}">
+                                    <a class="dropdown-item" th:href="@{/sobre-la-app}">
+                                        Sobre la app
+                                    </a>
+                                </li>
+
+                                <li th:if="${session['ROL'] != 'ADMIN'}">
+                                    <a class="dropdown-item" th:href="@{/feedback}">
+                                        Dar feedback
+                                    </a>
+                                </li>
+
+                                <li th:if="${session['ROL'] == 'ADMIN'}">
+                                    <a class="dropdown-item" th:href="@{/admin/consultas}">
+                                        Consultas recibidas
+                                    </a>
+                                </li>
+
+                                <li th:if="${session['ROL'] == 'ADMIN'}">
+                                    <a class="dropdown-item" th:href="@{/admin/estadisticas}">
+                                        <i class="bi bi-bar-chart-fill me-1"></i>Estadísticas
+                                    </a>
+                                </li>
+
+                                <li th:if="${session['ROL'] == 'ADMIN'}">
+                                    <a class="dropdown-item" th:href="@{/admin/verificaciones}">
+                                        <i class="bi bi-patch-check-fill me-1"></i>Solicitudes de verificación
+                                    </a>
+                                </li>
+
+                                <li th:if="${session['ROL'] != null}">
+                                    <hr class="dropdown-divider">
+                                </li>
+
+                                <li th:if="${session['ROL'] != null}">
+                                    <a class="dropdown-item" th:href="@{/logout}">
+                                        Cerrar sesión
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </div>
+
+                        <!-- Usuario conectado: la inicial en un círculo; en el panel del celular se ve también el correo -->
+                        <span th:if="${session['ROL'] != null and session['EMAIL'] != null}"
+                              class="nav-link cuenta-nav"
+                              th:title="${session['EMAIL']}">
+                    <span class="cuenta-avatar" aria-hidden="true"
+                          th:text="${#strings.toUpperCase(#strings.substring(session['EMAIL'], 0, 1))}">M</span>
+                    <span class="cuenta-email d-lg-none" th:text="${session['EMAIL']}"></span>
+                    <span class="visually-hidden d-none d-lg-inline"
+                          th:text="'Sesión iniciada como ' + ${session['EMAIL']}"></span>
                 </span>
 
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</nav>
+    </nav>
+
+    <!-- Barra inferior (celular). Solo para quien inició sesión. -->
+    <nav class="bnav" aria-label="Navegación principal" th:if="${session['ROL'] != null}">
+
+        <th:block th:if="${session['ROL'] == 'USER'}">
+            <a th:href="@{/home}" data-bnav="/home"><i class="bi bi-house-door"></i>Inicio</a>
+            <a th:href="@{/producto}" data-bnav="/producto"><i class="bi bi-search"></i>Buscar</a>
+            <a th:href="@{/reporte}" class="bnav-central" aria-label="Reportar un precio" data-bnav="/reporte"><i class="bi bi-plus-lg"></i></a>
+            <a th:href="@{/mis-listas}" data-bnav="/mis-listas"><i class="bi bi-list-check"></i>Listas</a>
+        </th:block>
+
+        <th:block th:if="${session['ROL'] == 'COMERCIO'}">
+            <a th:href="@{/home}" data-bnav="/home"><i class="bi bi-house-door"></i>Inicio</a>
+            <a th:href="@{/reporte/mis-productos}" data-bnav="/reporte/mis-productos"><i class="bi bi-box-seam"></i>Productos</a>
+            <a th:href="@{/reporte}" class="bnav-central" aria-label="Agregar producto a mi comercio" data-bnav="/reporte"><i class="bi bi-plus-lg"></i></a>
+            <a th:href="@{/comercio/dashboard}" data-bnav="/comercio/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a>
+        </th:block>
+
+        <th:block th:if="${session['ROL'] == 'ADMIN'}">
+            <a th:href="@{/home}" data-bnav="/home"><i class="bi bi-house-door"></i>Inicio</a>
+            <a th:href="@{/admin/estadisticas}" data-bnav="/admin/estadisticas"><i class="bi bi-bar-chart-fill"></i>Estadísticas</a>
+            <a th:href="@{/admin/consultas}" data-bnav="/admin/consultas"><i class="bi bi-chat-left-text"></i>Consultas</a>
+        </th:block>
+
+        <button type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarOpciones" aria-controls="navbarOpciones">
+            <i class="bi bi-list"></i>Menú
+        </button>
+    </nav>
+
+    <script>
+        // Marca en la barra inferior el destino donde estás parado
+        (function () {
+            var actual = window.location.pathname.replace(/;jsessionid=.*$/, '');
+            document.querySelectorAll('.bnav [data-bnav]').forEach(function (enlace) {
+                var destino = enlace.getAttribute('data-bnav');
+                var coincide = actual.endsWith(destino)
+                    || (destino === '/producto' && actual.indexOf('/producto') !== -1);
+                if (coincide) {
+                    enlace.classList.add('activo');
+                    enlace.setAttribute('aria-current', 'page');
+                }
+            });
+        })();
+    </script>
+
+</div>
 
 </body>
 </html>
