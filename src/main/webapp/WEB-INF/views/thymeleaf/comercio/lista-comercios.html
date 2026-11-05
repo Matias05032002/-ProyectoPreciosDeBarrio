@@ -1,76 +1,372 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Comercios</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/comercios.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
-<div class="container mt-4">
-    <form th:action="@{/comercio/buscar}" method="get" class="mb-4">
-        <div class="input-group">
-            <input type="text" name="nombre" id="comercio-buscar" class="form-control form-control-lg"
+
+<header class="co-cabecera">
+    <div class="container co-cabecera-fila">
+        <div class="co-cabecera-texto">
+            <h1 id="titulo-pagina" class="aparece">Comercios del barrio</h1>
+            <p class="co-subtitulo aparece" style="--d:.08s">Almacenes, verdulerías, carnicerías y más, cerca tuyo.</p>
+            <p id="co-resumen" class="co-resumen" hidden>
+                <i class="bi bi-shop" aria-hidden="true"></i>
+                <span id="co-resumen-texto"></span>
+            </p>
+        </div>
+        <!-- Foto solo en pantallas anchas: en el celular el lugar se lo queda el buscador -->
+        <div class="co-cabecera-foto aparece" style="--d:.2s"
+             th:style="'--foto:url(' + @{/css/hero-gondolas.jpg} + ')'" aria-hidden="true"></div>
+    </div>
+</header>
+
+<main class="container co-principal">
+
+    <form th:action="@{/comercio/buscar}" method="get" class="co-buscador aparece" style="--d:.16s" role="search">
+        <div class="co-campo">
+            <label for="comercio-buscar" class="visually-hidden">Nombre del comercio</label>
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="nombre" id="comercio-buscar" maxlength="100" autocomplete="off"
                    placeholder="Buscá un comercio...">
-            <button type="submit" id="btn-buscar-comercio" class="btn btn-primary">Buscar</button>
         </div>
+        <button type="submit" id="btn-buscar-comercio" class="co-btn co-btn-principal">Buscar</button>
     </form>
-    <h2 id="titulo-pagina">Comercios del barrio</h2>
-    <p class="text-muted">Almacenes, verdulerías, carnicerías y más.</p>
 
-    <div th:if="${#lists.isEmpty(comercios)}" class="alert alert-info mt-3">
-        No se encontraron comercios.
+    <!-- Filtros por tipo: se arman con los tipos que hay en la lista -->
+    <div class="co-tipos aparece" style="--d:.24s" id="co-tipos" role="group" aria-label="Filtrar por tipo" hidden></div>
+
+    <div class="co-barra aparece" style="--d:.3s">
+        <div class="co-vista" role="radiogroup" aria-label="Cómo ver los comercios">
+            <label class="co-vista-opcion">
+                <input type="radio" name="co-vista" value="lista" checked>
+                <span><i class="bi bi-list-ul" aria-hidden="true"></i> Lista</span>
+            </label>
+            <label class="co-vista-opcion">
+                <input type="radio" name="co-vista" value="mapa" id="co-vista-mapa">
+                <span><i class="bi bi-map" aria-hidden="true"></i> Mapa</span>
+            </label>
+        </div>
+        <button type="button" id="btn-cerca-tuyo" class="co-btn co-btn-claro" aria-pressed="false">
+            <i class="bi bi-crosshair" aria-hidden="true"></i>
+            <span>Cerca tuyo</span>
+        </button>
     </div>
 
-    <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+    <p id="co-aviso" class="co-aviso" role="alert" hidden></p>
+
+    <section id="co-mapa-panel" class="co-mapa-panel" aria-label="Mapa de comercios" hidden>
+        <div id="co-mapa"></div>
+    </section>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-3 g-md-4 co-resultados" id="co-lista">
         <div class="col" th:each="comercio : ${comercios}">
-            <div class="card h-100 shadow-sm" th:id="'card-comercio-' + ${comercio.id}">
-                <img th:if="${comercio.tieneFoto()}"
-                     th:src="@{/comercio/{id}/foto(id=${comercio.id})}"
-                     class="card-img-top"
-                     style="height:140px;object-fit:cover;"
-                     th:alt="${'Foto de ' + comercio.nombre}"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                <div aria-hidden="true"
-                     style="height:140px;background:#198754;color:#fff;font-size:2.5rem;font-weight:700;align-items:center;justify-content:center;"
-                     th:styleappend="${comercio.tieneFoto()} ? 'display:none;' : 'display:flex;'">
-                    <span th:text="${#strings.toUpperCase(#strings.substring(comercio.nombre,0,1))}"></span>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title" th:id="'nombre-comercio-' + ${comercio.id}" th:text="${comercio.nombre}"></h5>
-                    <span class="badge bg-secondary mb-2" th:text="${comercio.tipo}"></span>
-                    <p class="card-text mb-1">
-                        <span class="text-muted">Dirección:</span>
-                        <span th:text="${comercio.direccion}"></span>
-                    </p>
-                    <p class="card-text text-muted">
-                        <small th:text="${comercio.localidad}"></small>
-                    </p>
+            <article class="co-card entra-scroll"
+                     th:id="'card-comercio-' + ${comercio.id}"
+                     th:attr="data-nombre=${comercio.nombre},data-tipo=${comercio.tipo},data-lat=${comercio.latitud},data-lng=${comercio.longitud},data-abierto=${estadosAbierto[comercio.id]}">
+
+                <div class="co-media">
+                    <img th:if="${comercio.tieneFoto()}"
+                         th:src="@{/comercio/{id}/foto(id=${comercio.id})}"
+                         class="co-foto"
+                         th:alt="${'Foto de ' + comercio.nombre}"
+                         loading="lazy"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="co-inicial" aria-hidden="true"
+                         th:styleappend="${comercio.tieneFoto()} ? 'display:none;' : 'display:flex;'">
+                        <span th:text="${#strings.toUpperCase(#strings.substring(comercio.nombre,0,1))}"></span>
+                    </div>
+
                     <span th:if="${estadosAbierto[comercio.id] != null and estadosAbierto[comercio.id]}"
-                          class="badge bg-success">
-    <i class="bi bi-circle-fill me-1" style="font-size:.55rem"></i>Abierto ahora
-</span>
+                          class="co-estado co-abierto">Abierto ahora</span>
                     <span th:if="${estadosAbierto[comercio.id] != null and !estadosAbierto[comercio.id]}"
-                          class="badge bg-secondary">Cerrado</span>
+                          class="co-estado co-cerrado">Cerrado</span>
                     <span th:if="${estadosAbierto[comercio.id] == null}"
-                          class="badge" style="background-color:#e9e9e9; color:#888;">
-    Sin horario cargado
-</span>
+                          class="co-estado co-sin-horario">Sin horario cargado</span>
                 </div>
-                <div class="card-footer bg-transparent">
-                    <a th:href="@{/comercio/{id}(id=${comercio.id})}"
-                       th:id="'btn-ver-detalle-' + ${comercio.id}"
-                       class="btn btn-outline-primary btn-sm w-100">
-                        Ver detalle
-                    </a>
+
+                <div class="co-cuerpo">
+                    <h2 class="co-nombre" th:id="'nombre-comercio-' + ${comercio.id}" th:text="${comercio.nombre}"></h2>
+
+                    <p class="co-etiquetas">
+                        <span class="co-tipo" th:if="${comercio.tipo != null}" th:text="${comercio.tipo}"></span>
+                        <span class="co-verificado" th:if="${comercio.verificado}">
+                            <i class="bi bi-patch-check-fill" aria-hidden="true"></i> Verificado
+                        </span>
+                    </p>
+
+                    <p class="co-direccion">
+                        <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                        <span>
+                            <span th:text="${comercio.direccion}"></span>
+                            <small th:text="${comercio.localidad}"></small>
+                        </span>
+                        <span class="co-distancia" hidden></span>
+                    </p>
+
+                    <div class="co-acciones">
+                        <a th:href="@{/comercio/{id}(id=${comercio.id})}"
+                           th:id="'btn-ver-detalle-' + ${comercio.id}"
+                           class="co-btn co-btn-principal">
+                            Ver detalle
+                        </a>
+                        <a th:if="${comercio.latitud != null and comercio.longitud != null}"
+                           th:href="'https://www.google.com/maps/dir/?api=1&destination=' + ${comercio.latitud} + ',' + ${comercio.longitud}"
+                           target="_blank" rel="noopener"
+                           class="co-btn co-btn-claro co-btn-icono"
+                           th:attr="aria-label='Cómo llegar a ' + ${comercio.nombre}">
+                            <i class="bi bi-signpost-split" aria-hidden="true"></i>
+                            <span class="co-solo-escritorio">Cómo llegar</span>
+                        </a>
+                    </div>
                 </div>
-            </div>
+            </article>
         </div>
     </div>
-</div>
+
+    <div th:if="${#lists.isEmpty(comercios)}" class="co-vacio" id="co-vacio-servidor">
+        <span class="co-vacio-icono"><i class="bi bi-shop-window" aria-hidden="true"></i></span>
+        <p class="co-vacio-titulo">No se encontraron comercios.</p>
+        <p class="co-vacio-texto">Probá con otro nombre o mirá todos los comercios del barrio.</p>
+        <a th:href="@{/comercio}" class="co-btn co-btn-principal">Ver todos</a>
+    </div>
+
+    <div class="co-vacio" id="co-vacio-filtro" hidden>
+        <span class="co-vacio-icono"><i class="bi bi-funnel" aria-hidden="true"></i></span>
+        <p class="co-vacio-titulo">Ningún comercio coincide con los filtros.</p>
+        <p class="co-vacio-texto">Probá quitando alguno para ver más resultados.</p>
+        <button type="button" id="btn-limpiar-filtros" class="co-btn co-btn-principal">Quitar filtros</button>
+    </div>
+</main>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    (function () {
+        var lista = document.getElementById('co-lista');
+        var cards = Array.prototype.slice.call(lista.querySelectorAll('.co-card'));
+        var orden = cards.slice();               // orden original, para volver atrás
+        var filtro = { tipo: null, soloAbiertos: false };
+        var usuario = null;                      // { lat, lng } cuando se pudo ubicar
+        var mapa = null, capa = null;
+
+        function columna(card) { return card.parentElement; }
+
+        // ---------- Filtros ----------
+        var contTipos = document.getElementById('co-tipos');
+
+        function armarChips() {
+            var tipos = [];
+            cards.forEach(function (c) {
+                var t = c.getAttribute('data-tipo');
+                if (t && tipos.indexOf(t) === -1) { tipos.push(t); }
+            });
+            var hayAbiertos = cards.some(function (c) { return c.getAttribute('data-abierto') === 'true'; });
+            if (tipos.length < 2 && !hayAbiertos) { return; }
+
+            function chip(texto, icono, accion, id) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'co-chip';
+                if (id) { b.id = id; }
+                b.setAttribute('aria-pressed', 'false');
+                b.innerHTML = (icono ? '<i class="bi ' + icono + '" aria-hidden="true"></i> ' : '');
+                b.appendChild(document.createTextNode(texto));
+                b.addEventListener('click', function () { accion(b); });
+                contTipos.appendChild(b);
+                return b;
+            }
+
+            var todos = chip('Todos', null, function () { filtro.tipo = null; filtro.soloAbiertos = false; aplicar(); }, 'chip-todos');
+            tipos.forEach(function (t) {
+                chip(t, null, function () { filtro.tipo = (filtro.tipo === t ? null : t); aplicar(); });
+            });
+            if (hayAbiertos) {
+                chip('Abiertos ahora', 'bi-clock', function () { filtro.soloAbiertos = !filtro.soloAbiertos; aplicar(); }, 'chip-abiertos');
+            }
+            contTipos.hidden = false;
+            contTipos._todos = todos;
+        }
+
+        function pintarChips() {
+            var botones = contTipos.querySelectorAll('.co-chip');
+            Array.prototype.forEach.call(botones, function (b) {
+                var activo;
+                if (b.id === 'chip-todos') { activo = !filtro.tipo && !filtro.soloAbiertos; }
+                else if (b.id === 'chip-abiertos') { activo = filtro.soloAbiertos; }
+                else { activo = (b.textContent.trim() === filtro.tipo); }
+                b.classList.toggle('activo', activo);
+                b.setAttribute('aria-pressed', activo ? 'true' : 'false');
+            });
+        }
+
+        function visible(card) {
+            if (filtro.tipo && card.getAttribute('data-tipo') !== filtro.tipo) { return false; }
+            if (filtro.soloAbiertos && card.getAttribute('data-abierto') !== 'true') { return false; }
+            return true;
+        }
+
+        function aplicar() {
+            var visibles = 0, abiertos = 0;
+            cards.forEach(function (c) {
+                var ok = visible(c);
+                columna(c).hidden = !ok;
+                if (ok) { visibles++; if (c.getAttribute('data-abierto') === 'true') { abiertos++; } }
+            });
+            pintarChips();
+
+            var resumen = document.getElementById('co-resumen');
+            if (cards.length) {
+                var texto = visibles + (visibles === 1 ? ' comercio' : ' comercios');
+                if (abiertos) { texto += ' · ' + abiertos + (abiertos === 1 ? ' abierto ahora' : ' abiertos ahora'); }
+                document.getElementById('co-resumen-texto').textContent = texto;
+                resumen.hidden = false;
+            }
+            document.getElementById('co-vacio-filtro').hidden = !(cards.length && visibles === 0);
+            if (mapa) { pintarMapa(); }
+        }
+
+        document.getElementById('btn-limpiar-filtros').addEventListener('click', function () {
+            filtro.tipo = null; filtro.soloAbiertos = false; aplicar();
+        });
+
+        // ---------- Distancia y orden por cercanía ----------
+        function km(a, b, c, d) {
+            var r = Math.PI / 180, dLat = (c - a) * r, dLng = (d - b) * r;
+            var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(a * r) * Math.cos(c * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+        }
+
+        function textoKm(d) {
+            if (d < 1) { return 'a ' + (Math.max(1, Math.round(d * 100)) * 10) + ' m'; }
+            return 'a ' + d.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + ' km';
+        }
+
+        function coords(card) {
+            var la = parseFloat(card.getAttribute('data-lat')), lo = parseFloat(card.getAttribute('data-lng'));
+            return (isNaN(la) || isNaN(lo)) ? null : { lat: la, lng: lo };
+        }
+
+        var boton = document.getElementById('btn-cerca-tuyo');
+        var aviso = document.getElementById('co-aviso');
+
+        function avisar(texto) { aviso.textContent = texto; aviso.hidden = !texto; }
+
+        function ordenarPorCercania() {
+            cards.forEach(function (c) {
+                var p = coords(c), chip = c.querySelector('.co-distancia');
+                c._km = p ? km(usuario.lat, usuario.lng, p.lat, p.lng) : null;
+                if (c._km !== null) { chip.textContent = textoKm(c._km); chip.hidden = false; }
+            });
+            var porKm = cards.slice().sort(function (a, b) {
+                if (a._km === null && b._km === null) { return 0; }
+                if (a._km === null) { return 1; }
+                if (b._km === null) { return -1; }
+                return a._km - b._km;
+            });
+            porKm.forEach(function (c) { lista.appendChild(columna(c)); });
+            boton.classList.add('activo');
+            boton.setAttribute('aria-pressed', 'true');
+            boton.querySelector('span').textContent = 'Ordenado por cercanía';
+            if (mapa) { pintarMapa(); }
+        }
+
+        function volverAlOrden() {
+            orden.forEach(function (c) {
+                lista.appendChild(columna(c));
+                c.querySelector('.co-distancia').hidden = true;
+            });
+            boton.classList.remove('activo');
+            boton.setAttribute('aria-pressed', 'false');
+            boton.querySelector('span').textContent = 'Cerca tuyo';
+        }
+
+        boton.addEventListener('click', function () {
+            avisar('');
+            if (boton.classList.contains('activo')) { volverAlOrden(); return; }
+            if (usuario) { ordenarPorCercania(); return; }
+            if (!navigator.geolocation) { avisar('Tu navegador no permite usar la ubicación.'); return; }
+            avisar('Buscando tu ubicación…');
+            boton.classList.add('cargando');
+            navigator.geolocation.getCurrentPosition(function (pos) {
+                boton.classList.remove('cargando');
+                avisar('');
+                usuario = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                ordenarPorCercania();
+            }, function () {
+                boton.classList.remove('cargando');
+                avisar('No se pudo obtener tu ubicación. Activá el GPS o los permisos del navegador.');
+            }, { enableHighAccuracy: true, timeout: 8000 });
+        });
+
+        // ---------- Mapa ----------
+        function pintarMapa() {
+            if (!capa) { return; }
+            capa.clearLayers();
+            var puntos = [];
+            cards.forEach(function (c) {
+                var p = coords(c);
+                if (!p || columna(c).hidden) { return; }
+                var enlace = c.querySelector('[id^="btn-ver-detalle-"]').getAttribute('href');
+                var popup = document.createElement('div');
+                var t = document.createElement('strong'); t.textContent = c.getAttribute('data-nombre');
+                popup.appendChild(t);
+                if (c.getAttribute('data-tipo')) {
+                    var s = document.createElement('div'); s.textContent = c.getAttribute('data-tipo'); popup.appendChild(s);
+                }
+                var a = document.createElement('a'); a.href = enlace; a.textContent = 'Ver detalle';
+                a.className = 'co-popup-enlace'; popup.appendChild(a);
+                L.marker([p.lat, p.lng]).bindPopup(popup).addTo(capa);
+                puntos.push([p.lat, p.lng]);
+            });
+            if (usuario) {
+                L.circleMarker([usuario.lat, usuario.lng], { radius: 8, color: '#fff', weight: 3, fillColor: '#2563EB', fillOpacity: 1 })
+                    .bindPopup('Estás acá').addTo(capa);
+                puntos.push([usuario.lat, usuario.lng]);
+            }
+            if (puntos.length) { mapa.fitBounds(puntos, { padding: [30, 30], maxZoom: 16 }); }
+        }
+
+        function mostrarVista(vista) {
+            var panel = document.getElementById('co-mapa-panel');
+            var verMapa = vista === 'mapa';
+            panel.hidden = !verMapa;
+            lista.hidden = verMapa;
+            if (!verMapa) { return; }
+            if (!mapa) {
+                mapa = L.map('co-mapa').setView([-34.67, -58.56], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(mapa);
+                capa = L.layerGroup().addTo(mapa);
+            }
+            setTimeout(function () { mapa.invalidateSize(); pintarMapa(); }, 50);
+        }
+
+        Array.prototype.forEach.call(document.querySelectorAll('input[name="co-vista"]'), function (r) {
+            r.addEventListener('change', function () { mostrarVista(r.value); });
+        });
+
+        // El botón de buscar queda "cargando" hasta que llega la respuesta
+        document.querySelector('.co-buscador').addEventListener('submit', function () {
+            var b = document.getElementById('btn-buscar-comercio');
+            b.classList.add('cargando');
+            b.setAttribute('aria-busy', 'true');
+        });
+
+        armarChips();
+        aplicar();
+    })();
+</script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>

@@ -1,110 +1,237 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Subir ticket de compra</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/reportar.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
-<div class="container mt-4">
-    <h2 id="titulo-pagina">Cargar por ticket de compra</h2>
-    <p class="text-muted">Sacá una foto del ticket y detectamos los productos automáticamente.</p>
 
-    <div th:if="${error}" id="error-ticket" class="alert alert-danger" th:text="${error}"></div>
+<header class="rp-cabecera">
+    <div class="container">
+        <h1 id="titulo-pagina">Cargar por ticket de compra</h1>
+        <p class="rp-subtitulo">Sacá una foto del ticket y detectamos los productos y precios automáticamente.</p>
 
-    <form id="form-ticket" th:action="@{/reporte/ticket}" method="post" class="mt-3">
-        <input type="hidden" name="ticketBase64" id="ticket-base64">
-
-        <h6 class="text-muted mt-3">Foto del ticket</h6>
-        <div class="mb-3">
-            <input type="file" id="ticket-foto" class="form-control" accept="image/*">
+        <div class="rp-modo" role="navigation" aria-label="Forma de cargar el precio">
+            <a th:href="@{/reporte}">
+                <i class="bi bi-pencil-square" aria-hidden="true"></i> Cargar manualmente
+            </a>
+            <a th:href="@{/reporte/ticket}" class="activo" aria-current="page">
+                <i class="bi bi-receipt" aria-hidden="true"></i> Cargar por ticket
+            </a>
         </div>
 
-        <h6 class="text-muted mt-3">Datos del comercio</h6>
-        <div class="mb-3">
-            <input type="text" name="comercio.nombre" class="form-control" placeholder="Nombre del comercio" required>
+        <ol class="rp-pasos" aria-label="Pasos">
+            <li class="actual" aria-current="step"><span>1</span> Subir el ticket</li>
+            <li><span>2</span> Revisar los productos</li>
+            <li><span>3</span> Guardar</li>
+        </ol>
+    </div>
+</header>
+
+<main class="container rp-principal">
+    <div class="rp-columna-ticket">
+
+        <div th:if="${error}" id="error-ticket" class="rp-alerta rp-alerta-error alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <div th:text="${error}"></div>
         </div>
-        <div class="mb-3">
-            <input type="text" name="comercio.direccion" class="form-control" placeholder="Dirección" required>
-        </div>
-        <div class="mb-3">
-            <select name="comercio.localidad" id="comercio-localidad" class="form-select">
-                <option value="">Seleccionar partido/localidad</option>
-                <option value="Almirante Brown">Almirante Brown</option>
-                <option value="Avellaneda">Avellaneda</option>
-                <option value="Bahia Blanca">Bahía Blanca</option>
-                <option value="Berazategui">Berazategui</option>
-                <option value="Berisso">Berisso</option>
-                <option value="Brandsen">Brandsen</option>
-                <option value="Buenos Aires">Buenos Aires (CABA)</option>
-                <option value="Campana">Campana</option>
-                <option value="Canuelas">Cañuelas</option>
-                <option value="Ensenada">Ensenada</option>
-                <option value="Escobar">Escobar</option>
-                <option value="Esteban Echeverria">Esteban Echeverría</option>
-                <option value="Exaltacion de la Cruz">Exaltación de la Cruz</option>
-                <option value="Ezeiza">Ezeiza</option>
-                <option value="Florencio Varela">Florencio Varela</option>
-                <option value="General Las Heras">General Las Heras</option>
-                <option value="General Rodriguez">General Rodríguez</option>
-                <option value="Hurlingham">Hurlingham</option>
-                <option value="Ituzaingo">Ituzaingó</option>
-                <option value="Jose C. Paz">José C. Paz</option>
-                <option value="La Matanza">La Matanza</option>
-                <option value="La Plata">La Plata</option>
-                <option value="Lanus">Lanús</option>
-                <option value="Lobos">Lobos</option>
-                <option value="Lomas de Zamora">Lomas de Zamora</option>
-                <option value="Lujan">Luján</option>
-                <option value="Magdalena">Magdalena</option>
-                <option value="Malvinas Argentinas">Malvinas Argentinas</option>
-                <option value="Mar del Plata">Mar del Plata</option>
-                <option value="Marcos Paz">Marcos Paz</option>
-                <option value="Merlo">Merlo</option>
-                <option value="Moreno">Moreno</option>
-                <option value="Moron">Morón</option>
-                <option value="Navarro">Navarro</option>
-                <option value="Pilar">Pilar</option>
-                <option value="Presidente Peron">Presidente Perón</option>
-                <option value="Punta Indio">Punta Indio</option>
-                <option value="Quilmes">Quilmes</option>
-                <option value="Ramallo">Ramallo</option>
-                <option value="San Fernando">San Fernando</option>
-                <option value="San Isidro">San Isidro</option>
-                <option value="San Martin">San Martín</option>
-                <option value="San Miguel">San Miguel</option>
-                <option value="San Nicolas">San Nicolás</option>
-                <option value="San Vicente">San Vicente</option>
-                <option value="Tigre">Tigre</option>
-                <option value="Tres de Febrero">Tres de Febrero</option>
-                <option value="Vicente Lopez">Vicente López</option>
-                <option value="Zarate">Zárate</option>
-            </select>
+        <div id="aviso-ticket" class="rp-alerta rp-alerta-aviso" role="alert" hidden>
+            <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+            <div id="aviso-ticket-texto"></div>
         </div>
 
-        <button type="submit" id="btn-analizar" class="btn btn-primary">Analizar ticket</button>
-        <a th:href="@{/reporte}" class="btn btn-secondary ms-2">Cargar manualmente</a>
-    </form>
-</div>
+        <form id="form-ticket" th:action="@{/reporte/ticket}" method="post" novalidate class="rp-columna">
+            <input type="hidden" name="ticketBase64" id="ticket-base64">
+
+            <section class="rp-seccion" aria-labelledby="rp-t-ticket">
+                <div class="rp-seccion-cabeza">
+                    <span class="rp-paso" aria-hidden="true">1</span>
+                    <div>
+                        <h2 id="rp-t-ticket">La foto del ticket</h2>
+                        <p class="rp-seccion-ayuda">Que se vea completo, derecho y con buena luz.</p>
+                    </div>
+                </div>
+
+                <input type="file" id="ticket-foto" class="rp-solo-lectores" accept="image/*">
+                <label for="ticket-foto" class="rp-subida rp-subida-ticket" id="rp-zona-ticket">
+                    <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
+                    <strong>Sacar o elegir la foto del ticket</strong>
+                    <span>JPG o PNG. Se achica sola para que suba rápido.</span>
+                </label>
+
+                <div id="rp-previa-ticket" class="rp-previa rp-previa-ticket" hidden>
+                    <img id="rp-img-ticket" src="" alt="Vista previa del ticket">
+                    <div class="rp-previa-texto">
+                        <strong id="rp-nombre-ticket">Ticket listo</strong>
+                        <p class="rp-estado-foto"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Listo para analizar</p>
+                        <button type="button" class="rp-btn rp-btn-claro rp-btn-chico" id="rp-cambiar-ticket">
+                            <i class="bi bi-arrow-repeat" aria-hidden="true"></i> Cambiar foto
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rp-seccion" aria-labelledby="rp-t-comercio-ticket">
+                <div class="rp-seccion-cabeza">
+                    <span class="rp-paso" aria-hidden="true">2</span>
+                    <div>
+                        <h2 id="rp-t-comercio-ticket">El comercio</h2>
+                        <p class="rp-seccion-ayuda">¿Dónde hiciste la compra? Es obligatorio para analizar el ticket.</p>
+                    </div>
+                </div>
+
+                <div class="rp-campo">
+                    <label class="rp-etiqueta" for="comercio-nombre">Nombre del comercio</label>
+                    <input type="text" name="comercio.nombre" id="comercio-nombre" class="rp-control" data-nombre="el nombre del comercio"
+                           placeholder="Ej: Almacén Don Pepe" list="lista-comercios" autocomplete="off" required>
+                    <datalist id="lista-comercios">
+                        <option th:each="c : ${comercios}" th:value="${c.nombre}"></option>
+                    </datalist>
+                </div>
+                <div class="rp-fila rp-fila-2">
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" for="comercio-direccion">Dirección</label>
+                        <input type="text" name="comercio.direccion" id="comercio-direccion" class="rp-control" data-nombre="la dirección"
+                               placeholder="Calle y altura" autocomplete="off" required>
+                    </div>
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" for="comercio-localidad">Partido / localidad</label>
+                        <select name="comercio.localidad" id="comercio-localidad" class="rp-control" data-nombre="la localidad">
+                            <option value="">Seleccionar partido/localidad</option>
+                            <option value="Almirante Brown">Almirante Brown</option>
+                            <option value="Avellaneda">Avellaneda</option>
+                            <option value="Bahia Blanca">Bahía Blanca</option>
+                            <option value="Berazategui">Berazategui</option>
+                            <option value="Berisso">Berisso</option>
+                            <option value="Brandsen">Brandsen</option>
+                            <option value="Buenos Aires">Buenos Aires (CABA)</option>
+                            <option value="Campana">Campana</option>
+                            <option value="Canuelas">Cañuelas</option>
+                            <option value="Ensenada">Ensenada</option>
+                            <option value="Escobar">Escobar</option>
+                            <option value="Esteban Echeverria">Esteban Echeverría</option>
+                            <option value="Exaltacion de la Cruz">Exaltación de la Cruz</option>
+                            <option value="Ezeiza">Ezeiza</option>
+                            <option value="Florencio Varela">Florencio Varela</option>
+                            <option value="General Las Heras">General Las Heras</option>
+                            <option value="General Rodriguez">General Rodríguez</option>
+                            <option value="Hurlingham">Hurlingham</option>
+                            <option value="Ituzaingo">Ituzaingó</option>
+                            <option value="Jose C. Paz">José C. Paz</option>
+                            <option value="La Matanza">La Matanza</option>
+                            <option value="La Plata">La Plata</option>
+                            <option value="Lanus">Lanús</option>
+                            <option value="Lobos">Lobos</option>
+                            <option value="Lomas de Zamora">Lomas de Zamora</option>
+                            <option value="Lujan">Luján</option>
+                            <option value="Magdalena">Magdalena</option>
+                            <option value="Malvinas Argentinas">Malvinas Argentinas</option>
+                            <option value="Mar del Plata">Mar del Plata</option>
+                            <option value="Marcos Paz">Marcos Paz</option>
+                            <option value="Merlo">Merlo</option>
+                            <option value="Moreno">Moreno</option>
+                            <option value="Moron">Morón</option>
+                            <option value="Navarro">Navarro</option>
+                            <option value="Pilar">Pilar</option>
+                            <option value="Presidente Peron">Presidente Perón</option>
+                            <option value="Punta Indio">Punta Indio</option>
+                            <option value="Quilmes">Quilmes</option>
+                            <option value="Ramallo">Ramallo</option>
+                            <option value="San Fernando">San Fernando</option>
+                            <option value="San Isidro">San Isidro</option>
+                            <option value="San Martin">San Martín</option>
+                            <option value="San Miguel">San Miguel</option>
+                            <option value="San Nicolas">San Nicolás</option>
+                            <option value="San Vicente">San Vicente</option>
+                            <option value="Tigre">Tigre</option>
+                            <option value="Tres de Febrero">Tres de Febrero</option>
+                            <option value="Vicente Lopez">Vicente López</option>
+                            <option value="Zarate">Zárate</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <div>
+                <div class="rp-acciones">
+                    <button type="submit" id="btn-analizar" class="rp-btn rp-btn-principal">
+                        <i class="bi bi-magic" aria-hidden="true"></i> Analizar ticket
+                    </button>
+                    <a th:href="@{/reporte}" class="rp-btn rp-btn-texto">Prefiero cargar a mano</a>
+                </div>
+                <p id="rp-analizando" class="rp-analizando" role="status" aria-live="polite" hidden>
+                    <span class="rp-spinner" aria-hidden="true"></span>
+                    Estamos leyendo el ticket. Puede tardar unos segundos…
+                </p>
+            </div>
+        </form>
+    </div>
+</main>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.getElementById('form-ticket').addEventListener('submit', function(e) {
+    var inputFoto = document.getElementById('ticket-foto');
+
+    // Vista previa del ticket elegido
+    inputFoto.addEventListener('change', function () {
+        var zona = document.getElementById('rp-zona-ticket');
+        var previa = document.getElementById('rp-previa-ticket');
+        if (!inputFoto.files.length) {
+            zona.hidden = false;
+            previa.hidden = true;
+            return;
+        }
+        document.getElementById('aviso-ticket').hidden = true;
+        var archivo = inputFoto.files[0];
+        document.getElementById('rp-nombre-ticket').textContent = archivo.name;
+        var lector = new FileReader();
+        lector.onload = function (evento) {
+            document.getElementById('rp-img-ticket').src = evento.target.result;
+            zona.hidden = true;
+            previa.hidden = false;
+        };
+        lector.readAsDataURL(archivo);
+    });
+
+    document.getElementById('rp-cambiar-ticket').addEventListener('click', function () {
+        inputFoto.value = '';
+        document.getElementById('rp-zona-ticket').hidden = false;
+        document.getElementById('rp-previa-ticket').hidden = true;
+        inputFoto.click();
+    });
+
+    document.getElementById('form-ticket').addEventListener('submit', function (e) {
         e.preventDefault();
         var foto = document.getElementById('ticket-foto');
-        if (!foto.files.length) {
-            alert('Seleccioná una foto del ticket');
+        var faltantes = [];
+        ['comercio-nombre', 'comercio-direccion', 'comercio-localidad'].forEach(function (id) {
+            var campo = document.getElementById(id);
+            var vacio = !campo.value.trim();
+            campo.classList.toggle('rp-invalido', vacio);
+            if (vacio) { faltantes.push(campo.dataset.nombre); campo.setAttribute('aria-invalid', 'true'); }
+            else { campo.removeAttribute('aria-invalid'); }
+        });
+        if (!foto.files.length) { faltantes.unshift('la foto del ticket'); }
+        if (faltantes.length > 0) {
+            mostrarAviso('Completá: ' + faltantes.join(', ') + '.');
+            var primero = document.querySelector('.rp-invalido');
+            if (primero) { primero.focus({ preventScroll: true }); }
             return;
         }
         var boton = document.getElementById('btn-analizar');
         boton.disabled = true;
         boton.textContent = 'Analizando ticket...';
+        document.getElementById('rp-analizando').hidden = false;
 
         var lector = new FileReader();
-        lector.onload = function(evento) {
-            achicarImagen(evento.target.result, function(base64) {
+        lector.onload = function (evento) {
+            achicarImagen(evento.target.result, function (base64) {
                 document.getElementById('ticket-base64').value = base64;
                 document.getElementById('form-ticket').submit();
             });
@@ -112,12 +239,29 @@
         lector.readAsDataURL(foto.files[0]);
     });
 
+    function mostrarAviso(texto) {
+        var aviso = document.getElementById('aviso-ticket');
+        document.getElementById('aviso-ticket-texto').textContent = texto;
+        aviso.hidden = false;
+        aviso.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Al corregir un campo se le saca la marca de error
+    document.getElementById('form-ticket').addEventListener('input', function (e) {
+        e.target.classList.remove('rp-invalido');
+        e.target.removeAttribute('aria-invalid');
+    });
+    document.getElementById('form-ticket').addEventListener('change', function (e) {
+        e.target.classList.remove('rp-invalido');
+        e.target.removeAttribute('aria-invalid');
+    });
+
     // Las fotos de celular pesan varios MB: se achican a 1600 px en el lado largo
     // para que el envío sea rápido y Gemini no tarde de más.
     function achicarImagen(dataUrl, alTerminar) {
         var LADO_MAXIMO = 1600;
         var imagen = new Image();
-        imagen.onload = function() {
+        imagen.onload = function () {
             var escala = Math.min(1, LADO_MAXIMO / Math.max(imagen.width, imagen.height));
             var lienzo = document.createElement('canvas');
             lienzo.width = Math.round(imagen.width * escala);
@@ -128,7 +272,7 @@
             contexto.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
             alTerminar(lienzo.toDataURL('image/jpeg', 0.85));
         };
-        imagen.onerror = function() {
+        imagen.onerror = function () {
             alTerminar(dataUrl);
         };
         imagen.src = dataUrl;

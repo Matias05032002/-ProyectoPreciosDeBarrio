@@ -1,79 +1,241 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Detalle del Comercio</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/comercios.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
-<div class="container mt-4">
-    <a th:href="@{/comercio}" class="btn btn-outline-secondary mb-3">Volver</a>
 
-    <div th:if="${comercio != null}">
-        <h2 th:text="${comercio.nombre}"></h2>
-        <p class="text-muted mb-1">
-            <span th:text="${comercio.tipo}"></span> &middot;
-            <span th:text="${comercio.localidad}"></span>
-        </p>
-        <p th:text="${comercio.direccion}"></p>
+<header class="co-cabecera co-cabecera-detalle">
+    <div class="container">
+        <a th:href="@{/comercio}" class="co-volver" id="btn-volver-comercios">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Comercios
+        </a>
 
-        <hr>
+        <div th:if="${comercio != null}" class="co-ficha aparece">
+            <div class="co-ficha-foto">
+                <img th:if="${comercio.tieneFoto()}"
+                     th:src="@{/comercio/{id}/foto(id=${comercio.id})}"
+                     class="co-foto"
+                     th:alt="${'Foto de ' + comercio.nombre}"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <div class="co-inicial" aria-hidden="true"
+                     th:styleappend="${comercio.tieneFoto()} ? 'display:none;' : 'display:flex;'">
+                    <span th:text="${#strings.toUpperCase(#strings.substring(comercio.nombre,0,1))}"></span>
+                </div>
+            </div>
 
-        <h4 class="mt-4">Productos del Comercio</h4>
-
-        <div th:if="${#lists.isEmpty(reportes)}" class="alert alert-info mt-3">
-            No hay productos reportados para este comercio.
-        </div>
-
-        <div th:if="${not #lists.isEmpty(reportes)}" class="row row-cols-1 row-cols-md-3 g-4 mt-2">
-            <div class="col" th:each="reporte : ${reportes}">
-                <div class="card h-100 shadow-sm" th:id="'card-producto-comercio-' + ${reporte.id}">
-                    <div class="card-body">
-                        <h5 class="card-title" th:text="${reporte.producto.nombre}"></h5>
-                        <p class="card-text text-muted mb-1">
-                            <span th:text="${reporte.producto.marca}"></span> ·
-                            <span th:text="${reporte.producto.unidad}"></span>
-                        </p>
-                        <p class="card-text fw-bold text-success">
-                            <span th:text="${'$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')}"></span>
-                        </p>
-                        <p class="card-text text-muted small"
-                           th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy')}">
-                        </p>
-                    </div>
+            <div class="co-ficha-texto">
+                <h1 id="titulo-pagina" th:text="${comercio.nombre}"></h1>
+                <p class="co-etiquetas">
+                    <span class="co-tipo" th:if="${comercio.tipo != null}" th:text="${comercio.tipo}"></span>
+                    <span class="co-verificado" th:if="${comercio.verificado}">
+                        <i class="bi bi-patch-check-fill" aria-hidden="true"></i> Verificado
+                    </span>
+                    <span th:if="${abierto != null and abierto}" class="co-estado-chip co-abierto">Abierto ahora</span>
+                    <span th:if="${abierto != null and !abierto}" class="co-estado-chip co-cerrado">Cerrado</span>
+                    <span th:if="${abierto == null}" class="co-estado-chip co-sin-horario">Sin horario cargado</span>
+                </p>
+                <p class="co-ficha-direccion">
+                    <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                    <span th:text="${comercio.direccion + ', ' + comercio.localidad}"></span>
+                </p>
+                <div class="co-acciones co-acciones-ficha">
+                    <a th:if="${comercio.latitud != null and comercio.longitud != null}"
+                       th:href="'https://www.google.com/maps/dir/?api=1&destination=' + ${comercio.latitud} + ',' + ${comercio.longitud}"
+                       target="_blank" rel="noopener" id="btn-como-llegar"
+                       class="co-btn co-btn-principal">
+                        <i class="bi bi-signpost-split" aria-hidden="true"></i> Cómo llegar
+                    </a>
+                    <a href="#ubicacion" class="co-btn co-btn-claro" id="btn-ver-ubicacion"
+                       th:if="${comercio.latitud != null and comercio.longitud != null}">
+                        <i class="bi bi-map" aria-hidden="true"></i> Ver en el mapa
+                    </a>
                 </div>
             </div>
         </div>
-
-        <h4 class="mt-4">Ubicación del comercio</h4>
-        <div id="mapa-comercio" style="height: 300px; width: 100%;"
-             th:data-lat="${comercio.latitud}"
-             th:data-lon="${comercio.longitud}"
-             th:data-direccion="${comercio.direccion + ', ' + comercio.localidad}">
-        </div>
-
     </div>
-</div>
+</header>
+
+<main class="container co-principal co-principal-detalle">
+
+    <div th:if="${comercio == null}" class="co-vacio">
+        <span class="co-vacio-icono"><i class="bi bi-shop-window" aria-hidden="true"></i></span>
+        <p class="co-vacio-titulo">No encontramos ese comercio.</p>
+        <a th:href="@{/comercio}" class="co-btn co-btn-principal">Ver todos los comercios</a>
+    </div>
+
+    <div th:if="${comercio != null}" class="co-detalle-grilla">
+
+        <!-- Productos con precio reportado -->
+        <section class="co-seccion" aria-labelledby="titulo-productos">
+            <div class="co-seccion-cabeza">
+                <h2 id="titulo-productos">Precios reportados</h2>
+                <span class="co-contador" th:if="${not #lists.isEmpty(reportes)}"
+                      th:text="${#lists.size(reportes) + (#lists.size(reportes) == 1 ? ' producto' : ' productos')}"></span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(reportes)}" class="co-vacio co-vacio-chico">
+                <span class="co-vacio-icono"><i class="bi bi-basket2" aria-hidden="true"></i></span>
+                <p class="co-vacio-titulo">No hay productos reportados para este comercio.</p>
+                <p class="co-vacio-texto">Si comprás acá, ayudá al barrio reportando lo que viste.</p>
+                <a th:href="@{/reporte}" class="co-btn co-btn-principal">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> Reportar un precio
+                </a>
+            </div>
+
+            <div th:if="${not #lists.isEmpty(reportes)}">
+                <div class="co-campo co-campo-filtro" th:if="${#lists.size(reportes) > 4}">
+                    <label for="co-filtro-productos" class="visually-hidden">Buscar en este comercio</label>
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" id="co-filtro-productos" autocomplete="off" maxlength="60"
+                           placeholder="Buscar en este comercio">
+                </div>
+
+                <div class="row row-cols-1 row-cols-md-2 g-3 co-productos" id="co-productos">
+                    <div class="col" th:each="reporte : ${reportes}">
+                        <article class="co-producto" th:id="'card-producto-comercio-' + ${reporte.id}"
+                                 th:attr="data-nombre=${reporte.producto.nombre},data-fecha=${reporte.fechaDeReporte}">
+                            <div class="co-producto-datos">
+                                <h3 th:text="${reporte.producto.nombre}"></h3>
+                                <p class="co-producto-detalle">
+                                    <span th:text="${reporte.producto.marca}"></span> ·
+                                    <span th:text="${reporte.producto.unidad}"></span>
+                                </p>
+                                <p class="co-producto-fecha">
+                                    <i class="bi bi-clock-history" aria-hidden="true"></i>
+                                    <span class="co-hace"
+                                          th:text="${#temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy')}"></span>
+                                </p>
+                            </div>
+                            <div class="co-producto-precio">
+                                <strong th:text="${'$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')}"></strong>
+                                <a th:href="@{/producto/buscar(nombre=${reporte.producto.nombre}, orden='precio')}"
+                                   class="co-comparar"
+                                   th:attr="aria-label='Comparar el precio de ' + ${reporte.producto.nombre} + ' en otros comercios'">
+                                    Comparar <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+                <p class="co-sin-resultados" id="co-productos-vacio" hidden>
+                    Ningún producto coincide con tu búsqueda.
+                </p>
+            </div>
+        </section>
+
+        <!-- Horarios, descripción y mapa -->
+        <aside class="co-lateral">
+            <section class="co-seccion co-tarjeta" th:if="${comercio.descripcion != null and !#strings.isEmpty(comercio.descripcion)}">
+                <h2>Sobre el comercio</h2>
+                <p class="co-descripcion" th:text="${comercio.descripcion}"></p>
+            </section>
+
+            <section class="co-seccion co-tarjeta" th:if="${horarios != null and not #lists.isEmpty(horarios)}">
+                <h2>Horarios</h2>
+                <ul class="co-horarios" id="co-horarios">
+                    <li th:each="horario : ${horarios}" th:attr="data-dia=${horario.diaSemana}">
+                        <span class="co-dia" th:text="${horario.nombreDia}"></span>
+                        <span th:if="${horario.abierto != null and horario.abierto and horario.horaApertura != null and horario.horaCierre != null}"
+                              class="co-horas"
+                              th:text="${#temporals.format(horario.horaApertura, 'HH:mm') + ' – ' + #temporals.format(horario.horaCierre, 'HH:mm')}"></span>
+                        <span th:unless="${horario.abierto != null and horario.abierto and horario.horaApertura != null and horario.horaCierre != null}"
+                              class="co-horas co-horas-cerrado">Cerrado</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="co-seccion co-tarjeta" id="ubicacion">
+                <h2>Ubicación</h2>
+                <div id="mapa-comercio" class="co-mapa-detalle"
+                     th:data-lat="${comercio.latitud}"
+                     th:data-lon="${comercio.longitud}"
+                     th:data-direccion="${comercio.direccion + ', ' + comercio.localidad}">
+                </div>
+            </section>
+        </aside>
+    </div>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const mapaDiv = document.getElementById('mapa-comercio');
-    const lat = mapaDiv.dataset.lat;
-    const lon = mapaDiv.dataset.lon;
-    const direccion = mapaDiv.dataset.direccion;
+    (function () {
+        // Mapa con la ubicación del comercio
+        var mapaDiv = document.getElementById('mapa-comercio');
+        if (mapaDiv) {
+            var lat = mapaDiv.dataset.lat;
+            var lon = mapaDiv.dataset.lon;
+            if (lat && lon) {
+                var map = L.map('mapa-comercio').setView([parseFloat(lat), parseFloat(lon)], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+                var marcador = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(map)
+                    .bindPopup(mapaDiv.dataset.direccion).openPopup();
 
-    if (lat && lon) {
-        const map = L.map('mapa-comercio').setView([lat, lon], 16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        L.marker([lat, lon]).addTo(map).bindPopup(direccion).openPopup();
-    } else {
-        mapaDiv.innerHTML = '<p class="text-muted mt-2">Este comercio no tiene ubicación registrada.</p>';
-    }
+                // "Ver en el mapa": baja hasta el mapa, lo resalta y reabre el popup
+                var botonMapa = document.getElementById('btn-ver-ubicacion');
+                if (botonMapa) {
+                    botonMapa.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        var seccion = document.getElementById('ubicacion');
+                        var reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                        seccion.scrollIntoView({ behavior: reducido ? 'auto' : 'smooth', block: 'center' });
+                        map.invalidateSize();
+                        map.setView([parseFloat(lat), parseFloat(lon)], 16);
+                        marcador.openPopup();
+                        seccion.classList.remove('co-resaltada');
+                        void seccion.offsetWidth;
+                        seccion.classList.add('co-resaltada');
+                    });
+                }
+            } else {
+                mapaDiv.classList.add('co-sin-mapa');
+                mapaDiv.textContent = 'Este comercio no tiene ubicación registrada.';
+            }
+        }
+
+        // "Hace 3 días" en lugar de la fecha (si algo falla queda la fecha)
+        Array.prototype.forEach.call(document.querySelectorAll('.co-producto'), function (el) {
+            var fecha = new Date(el.getAttribute('data-fecha'));
+            if (isNaN(fecha.getTime())) { return; }
+            var dias = Math.floor((Date.now() - fecha.getTime()) / 86400000);
+            var texto = dias <= 0 ? 'Hoy' : dias === 1 ? 'Ayer' : dias < 30 ? 'Hace ' + dias + ' días' : null;
+            if (texto) { el.querySelector('.co-hace').textContent = texto; }
+        });
+
+        // Filtro de productos de este comercio
+        var filtro = document.getElementById('co-filtro-productos');
+        if (filtro) {
+            filtro.addEventListener('input', function () {
+                var q = filtro.value.trim().toLowerCase();
+                var visibles = 0;
+                Array.prototype.forEach.call(document.querySelectorAll('.co-producto'), function (el) {
+                    var ok = !q || el.getAttribute('data-nombre').toLowerCase().indexOf(q) !== -1;
+                    el.parentElement.hidden = !ok;
+                    if (ok) { visibles++; }
+                });
+                document.getElementById('co-productos-vacio').hidden = visibles !== 0;
+            });
+        }
+
+        // Resalta el día de hoy en los horarios (lunes = 1 ... domingo = 7)
+        var hoy = new Date().getDay() || 7;
+        var fila = document.querySelector('#co-horarios li[data-dia="' + hoy + '"]');
+        if (fila) { fila.classList.add('hoy'); }
+    })();
 </script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>

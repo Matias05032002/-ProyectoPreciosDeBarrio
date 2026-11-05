@@ -1,85 +1,185 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Confirmar productos del ticket</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/reportar.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
-<div class="container mt-4">
-    <h2>Productos detectados en el ticket</h2>
-    <p class="text-muted">Revisá y corregí si hace falta. Después guardá todos de una.</p>
 
-    <div th:if="${#lists.isEmpty(items)}" class="alert alert-warning">
-        No se detectaron productos en el ticket. Probá con una foto más clara o cargá manualmente.
-        <a th:href="@{/reporte}" class="btn btn-primary ms-3">Cargar manualmente</a>
+<header class="rp-cabecera">
+    <div class="container">
+        <h1 id="titulo-pagina">Productos detectados en el ticket</h1>
+        <p class="rp-subtitulo">Revisá y corregí lo que haga falta. Después guardás todos de una.</p>
+        <ol class="rp-pasos" aria-label="Pasos">
+            <li><span><i class="bi bi-check-lg" aria-hidden="true"></i></span> Subir el ticket</li>
+            <li class="actual" aria-current="step"><span>2</span> Revisar los productos</li>
+            <li><span>3</span> Guardar</li>
+        </ol>
+    </div>
+</header>
+
+<main class="container rp-principal">
+
+    <div th:if="${#lists.isEmpty(items)}" class="rp-vacio">
+        <i class="bi bi-receipt" aria-hidden="true"></i>
+        <h2>No detectamos productos en el ticket</h2>
+        <p>Probá con una foto más clara y derecha, o cargá el precio a mano.</p>
+        <div class="rp-acciones" style="justify-content: center;">
+            <a th:href="@{/reporte/ticket}" class="rp-btn rp-btn-claro">
+                <i class="bi bi-arrow-repeat" aria-hidden="true"></i> Probar con otra foto
+            </a>
+            <a th:href="@{/reporte}" class="rp-btn rp-btn-principal">
+                <i class="bi bi-pencil-square" aria-hidden="true"></i> Cargar manualmente
+            </a>
+        </div>
     </div>
 
-    <form th:if="${not #lists.isEmpty(items)}" th:action="@{/reporte/ticket/guardar}" method="post">
+    <form th:if="${not #lists.isEmpty(items)}" id="form-confirmar-ticket"
+          th:action="@{/reporte/ticket/guardar}" method="post">
         <input type="hidden" name="comercioNombre" th:value="${comercioNombre}">
         <input type="hidden" name="comercioDireccion" th:value="${comercioDireccion}">
         <input type="hidden" name="comercioLocalidad" th:value="${comercioLocalidad}">
 
-        <div class="alert alert-info">
-            <strong>Comercio:</strong> <span th:text="${comercioNombre}"></span> —
-            <span th:text="${comercioDireccion}"></span>, <span th:text="${comercioLocalidad}"></span>
+        <div class="rp-comercio-ticket">
+            <i class="bi bi-shop" aria-hidden="true"></i>
+            <div>
+                <strong th:text="${comercioNombre}">Comercio</strong>
+                <span><span th:text="${comercioDireccion}"></span>, <span th:text="${comercioLocalidad}"></span></span>
+            </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="table">
-            <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Precio</th>
-                <th>Categoría</th>
-                <th>Marca</th>
-                <th>Unidad</th>
-                <th>Incluir</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="item, stat : ${items}">
-                <td>
-                    <input type="text" class="form-control"
+        <datalist id="lista-categorias">
+            <option value="Almacen"></option>
+            <option value="Bebidas con alcohol"></option>
+            <option value="Bebidas sin alcohol"></option>
+            <option value="Carnes y aves"></option>
+            <option value="Cereales y legumbres"></option>
+            <option value="Condimentos y salsas"></option>
+            <option value="Congelados"></option>
+            <option value="Enlatados y conservas"></option>
+            <option value="Farmacia y perfumeria"></option>
+            <option value="Ferreteria y bazar"></option>
+            <option value="Fiambres y embutidos"></option>
+            <option value="Higiene personal"></option>
+            <option value="Lacteos"></option>
+            <option value="Limpieza del hogar"></option>
+            <option value="Mascotas"></option>
+            <option value="Panaderia y reposteria"></option>
+            <option value="Pescados y mariscos"></option>
+            <option value="Productos de dietetica"></option>
+            <option value="Snacks y golosinas"></option>
+            <option value="Tabaco"></option>
+            <option value="Verduras y frutas"></option>
+            <option value="Varios"></option>
+        </datalist>
+
+        <ul class="rp-items">
+            <li class="rp-item" th:each="item, stat : ${items}">
+                <div class="rp-item-cabeza">
+                    <span class="rp-item-numero" th:text="'Producto ' + ${stat.count}">Producto 1</span>
+                    <label class="rp-incluir">
+                        <input type="checkbox" th:name="'incluir[' + ${stat.index} + ']'" checked>
+                        Incluir
+                    </label>
+                </div>
+
+                <div class="rp-campo">
+                    <label class="rp-etiqueta" th:for="'item-nombre-' + ${stat.index}">Producto</label>
+                    <input type="text" class="rp-control" th:id="'item-nombre-' + ${stat.index}"
                            th:name="'items[' + ${stat.index} + '].nombre'"
                            th:value="${item.nombre}">
-                </td>
-                <td>
-                    <input type="number" step="0.01" class="form-control"
-                           th:name="'items[' + ${stat.index} + '].precio'"
-                           th:value="${item.precio}">
-                </td>
-                <td>
-                    <input type="text" class="form-control"
-                           th:name="'items[' + ${stat.index} + '].categoria'"
-                           th:value="${item.categoria}">
-                </td>
-                <td>
-                    <input type="text" class="form-control"
-                           th:name="'items[' + ${stat.index} + '].marca'"
-                           th:value="${item.marca}">
-                </td>
-                <td>
-                    <input type="text" class="form-control"
-                           th:name="'items[' + ${stat.index} + '].unidad'"
-                           th:value="${item.unidad}">
-                </td>
-                <td class="text-center">
-                    <input type="checkbox"
-                           th:name="'incluir[' + ${stat.index} + ']'"
-                           checked>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+                </div>
+                <div class="rp-fila rp-fila-2">
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" th:for="'item-precio-' + ${stat.index}">Precio ($)</label>
+                        <input type="number" step="0.01" min="0" inputmode="decimal" class="rp-control"
+                               th:id="'item-precio-' + ${stat.index}"
+                               th:name="'items[' + ${stat.index} + '].precio'"
+                               th:value="${item.precio}">
+                    </div>
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" th:for="'item-unidad-' + ${stat.index}">Unidad</label>
+                        <input type="text" class="rp-control" th:id="'item-unidad-' + ${stat.index}"
+                               th:name="'items[' + ${stat.index} + '].unidad'"
+                               th:value="${item.unidad}">
+                    </div>
+                </div>
+                <div class="rp-fila rp-fila-2">
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" th:for="'item-marca-' + ${stat.index}">Marca</label>
+                        <input type="text" class="rp-control" th:id="'item-marca-' + ${stat.index}"
+                               th:name="'items[' + ${stat.index} + '].marca'"
+                               th:value="${item.marca}">
+                    </div>
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" th:for="'item-categoria-' + ${stat.index}">Categoría</label>
+                        <input type="text" class="rp-control" list="lista-categorias" autocomplete="off"
+                               th:id="'item-categoria-' + ${stat.index}"
+                               th:name="'items[' + ${stat.index} + '].categoria'"
+                               th:value="${item.categoria}">
+                    </div>
+                </div>
+            </li>
+        </ul>
+
+        <div class="rp-barra-guardar">
+            <p id="rp-conteo" aria-live="polite">
+                <span id="rp-conteo-texto"></span>
+            </p>
+            <div class="rp-acciones">
+                <a th:href="@{/reporte/ticket}" class="rp-btn rp-btn-texto">Volver</a>
+                <button type="submit" id="btn-guardar-todos" class="rp-btn rp-btn-principal">
+                    <i class="bi bi-check2-all" aria-hidden="true"></i> Guardar todos
+                </button>
+            </div>
         </div>
-        <button type="submit" class="btn btn-success">Guardar todos</button>
-        <a th:href="@{/reporte/ticket}" class="btn btn-secondary ms-2">Volver</a>
     </form>
-</div>
+</main>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        var form = document.getElementById('form-confirmar-ticket');
+        if (!form) { return; }
+
+        function actualizar() {
+            var items = form.querySelectorAll('.rp-item');
+            var incluidos = 0;
+            var total = 0;
+            Array.prototype.forEach.call(items, function (item) {
+                var casilla = item.querySelector('input[type="checkbox"]');
+                item.classList.toggle('excluido', !casilla.checked);
+                if (casilla.checked) {
+                    incluidos++;
+                    var precio = parseFloat(item.querySelector('input[type="number"]').value);
+                    if (!isNaN(precio)) { total += precio; }
+                }
+            });
+            var texto = incluidos + (incluidos === 1 ? ' producto' : ' productos') + ' para guardar';
+            if (incluidos > 0) {
+                texto += ' · $ ' + total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            document.getElementById('rp-conteo-texto').textContent = texto;
+            document.getElementById('btn-guardar-todos').disabled = incluidos === 0;
+        }
+
+        form.addEventListener('input', actualizar);
+        form.addEventListener('change', actualizar);
+        form.addEventListener('submit', function () {
+            var boton = document.getElementById('btn-guardar-todos');
+            setTimeout(function () {
+                boton.disabled = true;
+                boton.textContent = 'Guardando…';
+            }, 0);
+        });
+        actualizar();
+    })();
+</script>
 </body>
 </html>

@@ -1,0 +1,649 @@
+/* =========================================
+   MIS LISTAS · mismo criterio que el resto del vecino
+   (verde + negro, Inter, mobile primero, prefijo ls-)
+   Lo usan: lista/mis-listas y lista/detalle-lista
+   ========================================= */
+
+.ls-cabecera {
+    padding: 2rem 0 4.25rem;
+    overflow: hidden;
+    background:
+            radial-gradient(50% 120% at 90% 0%, rgba(19, 138, 87, .14) 0%, rgba(19, 138, 87, 0) 70%),
+            linear-gradient(180deg, #E9EEF1 0%, #F3F6F7 100%);
+}
+
+.ls-cabecera-fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+}
+
+.ls-cabecera h1 {
+    margin: 0 0 .35rem;
+    color: #0B1B2B;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: clamp(1.75rem, 4.5vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: -.03em;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+}
+
+.ls-subtitulo {
+    margin: 0;
+    color: #2F3C47;
+    font-size: clamp(1rem, 1.6vw, 1.1rem);
+}
+
+.ls-volver {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    min-height: 44px;
+    margin-bottom: .35rem;
+    color: #2F3C47;
+    font-size: .9375rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.ls-volver i {
+    transition: transform .2s ease;
+}
+
+.ls-volver:hover {
+    color: var(--verde-ref-oscuro);
+}
+
+.ls-volver:hover i {
+    transform: translateX(-3px);
+}
+
+.ls-principal {
+    position: relative;
+    margin-top: -2.5rem;
+    padding-bottom: 5rem;
+}
+
+/* Botones */
+
+.ls-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 48px;
+    padding: 0 1.25rem;
+    overflow: hidden;
+    font-family: inherit;
+    font-size: .9375rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    border-radius: 12px;
+    transition:
+            transform .2s cubic-bezier(.2, .8, .2, 1),
+            box-shadow .2s ease,
+            background .2s ease,
+            color .2s ease,
+            border-color .2s ease;
+}
+
+.ls-btn i {
+    transition: transform .25s ease;
+}
+
+.ls-btn-principal {
+    color: #FFFFFF;
+    background: var(--verde-ref);
+    border-color: var(--verde-ref);
+    box-shadow: 0 8px 20px rgba(19, 138, 87, .26);
+}
+
+.ls-btn-principal:hover {
+    color: #FFFFFF;
+    background: var(--verde-ref-oscuro);
+    border-color: var(--verde-ref-oscuro);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(19, 138, 87, .34);
+}
+
+.ls-btn-principal:hover i {
+    transform: rotate(90deg);
+}
+
+.ls-btn-claro {
+    color: var(--verde-ref-oscuro);
+    background: #FFFFFF;
+    border-color: var(--verde-ref);
+}
+
+.ls-btn-claro:hover {
+    color: var(--verde-ref-oscuro);
+    background: var(--verde-ref-claro);
+    transform: translateY(-2px);
+}
+
+.ls-btn-peligro {
+    min-width: 48px;
+    padding: 0 .85rem;
+    color: #B3261E;
+    background: #FFFFFF;
+    border-color: #E8B7B3;
+}
+
+.ls-btn-peligro:hover {
+    color: #FFFFFF;
+    background: #C0392B;
+    border-color: #C0392B;
+}
+
+.ls-btn-texto {
+    color: #2F3C47;
+    background: transparent;
+}
+
+.ls-btn-texto:hover {
+    color: #0B1B2B;
+    background: #EEF2F4;
+}
+
+.ls-btn:active {
+    transform: translateY(0) scale(.97);
+}
+
+.ls-btn:focus-visible,
+.ls-cantidad button:focus-visible {
+    outline: 3px solid #0B1B2B;
+    outline-offset: 2px;
+}
+
+/* Alertas */
+
+.ls-alerta {
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+    margin: 0 0 1rem;
+    padding: .9rem 1rem;
+    color: #7A1620;
+    font-size: .9375rem;
+    background: #FDECEE;
+    border: 1px solid #F3C2C8;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(11, 27, 43, .08);
+}
+
+.ls-alerta i {
+    flex: 0 0 auto;
+    margin-top: .1rem;
+    font-size: 1.15rem;
+}
+
+/* Grilla de listas */
+
+.ls-grilla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (min-width: 640px) {
+    .ls-grilla {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 992px) {
+    .ls-grilla {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+.ls-lista {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.15rem;
+    background: #FFFFFF;
+    border: 1px solid #E6EDF0;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(11, 27, 43, .07);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.ls-lista:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(11, 15, 12, .12);
+}
+
+.ls-lista-cabeza {
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+    margin-bottom: 1rem;
+}
+
+.ls-icono {
+    display: grid;
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    color: var(--verde-ref-oscuro);
+    font-size: 1.4rem;
+    background: var(--verde-ref-claro);
+    border-radius: 14px;
+}
+
+.ls-lista h2 {
+    margin: 0;
+    color: #0B1B2B;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -.015em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.ls-meta {
+    margin: .2rem 0 0;
+    color: #4A5863;
+    font-size: .875rem;
+}
+
+.ls-lista-pie {
+    display: flex;
+    gap: .5rem;
+    margin-top: auto;
+}
+
+.ls-lista-pie form {
+    display: contents;
+}
+
+.ls-lista-pie .ls-btn:first-child {
+    flex: 1;
+}
+
+/* Estado vacío */
+
+.ls-vacio {
+    padding: 2.5rem 1.25rem;
+    text-align: center;
+    background: #FFFFFF;
+    border: 1px solid #E6EDF0;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(11, 27, 43, .09);
+}
+
+.ls-vacio-icono {
+    display: grid;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1rem;
+    place-items: center;
+    color: var(--verde-ref-oscuro);
+    font-size: 2rem;
+    background: var(--verde-ref-claro);
+    border-radius: 50%;
+}
+
+.ls-vacio h2 {
+    margin: 0 0 .4rem;
+    color: #0B1B2B;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.ls-vacio p {
+    max-width: 30rem;
+    margin: 0 auto 1.25rem;
+    color: #3D4B58;
+}
+
+/* Modal */
+
+.ls-modal .modal-content {
+    border: 0;
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(11, 27, 43, .3);
+}
+
+.ls-modal .modal-header {
+    padding: 1.15rem 1.25rem .5rem;
+    border: 0;
+}
+
+.ls-modal .modal-title {
+    color: #0B1B2B;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.ls-modal .modal-body {
+    padding: .5rem 1.25rem 1rem;
+}
+
+.ls-modal .modal-footer {
+    padding: .5rem 1.25rem 1.25rem;
+    border: 0;
+}
+
+.ls-etiqueta {
+    display: block;
+    margin-bottom: .35rem;
+    color: #0B1B2B;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.ls-control {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    padding: .55rem .85rem;
+    color: #0B1B2B;
+    font-family: inherit;
+    font-size: 1rem;
+    background: #F8FAFB;
+    border: 1.5px solid #D5DEE3;
+    border-radius: 12px;
+    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.ls-control::placeholder {
+    color: #6A7782;
+}
+
+.ls-control:focus {
+    outline: 0;
+    background: #FFFFFF;
+    border-color: var(--verde-ref);
+    box-shadow: 0 0 0 4px rgba(19, 138, 87, .18);
+}
+
+/* Detalle: resumen */
+
+.ls-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: .85rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ls-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    min-height: 36px;
+    padding: 0 .85rem;
+    color: #2F3C47;
+    font-size: .875rem;
+    font-weight: 600;
+    background: #FFFFFF;
+    border: 1px solid #DCE5E9;
+    border-radius: 999px;
+}
+
+.ls-chip i {
+    color: var(--verde-ref);
+}
+
+/* Detalle: productos */
+
+.ls-items {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .85rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (min-width: 992px) {
+    .ls-items {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.ls-item {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    padding: 1rem;
+    background: #FFFFFF;
+    border: 1px solid #E6EDF0;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(11, 27, 43, .06);
+    transition: box-shadow .2s ease;
+}
+
+.ls-item:hover {
+    box-shadow: 0 12px 26px rgba(11, 15, 12, .1);
+}
+
+.ls-item-datos {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.ls-item h3 {
+    margin: 0;
+    color: #0B1B2B;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.ls-item-comercio {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    margin: .2rem 0 0;
+    color: #3D4B58;
+    font-size: .9rem;
+}
+
+.ls-item-comercio i {
+    color: var(--verde-ref);
+}
+
+.ls-precio {
+    flex: 0 0 auto;
+    margin: 0;
+    color: var(--verde-ref-oscuro);
+    font-size: 1.4rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+}
+
+.ls-item-acciones {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding-top: .85rem;
+    border-top: 1px solid #EEF2F4;
+}
+
+.ls-item-acciones form {
+    margin: 0;
+}
+
+.ls-form-cantidad {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.ls-cantidad {
+    display: inline-flex;
+    align-items: center;
+    background: #F3F6F7;
+    border: 1.5px solid #D5DEE3;
+    border-radius: 12px;
+}
+
+.ls-cantidad button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    color: #0B1B2B;
+    font-size: 1.15rem;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    transition: background .2s ease, transform .15s ease;
+}
+
+.ls-cantidad button:hover {
+    background: var(--verde-ref-claro);
+}
+
+.ls-cantidad button:active {
+    transform: scale(.9);
+}
+
+.ls-cantidad input {
+    width: 48px;
+    height: 44px;
+    color: #0B1B2B;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    background: transparent;
+    border: 0;
+    outline: 0;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.ls-cantidad input::-webkit-outer-spin-button,
+.ls-cantidad input::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
+.ls-cantidad:focus-within {
+    border-color: var(--verde-ref);
+    box-shadow: 0 0 0 4px rgba(19, 138, 87, .18);
+}
+
+.ls-btn-chico {
+    min-height: 44px;
+    padding: 0 .9rem;
+}
+
+.ls-btn-actualizar {
+    color: var(--verde-ref-oscuro);
+    background: var(--verde-ref-claro);
+    border-color: transparent;
+}
+
+.ls-btn-actualizar.hay-cambio {
+    color: #FFFFFF;
+    background: var(--verde-ref);
+}
+
+.ls-btn-actualizar:hover {
+    color: #FFFFFF;
+    background: var(--verde-ref-oscuro);
+}
+
+/* Total fijo abajo */
+
+.ls-total {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem 1rem;
+    margin-top: 1.25rem;
+    padding: .9rem 1.1rem;
+    background: #FFFFFF;
+    border: 1px solid #E6EDF0;
+    border-radius: 18px;
+    box-shadow: 0 -4px 24px rgba(11, 27, 43, .14);
+}
+
+.ls-total-texto {
+    margin: 0;
+    color: #4A5863;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.ls-total-monto {
+    margin: 0;
+    color: var(--verde-ref-oscuro);
+    font-size: 1.75rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+}
+
+/* En celular la barra inferior de la app (fija, 72 px) no tiene que tapar el total */
+@media (max-width: 991.98px) {
+    .ls-total {
+        bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .ls-cabecera {
+        padding: 1.5rem 0 3.75rem;
+    }
+
+    .ls-cabecera-fila .ls-btn {
+        width: 100%;
+    }
+
+    .ls-total .ls-btn {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ls-btn,
+    .ls-btn i,
+    .ls-lista,
+    .ls-item,
+    .ls-volver i,
+    .ls-cantidad button,
+    .ls-control {
+        transition: none;
+    }
+
+    .ls-btn:hover,
+    .ls-btn:active,
+    .ls-lista:hover {
+        transform: none;
+    }
+}

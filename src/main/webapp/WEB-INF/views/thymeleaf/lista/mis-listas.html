@@ -1,84 +1,99 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Mis Listas</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/listas.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Mis listas de compras</h2>
-        <button id="btn-abrir-modal-crear" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearLista">
-            + Crear lista
+<header class="ls-cabecera">
+    <div class="container ls-cabecera-fila">
+        <div>
+            <h1>Mis listas de compras</h1>
+            <p class="ls-subtitulo">Armá tu lista y mirá cuánto vas a gastar antes de salir.</p>
+        </div>
+        <button id="btn-abrir-modal-crear" type="button" class="ls-btn ls-btn-principal"
+                data-bs-toggle="modal" data-bs-target="#modalCrearLista">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Crear lista
+        </button>
+    </div>
+</header>
+
+<main class="container ls-principal">
+
+    <div th:if="${error}" id="error-lista" class="ls-alerta" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div th:text="${error}"></div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(listas)}" class="ls-vacio">
+        <div class="ls-vacio-icono"><i class="bi bi-cart3" aria-hidden="true"></i></div>
+        <h2>Todavía no tenés listas creadas</h2>
+        <p>Creá una lista, sumale productos desde la búsqueda y mirá el total estimado según los precios del barrio.</p>
+        <button type="button" class="ls-btn ls-btn-principal" data-bs-toggle="modal" data-bs-target="#modalCrearLista">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Crear mi primera lista
         </button>
     </div>
 
-    <div th:if="${error}" id="error-lista" class="alert alert-danger" role="alert"
-         th:text="${error}"></div>
-
-    <div th:if="${#lists.isEmpty(listas)}" class="text-center mt-5">
-        <p class="text-muted">Todavía no tenés listas creadas.</p>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearLista">
-            Crear mi primera lista
-        </button>
-    </div>
-
-    <div class="row row-cols-1 row-cols-md-3 g-4" th:if="${!#lists.isEmpty(listas)}">
-        <div class="col" th:each="lista : ${listas}">
-            <div class="card h-100 shadow-sm card-lista">
-                <div class="card-body">
-                    <h5 class="card-title" th:id="'nombre-lista-' + ${lista.id}" th:text="${lista.nombre}"></h5>
-                    <p class="card-text text-muted">
-                        <span th:text="${lista.cantidadProductos}"></span> productos
+    <ul class="ls-grilla" th:if="${!#lists.isEmpty(listas)}">
+        <li class="ls-lista" th:each="lista : ${listas}">
+            <div class="ls-lista-cabeza">
+                <span class="ls-icono"><i class="bi bi-basket3" aria-hidden="true"></i></span>
+                <div>
+                    <h2 th:id="'nombre-lista-' + ${lista.id}" th:text="${lista.nombre}">Super del jueves</h2>
+                    <p class="ls-meta">
+                        <span th:text="${lista.cantidadProductos}">0</span> productos ·
+                        creada el <span th:text="${#temporals.format(lista.fechaCreacion, 'dd/MM/yyyy')}"></span>
                     </p>
-                    <p class="card-text text-muted small"
-                       th:text="${#temporals.format(lista.fechaCreacion, 'dd/MM/yyyy')}">
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent d-flex gap-2">
-                    <a th:href="@{/mis-listas/{id}(id=${lista.id})}"
-                       class="btn btn-outline-primary w-100"
-                       th:id="'btn-ver-lista-' + ${lista.id}">
-                        Ver lista
-                    </a>
-                    <form th:action="@{/mis-listas/eliminar}" method="post">
-                        <input type="hidden" name="listaId" th:value="${lista.id}">
-                        <button type="submit"
-                                class="btn btn-outline-danger"
-                                th:id="'btn-eliminar-lista-' + ${lista.id}">
-                            Eliminar
-                        </button>
-                    </form>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+            <div class="ls-lista-pie">
+                <a th:href="@{/mis-listas/{id}(id=${lista.id})}"
+                   class="ls-btn ls-btn-claro"
+                   th:id="'btn-ver-lista-' + ${lista.id}">
+                    Ver lista <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                </a>
+                <form th:action="@{/mis-listas/eliminar}" method="post">
+                    <input type="hidden" name="listaId" th:value="${lista.id}">
+                    <button type="submit"
+                            class="ls-btn ls-btn-peligro"
+                            th:id="'btn-eliminar-lista-' + ${lista.id}"
+                            th:attr="aria-label='Eliminar la lista ' + ${lista.nombre}"
+                            title="Eliminar lista">
+                        <i class="bi bi-trash3" aria-hidden="true"></i>
+                    </button>
+                </form>
+            </div>
+        </li>
+    </ul>
+</main>
 
 <!-- Modal crear lista -->
-<div class="modal fade" id="modalCrearLista" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade ls-modal" id="modalCrearLista" tabindex="-1" aria-labelledby="ls-t-nueva" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Nueva lista</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h2 class="modal-title" id="ls-t-nueva">Nueva lista</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form th:action="@{/mis-listas/crear}" method="post">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="nombreLista" class="form-label">Nombre de la lista</label>
-                        <input type="text" class="form-control" id="nombreLista"
-                               name="nombre" placeholder="Ej: Super del jueves" required maxlength="100">
-                    </div>
+                    <label for="nombreLista" class="ls-etiqueta">Nombre de la lista</label>
+                    <input type="text" class="ls-control" id="nombreLista"
+                           name="nombre" placeholder="Ej: Super del jueves" required maxlength="100"
+                           autocomplete="off">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" id="btn-crear-lista" class="btn btn-primary">Crear</button>
+                    <button type="button" class="ls-btn ls-btn-texto" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" id="btn-crear-lista" class="ls-btn ls-btn-principal">
+                        <i class="bi bi-check2" aria-hidden="true"></i> Crear
+                    </button>
                 </div>
             </form>
         </div>
@@ -86,6 +101,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Al abrir el modal, el cursor queda listo para escribir el nombre
+    var modalLista = document.getElementById('modalCrearLista');
+    modalLista.addEventListener('shown.bs.modal', function () {
+        document.getElementById('nombreLista').focus();
+    });
+</script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>
