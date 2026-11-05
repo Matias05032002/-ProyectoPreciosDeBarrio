@@ -3,44 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Promociones de comercios</title>
+    <title>Promociones — Precios de Barrio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/comercio-panel.css}">
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
-<main class="container py-4">
-    <div class="mb-4">
-        <h1 id="titulo-pagina" class="mb-1">Promociones de comercios</h1>
-        <p class="text-muted mb-0">Ofertas vigentes de los comercios del barrio.</p>
+
+<header class="cm-cabecera">
+    <div class="container">
+        <div class="cm-cabecera-texto">
+            <p class="cm-sobretitulo"><i class="bi bi-megaphone" aria-hidden="true"></i> Ofertas del barrio</p>
+            <h1 id="titulo-pagina">Promociones de comercios</h1>
+            <p class="cm-subtitulo">Ofertas vigentes de los comercios del barrio.</p>
+        </div>
+    </div>
+</header>
+
+<main class="container cm-principal">
+
+    <div th:if="${#lists.isEmpty(promociones)}" class="cm-vacio" id="sin-promociones">
+        <span class="cm-icono" aria-hidden="true"><i class="bi bi-megaphone"></i></span>
+        <h2>No hay promociones vigentes en este momento</h2>
+        <p>Cuando un comercio publique una oferta, la vas a ver acá.</p>
+        <a th:href="@{/comercio}" class="cm-btn cm-btn-claro"><i class="bi bi-shop" aria-hidden="true"></i> Ver comercios</a>
     </div>
 
-    <div th:if="${#lists.isEmpty(promociones)}" class="alert alert-info" id="sin-promociones">
-        No hay promociones vigentes en este momento.
-    </div>
-
-    <div class="row g-3">
-        <article th:each="item : ${promociones}" th:id="'card-promocion-' + ${item.id}" class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-body d-flex flex-column">
-                    <h2 class="h5" th:id="'titulo-promocion-' + ${item.id}" th:text="${item.titulo}"></h2>
-                    <p class="text-muted" th:if="${item.descripcion != null}" th:text="${item.descripcion}"></p>
-                    <p class="fs-4 fw-bold text-success mb-2"
-                       th:text="${'$' + #numbers.formatDecimal(item.precioPromocional, 1, 'POINT', 2, 'COMMA')}"></p>
-                    <p class="mb-1 mt-auto">
-                        <i class="bi bi-shop" aria-hidden="true"></i>
-                        <span th:text="${item.comercio.nombre}"></span>
-                    </p>
-                    <p class="text-muted small mb-0">
-                        Válida hasta el
-                        <span th:text="${#temporals.format(item.fechaFin, 'dd/MM/yyyy HH:mm')}"></span>
-                    </p>
-                </div>
-            </div>
+    <div class="cm-grilla cm-grilla-3">
+        <article th:each="item : ${promociones}" th:id="'card-promocion-' + ${item.id}" class="cm-promo">
+            <p class="pr-tipo" th:if="${item.tipo.name() == 'METODO_PAGO'}">
+                <i class="bi" th:classappend="${item.metodoPago.icono}" aria-hidden="true"></i>
+                <span th:text="${item.metodoPago.etiqueta}">Tarjeta de débito</span>
+            </p>
+            <p class="pr-tipo" th:unless="${item.tipo.name() == 'METODO_PAGO'}">
+                <i class="bi bi-box-seam" aria-hidden="true"></i>
+                <span>Producto</span>
+            </p>
+            <h2 class="cm-promo-titulo" th:id="'titulo-promocion-' + ${item.id}" th:text="${item.titulo}">Título</h2>
+            <p class="cm-promo-descripcion" th:if="${item.descripcion != null}" th:text="${item.descripcion}">Descripción</p>
+            <p class="pr-descuento" th:if="${item.tipo.name() == 'METODO_PAGO'}">
+                <span th:text="${item.porcentajeDescuento} + '% OFF'">20% OFF</span>
+                <small>pagando con <span th:text="${#strings.toLowerCase(item.metodoPago.etiqueta)}">débito</span></small>
+            </p>
+            <th:block th:unless="${item.tipo.name() == 'METODO_PAGO'}">
+                <p class="pr-producto" th:text="${item.productoNombre}">Leche entera 1l</p>
+                <p class="cm-precio"
+                   th:text="${'$' + #numbers.formatDecimal(item.precioPromocional, 1, 'POINT', 2, 'COMMA')}">$0,00</p>
+            </th:block>
+            <p class="cm-vigencia">
+                <i class="bi bi-calendar-event" aria-hidden="true"></i>
+                <span>Válida hasta el
+                <span th:text="${#temporals.format(item.fechaFin, 'dd/MM/yyyy HH:mm')}"></span></span>
+            </p>
+            <p class="cm-promo-comercio">
+                <i class="bi bi-shop" aria-hidden="true"></i>
+                <span th:text="${item.comercio.nombre}">Comercio</span>
+            </p>
         </article>
     </div>
 </main>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>

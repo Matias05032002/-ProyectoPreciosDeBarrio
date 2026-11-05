@@ -18,6 +18,7 @@ public class ServicioPromocionImplTest {
   private static final String TITULO = "Oferta especial";
   private static final String DESCRIPCION = "Descuento por tiempo limitado";
   private static final double PRECIO = 1500.0;
+  private static final String PRODUCTO = "Leche entera 1l";
 
   private ServicioPromocion servicioPromocion;
   private RepositorioPromocion repositorioPromocionMock;
@@ -338,10 +339,157 @@ public class ServicioPromocionImplTest {
     verify(repositorioPromocionMock, never()).actualizar(any());
   }
 
+  // ── promociones por método de pago ───────────────────────────────────────
+
+  @Test
+  public void crearPromocionDeMetodoPagoValidaSeGuardaSinProductoNiPrecio() {
+    Promocion promocion = crearPromocionDeMetodoPagoValida();
+    promocion.setProductoNombre("Sobrante del formulario");
+    promocion.setPrecioPromocional(99.0);
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+    when(repositorioPromocionMock.guardar(promocion)).thenReturn(promocion);
+
+    Promocion resultado = servicioPromocion.crearPromocion(promocion, USUARIO_ID);
+
+    assertThat(resultado.getTipo(), equalTo(TipoPromocion.METODO_PAGO));
+    assertThat(resultado.getMetodoPago(), equalTo(MetodoPago.DEBITO));
+    assertThat(resultado.getPorcentajeDescuento(), equalTo(20));
+    assertThat(resultado.getProductoNombre() == null, equalTo(true));
+    assertThat(resultado.getPrecioPromocional() == null, equalTo(true));
+  }
+
+  @Test
+  public void crearPromocionDeMetodoPagoSinMetodoLanzaExcepcion() {
+    Promocion promocion = crearPromocionDeMetodoPagoValida();
+    promocion.setMetodoPago(null);
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+    );
+    verify(repositorioPromocionMock, never()).guardar(any());
+  }
+
+  @Test
+  public void crearPromocionDeMetodoPagoConDescuentoFueraDeRangoLanzaExcepcion() {
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    for (Integer invalido : new Integer[] { null, 0, -5, 91, 100 }) {
+      Promocion promocion = crearPromocionDeMetodoPagoValida();
+      promocion.setPorcentajeDescuento(invalido);
+
+      assertThrows(
+        IllegalArgumentException.class,
+        () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+      );
+    }
+    verify(repositorioPromocionMock, never()).guardar(any());
+  }
+
+  @Test
+  public void crearPromocionDeMetodoPagoAceptaLosExtremosDelDescuento() {
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    for (int valido : new int[] { 1, 90 }) {
+      Promocion promocion = crearPromocionDeMetodoPagoValida();
+      promocion.setPorcentajeDescuento(valido);
+      when(repositorioPromocionMock.guardar(promocion)).thenReturn(promocion);
+
+      assertThat(servicioPromocion.crearPromocion(promocion, USUARIO_ID), equalTo(promocion));
+    }
+  }
+
+  @Test
+  public void crearPromocionDeProductoSinNombreDeProductoLanzaExcepcion() {
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    for (String invalido : new String[] { null, "", "   " }) {
+      Promocion promocion = crearPromocionValida();
+      promocion.setProductoNombre(invalido);
+
+      assertThrows(
+        IllegalArgumentException.class,
+        () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+      );
+    }
+    verify(repositorioPromocionMock, never()).guardar(any());
+  }
+
+  @Test
+  public void crearPromocionDeProductoConNombreMuyLargoLanzaExcepcion() {
+    Promocion promocion = crearPromocionValida();
+    promocion.setProductoNombre("a".repeat(151));
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioPromocion.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  @Test
+  public void crearPromocionDeProductoIgnoraElMetodoDePagoYElPorcentajeDelFormulario() {
+    Promocion promocion = crearPromocionValida();
+    promocion.setProductoNombre("  Leche  ");
+    promocion.setMetodoPago(MetodoPago.EFECTIVO);
+    promocion.setPorcentajeDescuento(15);
+
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+    when(repositorioPromocionMock.guardar(promocion)).thenReturn(promocion);
+
+    servicioPromocion.crearPromocion(promocion, USUARIO_ID);
+
+    assertThat(promocion.getProductoNombre(), equalTo("Leche"));
+    assertThat(promocion.getMetodoPago() == null, equalTo(true));
+    assertThat(promocion.getPorcentajeDescuento() == null, equalTo(true));
+  }
+
+  @Test
+  public void unaPromocionSinTipoSeLeeComoPromocionDeProducto() {
+    assertThat(new Promocion().getTipo(), equalTo(TipoPromocion.PRODUCTO));
+  }
+
+  @Test
+  public void actualizarPromocionCopiaLosDatosDeSuTipo() {
+    Promocion existente = crearPromocionDeMetodoPagoValida();
+    existente.setId(PROMOCION_ID);
+    Promocion cambios = crearPromocionDeMetodoPagoValida();
+    cambios.setId(PROMOCION_ID);
+    cambios.setMetodoPago(MetodoPago.TRANSFERENCIA);
+    cambios.setPorcentajeDescuento(35);
+
+    when(repositorioPromocionMock.buscarPorId(PROMOCION_ID)).thenReturn(existente);
+    when(repositorioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+
+    servicioPromocion.actualizarPromocion(cambios, USUARIO_ID);
+
+    assertThat(existente.getMetodoPago(), equalTo(MetodoPago.TRANSFERENCIA));
+    assertThat(existente.getPorcentajeDescuento(), equalTo(35));
+  }
+
+  private Promocion crearPromocionDeMetodoPagoValida() {
+    Promocion promocion = new Promocion();
+    promocion.setTitulo("20% con débito");
+    promocion.setTipo(TipoPromocion.METODO_PAGO);
+    promocion.setMetodoPago(MetodoPago.DEBITO);
+    promocion.setPorcentajeDescuento(20);
+    promocion.setFechaInicio(LocalDateTime.now().plusDays(1));
+    promocion.setFechaFin(LocalDateTime.now().plusDays(5));
+    promocion.setActiva(true);
+    promocion.setComercio(comercio);
+    return promocion;
+  }
+
   private Promocion crearPromocionValida() {
     Promocion promocion = new Promocion();
     promocion.setTitulo(TITULO);
     promocion.setDescripcion(DESCRIPCION);
+    promocion.setTipo(TipoPromocion.PRODUCTO);
+    promocion.setProductoNombre(PRODUCTO);
     promocion.setPrecioPromocional(PRECIO);
     promocion.setFechaInicio(LocalDateTime.now().plusDays(1));
     promocion.setFechaFin(LocalDateTime.now().plusDays(5));

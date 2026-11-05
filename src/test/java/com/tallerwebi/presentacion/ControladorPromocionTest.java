@@ -7,13 +7,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Comercio.MetodoPago;
 import com.tallerwebi.dominio.Comercio.Promocion;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Comercio.ServicioPromocion;
+import com.tallerwebi.dominio.Comercio.TipoPromocion;
+import com.tallerwebi.dominio.Producto.Producto;
+import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -29,6 +35,7 @@ public class ControladorPromocionTest {
 
   private ServicioPromocion servicioPromocionMock;
   private ServicioComercio servicioComercioMock;
+  private ServicioReporte servicioReporteMock;
   private HttpServletRequest requestMock;
   private HttpSession sesionMock;
   private ControladorPromocion controlador;
@@ -38,11 +45,13 @@ public class ControladorPromocionTest {
   public void init() {
     servicioPromocionMock = mock(ServicioPromocion.class);
     servicioComercioMock = mock(ServicioComercio.class);
+    servicioReporteMock = mock(ServicioReporte.class);
     requestMock = mock(HttpServletRequest.class);
     sesionMock = mock(HttpSession.class);
     when(requestMock.getSession()).thenReturn(sesionMock);
 
-    controlador = new ControladorPromocion(servicioPromocionMock, servicioComercioMock);
+    controlador =
+      new ControladorPromocion(servicioPromocionMock, servicioComercioMock, servicioReporteMock);
 
     comercio = new Comercio();
     comercio.setId(COMERCIO_ID);
@@ -100,7 +109,7 @@ public class ControladorPromocionTest {
     ModelAndView mav = controlador.misPromociones(requestMock);
 
     assertThat(mav.getViewName(), equalTo("comercio/mis-promociones"));
-    assertThat(mav.getModel().get("promocion") instanceof Promocion, equalTo(true));
+    assertThat(mav.getModel().get("promociones"), equalTo(Collections.emptyList()));
   }
 
   @Test
@@ -115,11 +124,79 @@ public class ControladorPromocionTest {
   }
 
   @Test
+  public void elFormularioDeProductoComoVecinoRedirigeAlInicio() {
+    iniciarSesionComo("USER");
+
+    ModelAndView mav = controlador.formularioPromocionDeProducto(requestMock);
+
+    assertThat(mav.getViewName(), equalTo("redirect:/home"));
+  }
+
+  @Test
+  public void elFormularioDeProductoSinSesionRedirigeAlLogin() {
+    ModelAndView mav = controlador.formularioPromocionDeProducto(requestMock);
+
+    assertThat(mav.getViewName(), equalTo("redirect:/login"));
+  }
+
+  @Test
+  public void elFormularioDeProductoSugiereLosProductosDelComercioSinRepetir() {
+    iniciarSesionComo("COMERCIO");
+    when(servicioReporteMock.buscarPorComercio(COMERCIO_ID))
+      .thenReturn(List.of(reporteDe("Yerba"), reporteDe("Arroz"), reporteDe("Yerba")));
+
+    ModelAndView mav = controlador.formularioPromocionDeProducto(requestMock);
+
+    assertThat(mav.getViewName(), equalTo("comercio/promocion-producto"));
+    assertThat(mav.getModel().get("productosDelComercio"), equalTo(List.of("Arroz", "Yerba")));
+    assertThat(mav.getModel().get("promocion") instanceof Promocion, equalTo(true));
+  }
+
+  @Test
+  public void elFormularioDeMetodoDePagoOfreceLosMetodosDisponibles() {
+    iniciarSesionComo("COMERCIO");
+
+    ModelAndView mav = controlador.formularioPromocionDeMetodoPago(requestMock);
+
+    assertThat(mav.getViewName(), equalTo("comercio/promocion-metodo-pago"));
+    assertThat(mav.getModel().get("metodosPago"), equalTo(MetodoPago.values()));
+  }
+
+  @Test
+  public void elFormularioDeMetodoDePagoComoVecinoRedirigeAlInicio() {
+    iniciarSesionComo("USER");
+
+    assertThat(
+      controlador.formularioPromocionDeMetodoPago(requestMock).getViewName(),
+      equalTo("redirect:/home")
+    );
+  }
+
+  @Test
+  public void losFormulariosSinComercioRedirigenAlPerfil() {
+    iniciarSesionComo("COMERCIO");
+    when(servicioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(null);
+
+    assertThat(
+      controlador.formularioPromocionDeProducto(requestMock).getViewName(),
+      equalTo("redirect:/comercio/perfil")
+    );
+    assertThat(
+      controlador.formularioPromocionDeMetodoPago(requestMock).getViewName(),
+      equalTo("redirect:/comercio/perfil")
+    );
+  }
+
+  @Test
   public void crearComoVecinoNoCreaNadaYRedirigeAlInicio() {
     iniciarSesionComo("USER");
     Promocion promocion = new Promocion();
 
-    ModelAndView mav = controlador.crear(promocion, sinErrores(promocion), requestMock);
+    ModelAndView mav = controlador.crearPromocionDeProducto(
+      promocion,
+      sinErrores(promocion),
+      requestMock
+    );
 
     assertThat(mav.getViewName(), equalTo("redirect:/home"));
     verify(servicioPromocionMock, never()).crearPromocion(any(), any());
@@ -129,36 +206,86 @@ public class ControladorPromocionTest {
   public void crearSinSesionRedirigeAlLogin() {
     Promocion promocion = new Promocion();
 
-    ModelAndView mav = controlador.crear(promocion, sinErrores(promocion), requestMock);
+    ModelAndView mav = controlador.crearPromocionDeMetodoPago(
+      promocion,
+      sinErrores(promocion),
+      requestMock
+    );
 
     assertThat(mav.getViewName(), equalTo("redirect:/login"));
     verify(servicioPromocionMock, never()).crearPromocion(any(), any());
   }
 
   @Test
-  public void crearComoComercioCreaYRedirigeAMisPromociones() {
+  public void crearPromocionDeProductoLaMarcaComoDeProductoYRedirige() {
     iniciarSesionComo("COMERCIO");
     Promocion promocion = new Promocion();
+    promocion.setTipo(TipoPromocion.METODO_PAGO);
 
-    ModelAndView mav = controlador.crear(promocion, sinErrores(promocion), requestMock);
+    ModelAndView mav = controlador.crearPromocionDeProducto(
+      promocion,
+      sinErrores(promocion),
+      requestMock
+    );
 
     assertThat(mav.getViewName(), equalTo("redirect:/promociones/mis-promociones"));
+    assertThat(promocion.getTipo(), equalTo(TipoPromocion.PRODUCTO));
     verify(servicioPromocionMock).crearPromocion(promocion, USUARIO_ID);
   }
 
   @Test
-  public void crearConDatosInvalidosVuelveAlFormularioConElMensajeYLoCargado() {
+  public void crearPromocionDeMetodoPagoLaMarcaComoDeMetodoPagoYRedirige() {
+    iniciarSesionComo("COMERCIO");
+    Promocion promocion = new Promocion();
+
+    ModelAndView mav = controlador.crearPromocionDeMetodoPago(
+      promocion,
+      sinErrores(promocion),
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalTo("redirect:/promociones/mis-promociones"));
+    assertThat(promocion.getTipo(), equalTo(TipoPromocion.METODO_PAGO));
+    verify(servicioPromocionMock).crearPromocion(promocion, USUARIO_ID);
+  }
+
+  @Test
+  public void crearDeProductoConDatosInvalidosVuelveAlSuFormularioConLoCargado() {
     iniciarSesionComo("COMERCIO");
     Promocion promocion = new Promocion();
     promocion.setTitulo("Oferta");
     when(servicioPromocionMock.crearPromocion(promocion, USUARIO_ID))
       .thenThrow(new IllegalArgumentException("El título es obligatorio."));
 
-    ModelAndView mav = controlador.crear(promocion, sinErrores(promocion), requestMock);
+    ModelAndView mav = controlador.crearPromocionDeProducto(
+      promocion,
+      sinErrores(promocion),
+      requestMock
+    );
 
-    assertThat(mav.getViewName(), equalTo("comercio/mis-promociones"));
+    assertThat(mav.getViewName(), equalTo("comercio/promocion-producto"));
     assertThat(mav.getModel().get("error"), equalTo("El título es obligatorio."));
     assertThat(mav.getModel().get("promocion"), equalTo(promocion));
+  }
+
+  @Test
+  public void crearDeMetodoPagoConDatosInvalidosVuelveAlSuFormularioConLoCargado() {
+    iniciarSesionComo("COMERCIO");
+    Promocion promocion = new Promocion();
+    promocion.setPorcentajeDescuento(95);
+    when(servicioPromocionMock.crearPromocion(promocion, USUARIO_ID))
+      .thenThrow(new IllegalArgumentException("El descuento debe ser de entre 1% y 90%."));
+
+    ModelAndView mav = controlador.crearPromocionDeMetodoPago(
+      promocion,
+      sinErrores(promocion),
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalTo("comercio/promocion-metodo-pago"));
+    assertThat(mav.getModel().get("error").toString(), containsString("descuento"));
+    assertThat(mav.getModel().get("promocion"), equalTo(promocion));
+    assertThat(mav.getModel().get("metodosPago"), equalTo(MetodoPago.values()));
   }
 
   @Test
@@ -168,10 +295,10 @@ public class ControladorPromocionTest {
     BindingResult resultado = sinErrores(promocion);
     resultado.rejectValue("fechaInicio", "typeMismatch");
 
-    ModelAndView mav = controlador.crear(promocion, resultado, requestMock);
+    ModelAndView mav = controlador.crearPromocionDeMetodoPago(promocion, resultado, requestMock);
 
-    assertThat(mav.getViewName(), equalTo("comercio/mis-promociones"));
-    assertThat(mav.getModel().get("error").toString(), containsString("precio y las fechas"));
+    assertThat(mav.getViewName(), equalTo("comercio/promocion-metodo-pago"));
+    assertThat(mav.getModel().get("error").toString(), containsString("precio, el descuento"));
     verify(servicioPromocionMock, never()).crearPromocion(any(), any());
   }
 
@@ -238,5 +365,13 @@ public class ControladorPromocionTest {
     );
 
     assertThat(binder.getBindingResult().hasFieldErrors("fechaInicio"), equalTo(true));
+  }
+
+  private Reporte reporteDe(String nombreDelProducto) {
+    Producto producto = new Producto();
+    producto.setNombre(nombreDelProducto);
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    return reporte;
   }
 }

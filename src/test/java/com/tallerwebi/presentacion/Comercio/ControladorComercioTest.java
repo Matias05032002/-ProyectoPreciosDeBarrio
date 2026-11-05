@@ -51,11 +51,12 @@ public class ControladorComercioTest {
 
   @Test
   public void listarTodosLosComercios() {
+    when(this.sessionMock.getAttribute("ROL")).thenReturn("USER");
     Comercio comercio = new Comercio();
     List<Comercio> listaDeComercios = Arrays.asList(comercio);
     when(this.servicioComercioMock.listarTodos()).thenReturn(listaDeComercios);
 
-    ModelAndView modelAndView = this.controladorComercio.listarTodos();
+    ModelAndView modelAndView = this.controladorComercio.listarTodos(requestMock);
 
     assertThat(modelAndView.getModel().get("comercios"), is(listaDeComercios));
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/lista-comercios"));
@@ -111,17 +112,35 @@ public class ControladorComercioTest {
 
   @Test
   public void buscarComercioPorNombre() {
+    when(this.sessionMock.getAttribute("ROL")).thenReturn("USER");
     Comercio comercio = new Comercio();
     List<Comercio> comercios = Arrays.asList(comercio);
     when(this.servicioComercioMock.buscarComercioPorNombre("Almacen de Matias"))
       .thenReturn(comercios);
 
     ModelAndView modelAndView =
-      this.controladorComercio.buscarComercioPorNombre("Almacen de Matias");
+      this.controladorComercio.buscarComercioPorNombre("Almacen de Matias", requestMock);
 
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/lista-comercios"));
     assertThat(modelAndView.getModel().get("comercios"), is(comercios));
     verify(this.servicioComercioMock, times(1)).buscarComercioPorNombre("Almacen de Matias");
+  }
+
+  @Test
+  public void unComercioNoPuedeVerElListadoDeComercios() {
+    ModelAndView modelAndView = this.controladorComercio.listarTodos(requestMock);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/comercio/dashboard"));
+    verify(this.servicioComercioMock, never()).listarTodos();
+  }
+
+  @Test
+  public void unComercioNoPuedeBuscarComerciosPorNombre() {
+    ModelAndView modelAndView =
+      this.controladorComercio.buscarComercioPorNombre("Don Pepe", requestMock);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/comercio/dashboard"));
+    verify(this.servicioComercioMock, never()).buscarComercioPorNombre(anyString());
   }
 
   // ── verPerfil ─────────────────────────────────────────────────────────────

@@ -34,6 +34,7 @@ public class ControladorComercio {
   private static final String REDIRECT_PERFIL = "redirect:/comercio/perfil";
   private static final String ROL_SESION = "ROL";
   private static final String REDIRECT_HOME = "redirect:/home";
+  private static final String REDIRECT_DASHBOARD = "redirect:/comercio/dashboard";
   private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(
     ControladorComercio.class
   );
@@ -50,7 +51,9 @@ public class ControladorComercio {
   }
 
   @RequestMapping(method = RequestMethod.GET)
-  public ModelAndView listarTodos() {
+  public ModelAndView listarTodos(HttpServletRequest request) {
+    // El listado es para los vecinos: un comercio tiene su propio panel
+    if (esComercio(request)) return new ModelAndView(REDIRECT_DASHBOARD);
     List<Comercio> comercios = servicioComercio.listarTodos();
     Map<Long, Boolean> estadosAbierto = new java.util.LinkedHashMap<>();
     for (Comercio comercio : comercios) {
@@ -80,7 +83,11 @@ public class ControladorComercio {
   }
 
   @RequestMapping(path = "/buscar", method = RequestMethod.GET)
-  public ModelAndView buscarComercioPorNombre(@RequestParam("nombre") String nombre) {
+  public ModelAndView buscarComercioPorNombre(
+    @RequestParam("nombre") String nombre,
+    HttpServletRequest request
+  ) {
+    if (esComercio(request)) return new ModelAndView(REDIRECT_DASHBOARD);
     List<Comercio> comercios = servicioComercio.buscarComercioPorNombre(nombre);
     Map<Long, Boolean> estadosAbierto = new java.util.LinkedHashMap<>();
     for (Comercio comercio : comercios) {

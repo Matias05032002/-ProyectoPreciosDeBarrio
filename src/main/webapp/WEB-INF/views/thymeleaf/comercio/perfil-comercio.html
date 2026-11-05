@@ -3,536 +3,562 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Mi Comercio</title>
+    <title>Mi comercio — Precios de Barrio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" th:href="@{/css/main.css}"/>
-    <style>
-        #sugerencias-ubicacion .list-group-item.active {
-            background-color: #047857;
-            border-color: #047857;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/comercio-panel.css}"/>
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<main role="main" class="container mt-5">
+<!-- ============ Sin comercio: formulario de registro ============ -->
+<th:block th:if="${comercio == null}">
+    <header class="cm-cabecera">
+        <div class="container">
+            <div class="cm-cabecera-texto">
+                <p class="cm-sobretitulo"><i class="bi bi-shop" aria-hidden="true"></i> Primer paso</p>
+                <h1 id="titulo-pagina">Registrá tu comercio</h1>
+                <p class="cm-subtitulo">Completá los datos de tu local para aparecer en el mapa y recibir a los vecinos.</p>
+            </div>
+        </div>
+    </header>
 
-    <!-- Si no tiene comercio: mostrar formulario de registro -->
-    <div th:if="${comercio == null}">
-        <h2><i class="bi bi-shop"></i> Registrá tu comercio</h2>
-        <p class="text-muted">Completá los datos de tu local para aparecer en el mapa.</p>
-        <hr>
-        <form th:action="@{/comercio/perfil}" method="POST">
-            <div class="mb-3">
-                <label class="form-label">Nombre del comercio</label>
-                <input type="text" name="nombre" class="form-control" required/>
+    <main role="main" class="container cm-principal" style="max-width: 760px;">
+        <form th:action="@{/comercio/perfil}" method="POST" class="cm-tarjeta">
+            <div class="cm-fila cm-fila-2">
+                <div class="cm-campo">
+                    <label class="cm-etiqueta" for="registro-nombre">Nombre del comercio</label>
+                    <input type="text" id="registro-nombre" name="nombre" class="cm-control" maxlength="100" required/>
+                </div>
+                <div class="cm-campo">
+                    <label class="cm-etiqueta" for="registro-tipo">Tipo</label>
+                    <select id="registro-tipo" name="tipo" class="cm-control" required>
+                        <option value="">Seleccioná un tipo...</option>
+                        <option value="Almacen">Almacen</option>
+                        <option value="Verduleria">Verduleria</option>
+                        <option value="Carniceria">Carniceria</option>
+                        <option value="Kiosco">Kiosco</option>
+                        <option value="Supermercado">Supermercado</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Tipo</label>
-                <select name="tipo" class="form-select" required>
-                    <option value="">Seleccioná un tipo...</option>
-                    <option value="Almacen">Almacen</option>
-                    <option value="Verduleria">Verduleria</option>
-                    <option value="Carniceria">Carniceria</option>
-                    <option value="Kiosco">Kiosco</option>
-                    <option value="Supermercado">Supermercado</option>
-                    <option value="Otro">Otro</option>
-                </select>
+            <div class="cm-fila cm-fila-2">
+                <div class="cm-campo">
+                    <label class="cm-etiqueta" for="registro-direccion">Dirección</label>
+                    <input type="text" id="registro-direccion" name="direccion" class="cm-control" maxlength="200" required/>
+                </div>
+                <div class="cm-campo">
+                    <label class="cm-etiqueta" for="registro-localidad">Localidad</label>
+                    <select id="registro-localidad" name="localidad" class="cm-control" required>
+                        <option value="">Seleccionar partido/localidad</option>
+                        <option value="Almirante Brown">Almirante Brown</option>
+                        <option value="Avellaneda">Avellaneda</option>
+                        <option value="Bahia Blanca">Bahía Blanca</option>
+                        <option value="Berazategui">Berazategui</option>
+                        <option value="Berisso">Berisso</option>
+                        <option value="Brandsen">Brandsen</option>
+                        <option value="Buenos Aires">Buenos Aires (CABA)</option>
+                        <option value="Campana">Campana</option>
+                        <option value="Canuelas">Cañuelas</option>
+                        <option value="Ensenada">Ensenada</option>
+                        <option value="Escobar">Escobar</option>
+                        <option value="Esteban Echeverria">Esteban Echeverría</option>
+                        <option value="Exaltacion de la Cruz">Exaltación de la Cruz</option>
+                        <option value="Ezeiza">Ezeiza</option>
+                        <option value="Florencio Varela">Florencio Varela</option>
+                        <option value="General Las Heras">General Las Heras</option>
+                        <option value="General Rodriguez">General Rodríguez</option>
+                        <option value="Hurlingham">Hurlingham</option>
+                        <option value="Ituzaingo">Ituzaingó</option>
+                        <option value="Jose C. Paz">José C. Paz</option>
+                        <option value="La Matanza">La Matanza</option>
+                        <option value="La Plata">La Plata</option>
+                        <option value="Lanus">Lanús</option>
+                        <option value="Lobos">Lobos</option>
+                        <option value="Lomas de Zamora">Lomas de Zamora</option>
+                        <option value="Lujan">Luján</option>
+                        <option value="Magdalena">Magdalena</option>
+                        <option value="Malvinas Argentinas">Malvinas Argentinas</option>
+                        <option value="Mar del Plata">Mar del Plata</option>
+                        <option value="Marcos Paz">Marcos Paz</option>
+                        <option value="Merlo">Merlo</option>
+                        <option value="Moreno">Moreno</option>
+                        <option value="Moron">Morón</option>
+                        <option value="Navarro">Navarro</option>
+                        <option value="Pilar">Pilar</option>
+                        <option value="Presidente Peron">Presidente Perón</option>
+                        <option value="Punta Indio">Punta Indio</option>
+                        <option value="Quilmes">Quilmes</option>
+                        <option value="Ramallo">Ramallo</option>
+                        <option value="San Fernando">San Fernando</option>
+                        <option value="San Isidro">San Isidro</option>
+                        <option value="San Martin">San Martín</option>
+                        <option value="San Miguel">San Miguel</option>
+                        <option value="San Nicolas">San Nicolás</option>
+                        <option value="San Vicente">San Vicente</option>
+                        <option value="Tigre">Tigre</option>
+                        <option value="Tres de Febrero">Tres de Febrero</option>
+                        <option value="Vicente Lopez">Vicente López</option>
+                        <option value="Zarate">Zárate</option>
+                    </select>
+                </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Dirección</label>
-                <input type="text" name="direccion" class="form-control" required/>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Localidad</label>
-                <select name="localidad" class="form-select" required>
-                    <option value="">Seleccionar partido/localidad</option>
-                    <option value="Almirante Brown">Almirante Brown</option>
-                    <option value="Avellaneda">Avellaneda</option>
-                    <option value="Bahia Blanca">Bahía Blanca</option>
-                    <option value="Berazategui">Berazategui</option>
-                    <option value="Berisso">Berisso</option>
-                    <option value="Brandsen">Brandsen</option>
-                    <option value="Buenos Aires">Buenos Aires (CABA)</option>
-                    <option value="Campana">Campana</option>
-                    <option value="Canuelas">Cañuelas</option>
-                    <option value="Ensenada">Ensenada</option>
-                    <option value="Escobar">Escobar</option>
-                    <option value="Esteban Echeverria">Esteban Echeverría</option>
-                    <option value="Exaltacion de la Cruz">Exaltación de la Cruz</option>
-                    <option value="Ezeiza">Ezeiza</option>
-                    <option value="Florencio Varela">Florencio Varela</option>
-                    <option value="General Las Heras">General Las Heras</option>
-                    <option value="General Rodriguez">General Rodríguez</option>
-                    <option value="Hurlingham">Hurlingham</option>
-                    <option value="Ituzaingo">Ituzaingó</option>
-                    <option value="Jose C. Paz">José C. Paz</option>
-                    <option value="La Matanza">La Matanza</option>
-                    <option value="La Plata">La Plata</option>
-                    <option value="Lanus">Lanús</option>
-                    <option value="Lobos">Lobos</option>
-                    <option value="Lomas de Zamora">Lomas de Zamora</option>
-                    <option value="Lujan">Luján</option>
-                    <option value="Magdalena">Magdalena</option>
-                    <option value="Malvinas Argentinas">Malvinas Argentinas</option>
-                    <option value="Mar del Plata">Mar del Plata</option>
-                    <option value="Marcos Paz">Marcos Paz</option>
-                    <option value="Merlo">Merlo</option>
-                    <option value="Moreno">Moreno</option>
-                    <option value="Moron">Morón</option>
-                    <option value="Navarro">Navarro</option>
-                    <option value="Pilar">Pilar</option>
-                    <option value="Presidente Peron">Presidente Perón</option>
-                    <option value="Punta Indio">Punta Indio</option>
-                    <option value="Quilmes">Quilmes</option>
-                    <option value="Ramallo">Ramallo</option>
-                    <option value="San Fernando">San Fernando</option>
-                    <option value="San Isidro">San Isidro</option>
-                    <option value="San Martin">San Martín</option>
-                    <option value="San Miguel">San Miguel</option>
-                    <option value="San Nicolas">San Nicolás</option>
-                    <option value="San Vicente">San Vicente</option>
-                    <option value="Tigre">Tigre</option>
-                    <option value="Tres de Febrero">Tres de Febrero</option>
-                    <option value="Vicente Lopez">Vicente López</option>
-                    <option value="Zarate">Zárate</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Descripción (opcional)</label>
-                <textarea name="descripcion" class="form-control" rows="3"
+            <div class="cm-campo">
+                <label class="cm-etiqueta" for="registro-descripcion">Descripción <span class="cm-opcional">(opcional)</span></label>
+                <textarea id="registro-descripcion" name="descripcion" class="cm-control" rows="3"
                           placeholder="Contá algo sobre tu comercio..."></textarea>
             </div>
-            <button type="submit" id="btn-guardar-comercio" class="btn btn-primary">Guardar comercio</button>
+            <div class="cm-acciones cm-barra-guardar">
+                <button type="submit" id="btn-guardar-comercio" class="cm-btn cm-btn-principal">
+                    <i class="bi bi-check2" aria-hidden="true"></i> Guardar comercio
+                </button>
+            </div>
         </form>
-    </div>
+    </main>
+</th:block>
 
-    <!-- Si ya tiene comercio: vista completa de perfil -->
-    <div th:if="${comercio != null}">
+<!-- ============ Con comercio: perfil completo ============ -->
+<th:block th:if="${comercio != null}">
+    <header class="cm-cabecera">
+        <div class="container">
+            <div class="cm-cabecera-fila">
+                <div class="cm-cabecera-texto">
+                    <p class="cm-sobretitulo"><i class="bi bi-shop" aria-hidden="true"></i> Mi comercio</p>
+                    <h1 id="titulo-pagina" th:text="${comercio.nombre}">Mi comercio</h1>
+                    <p class="cm-subtitulo">Mantené al día tus datos, tu ubicación y tus horarios para que los vecinos te encuentren.</p>
+                </div>
+                <div class="cm-cabecera-acciones">
+                    <a th:href="@{/comercio/{id}(id=${comercio.id})}" class="cm-btn cm-btn-neutro" id="btn-ver-pagina-publica">
+                        <i class="bi bi-eye" aria-hidden="true"></i> Ver página pública
+                    </a>
+                    <a th:href="@{/comercio/perfil/horarios}" class="cm-btn cm-btn-neutro" id="btn-horarios">
+                        <i class="bi bi-clock" aria-hidden="true"></i> Horarios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
 
-        <!-- Alertas de feedback -->
-        <div th:if="${param.editado}" class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-1"></i> Datos del comercio actualizados correctamente.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <main role="main" class="container cm-principal">
+
+        <!-- Avisos -->
+        <div th:if="${param.editado}" class="cm-alerta cm-alerta-ok" role="status">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">Datos del comercio actualizados correctamente.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
 
-        <div th:if="${comercio.latitud == null}" id="alerta-sin-ubicacion" class="alert alert-warning" role="alert">
-            <i class="bi bi-geo-alt me-1"></i> Tu local todavía no aparece en el mapa: no pudimos ubicar la dirección.
-            Revisala en <strong>Datos del comercio</strong>, tocá <strong>Buscar en el mapa</strong> y elegí la
-            ubicación correcta.
+        <div th:if="${comercio.latitud == null}" id="alerta-sin-ubicacion" class="cm-alerta cm-alerta-aviso" role="alert">
+            <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">Tu local todavía no aparece en el mapa: no pudimos ubicar la dirección.
+                Revisala en <strong>Datos del comercio</strong>, tocá <strong>Buscar en el mapa</strong> y elegí la
+                ubicación correcta.</div>
         </div>
 
-        <div th:if="${param.contrasenaCambiada}" class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-1"></i> Contraseña cambiada correctamente.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div th:if="${param.contrasenaCambiada}" class="cm-alerta cm-alerta-ok" role="status">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">Contraseña cambiada correctamente.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
 
-        <div th:if="${param.errorContrasena == 'incorrecta'}" class="alert alert-danger alert-dismissible fade show"
-             role="alert">
-            <i class="bi bi-x-circle me-1"></i> La contraseña actual es incorrecta.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div th:if="${param.errorContrasena == 'incorrecta'}" class="cm-alerta cm-alerta-error" role="alert">
+            <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">La contraseña actual es incorrecta.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
 
-        <div th:if="${param.errorContrasena == 'noCoinciden'}" class="alert alert-danger alert-dismissible fade show"
-             role="alert">
-            <i class="bi bi-x-circle me-1"></i> Las contraseñas nuevas no coinciden.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div th:if="${param.errorContrasena == 'noCoinciden'}" class="cm-alerta cm-alerta-error" role="alert">
+            <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">Las contraseñas nuevas no coinciden.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
 
-        <!-- Feedback de solicitud de verificación -->
-        <div th:if="${param.verificacionSolicitada}"
-             class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-1"></i>
-            Solicitud de verificación enviada correctamente.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div th:if="${param.verificacionSolicitada}" class="cm-alerta cm-alerta-ok" role="status">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">Solicitud de verificación enviada correctamente.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
 
-        <!-- Verificación del comercio -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-patch-check me-2"></i>
-                    Verificación del comercio
-                </h5>
-                <hr>
+        <div th:if="${param.fotoActualizada}" class="cm-alerta cm-alerta-ok" role="status">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">Foto actualizada.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        </div>
 
-                <!-- Comercio verificado -->
-                <div th:if="${comercio.verificado}">
-                    <span class="badge bg-success">
-                        <i class="bi bi-patch-check-fill me-1"></i>
-                        Comercio verificado
-                    </span>
-                    <p class="mt-2 mb-0">
-                        Tu comercio cuenta con la insignia de verificación.
+        <div th:if="${param.errorFoto}" class="cm-alerta cm-alerta-error" role="alert">
+            <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">No pudimos usar esa foto. Subí una imagen JPG, PNG o WEBP de hasta 5 MB.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        </div>
+
+        <div class="cm-perfil">
+
+            <!-- Identidad: portada, logo y qué le falta al perfil -->
+            <section class="cm-tarjeta cm-area-id pf-hero" aria-label="Logo y estado del perfil">
+                <div class="pf-portada" aria-hidden="true"></div>
+
+                <div class="pf-cuerpo">
+                    <div class="cm-avatar pf-avatar">
+                        <img th:if="${comercio.tieneFoto()}"
+                             th:src="@{/comercio/{id}/foto(id=${comercio.id})}"
+                             alt="Logo del comercio"
+                             onerror="this.style.display='none'; this.nextElementSibling.hidden=false">
+                        <div id="foto-inicial-comercio" class="cm-avatar-inicial" aria-hidden="true"
+                             th:hidden="${comercio.tieneFoto()}">
+                            <span th:text="${#strings.toUpperCase(#strings.substring(comercio.nombre,0,1))}">M</span>
+                        </div>
+                        <span class="pf-sello" th:if="${comercio.verificado}" title="Comercio verificado">
+                            <i class="bi bi-patch-check-fill" aria-hidden="true"></i>
+                            <span class="visually-hidden">Comercio verificado</span>
+                        </span>
+                    </div>
+
+                    <div class="pf-nombre">
+                        <strong th:text="${comercio.nombre}">Mi comercio</strong>
+                        <span class="cm-chip cm-chip-ok" th:text="${comercio.tipo}">Almacen</span>
+                    </div>
+
+                    <p class="pf-lugar">
+                        <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                        <span th:text="${comercio.direccion + ', ' + comercio.localidad}">Av. Siempre Viva 742, La Matanza</span>
                     </p>
                 </div>
 
-                <!-- Comercio sin verificar -->
-                <div th:unless="${comercio.verificado}">
+                <form th:action="@{/comercio/perfil/foto}" method="post" enctype="multipart/form-data" class="cm-subir-foto">
+                    <label class="cm-btn cm-btn-neutro cm-btn-bloque" id="etiqueta-cambiar-foto">
+                        <i class="bi bi-camera" aria-hidden="true"></i> Cambiar foto
+                        <input type="file" name="foto" accept="image/jpeg,image/png,image/webp"
+                               onchange="this.form.submit()">
+                    </label>
+                </form>
+                <p class="cm-nota cm-aviso-foto">JPG, PNG o WEBP de hasta 5 MB.</p>
 
-                    <!-- Solicitud pendiente -->
-                    <div th:if="${comercio.solicitudVerificacion}">
-                        <span class="badge bg-warning text-dark">
-                            Solicitud pendiente
-                        </span>
-                        <p class="mt-2 mb-0">
-                            Tu solicitud de verificación está pendiente de revisión.
-                        </p>
+                <div class="pf-progreso" id="progreso-perfil">
+                    <div class="pf-anillo">
+                        <svg viewBox="0 0 88 88" aria-hidden="true">
+                            <circle class="pf-anillo-fondo" cx="44" cy="44" r="38"></circle>
+                            <circle class="pf-anillo-valor" id="anillo-valor" cx="44" cy="44" r="38"></circle>
+                        </svg>
+                        <span class="pf-porcentaje" id="porcentaje-perfil" aria-hidden="true">0%</span>
                     </div>
-
-                    <!-- Todavía no solicitó verificación -->
-                    <div th:unless="${comercio.solicitudVerificacion}">
-                        <span class="badge bg-secondary">
-                            Comercio sin verificar
-                        </span>
-                        <p class="mt-2">
-                            Obtené la insignia de verificación para destacar tu comercio.
-                        </p>
-                        <form th:action="@{/comercio/perfil/solicitar-verificacion}"
-                              method="post">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-patch-check me-1"></i>
-                                Solicitar verificación
-                            </button>
-                        </form>
+                    <div class="pf-progreso-texto">
+                        <strong id="titulo-progreso">Completá tu perfil</strong>
+                        <span id="detalle-progreso">Un perfil completo genera más confianza en los vecinos.</span>
                     </div>
-
                 </div>
-            </div>
-        </div>
-        <div class="row g-4">
 
-            <!-- COLUMNA IZQUIERDA: info de cuenta + cambiar contraseña -->
-            <div class="col-lg-4">
-
-                <!-- Datos de la cuenta -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-person-circle me-2"></i>Mi cuenta</h5>
-                        <hr>
-                        <p class="mb-1 text-muted small">Email</p>
-                        <p class="fw-semibold" th:text="${usuario != null ? usuario.email : session['EMAIL']}"></p>
-                        <p class="mb-1 text-muted small mt-3">Productos cargados</p>
-                        <p class="fw-semibold" th:text="${cantidadProductos}"></p>
-                        <a th:href="@{/reporte/mis-productos}" class="btn btn-outline-primary btn-sm mt-2">
-                            <i class="bi bi-box-seam me-1"></i> Ver mis productos
+                <ul class="pf-pasos" aria-label="Pasos para completar el perfil">
+                    <li class="pf-paso pf-hecho">
+                        <a href="#nombre-comercio">
+                            <i class="bi bi-check-circle-fill" aria-hidden="true"></i> Datos básicos
                         </a>
-                    </div>
-                </div>
+                    </li>
+                    <li class="pf-paso" th:classappend="${comercio.tieneFoto()} ? 'pf-hecho' : ''">
+                        <a href="#etiqueta-cambiar-foto">
+                            <i class="bi" th:classappend="${comercio.tieneFoto()} ? 'bi-check-circle-fill' : 'bi-circle'" aria-hidden="true"></i> Logo del comercio
+                        </a>
+                    </li>
+                    <li class="pf-paso" th:classappend="${comercio.latitud != null} ? 'pf-hecho' : ''">
+                        <a href="#btn-buscar-ubicacion">
+                            <i class="bi" th:classappend="${comercio.latitud != null} ? 'bi-check-circle-fill' : 'bi-circle'" aria-hidden="true"></i> Ubicación en el mapa
+                        </a>
+                    </li>
+                    <li class="pf-paso" th:classappend="${comercio.descripcion != null and !#strings.isEmpty(comercio.descripcion)} ? 'pf-hecho' : ''">
+                        <a href="#descripcion-comercio">
+                            <i class="bi" th:classappend="${comercio.descripcion != null and !#strings.isEmpty(comercio.descripcion)} ? 'bi-check-circle-fill' : 'bi-circle'" aria-hidden="true"></i> Descripción
+                        </a>
+                    </li>
+                    <li class="pf-paso" th:classappend="${comercio.verificado} ? 'pf-hecho' : ''">
+                        <a href="#titulo-verificacion">
+                            <i class="bi" th:classappend="${comercio.verificado} ? 'bi-check-circle-fill' : 'bi-circle'" aria-hidden="true"></i> Verificación
+                        </a>
+                    </li>
+                </ul>
+            </section>
 
-                <!-- Cambiar contraseña -->
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-lock me-2"></i>Cambiar contraseña</h5>
-                        <hr>
-                        <form th:action="@{/comercio/perfil/cambiar-contrasena}" method="POST">
-                            <div class="mb-3">
-                                <label class="form-label small">Contraseña actual</label>
-                                <input type="password" name="contrasenaActual" class="form-control form-control-sm"
-                                       required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small">Nueva contraseña</label>
-                                <input type="password" name="contrasenaNueva" id="nuevaContrasena"
-                                       class="form-control form-control-sm" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small">Confirmar nueva contraseña</label>
-                                <input type="password" name="confirmarContrasena" id="confirmarContrasena"
-                                       class="form-control form-control-sm" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm w-100">
-                                <i class="bi bi-shield-lock me-1"></i> Cambiar contraseña
+            <!-- Datos del comercio -->
+            <section class="cm-tarjeta cm-area-datos" aria-labelledby="titulo-datos">
+                <h2 class="cm-seccion-titulo" id="titulo-datos">
+                    <span class="cm-icono" aria-hidden="true"><i class="bi bi-shop"></i></span>
+                    Datos del comercio
+                </h2>
+
+                <form th:action="@{/comercio/perfil/editar}" method="POST">
+                    <div class="cm-fila cm-fila-2">
+                        <div class="cm-campo">
+                            <label class="cm-etiqueta" for="nombre-comercio">Nombre del comercio</label>
+                            <input type="text" id="nombre-comercio" name="nombre" class="cm-control"
+                                   th:value="${comercio.nombre}" maxlength="100" required>
+                        </div>
+                        <div class="cm-campo">
+                            <label class="cm-etiqueta" for="tipo-comercio">Tipo</label>
+                            <select id="tipo-comercio" name="tipo" class="cm-control" required>
+                                <option value="">Seleccioná un tipo...</option>
+                                <option value="Almacen" th:selected="${comercio.tipo == 'Almacen'}">Almacen</option>
+                                <option value="Verduleria" th:selected="${comercio.tipo == 'Verduleria'}">Verduleria</option>
+                                <option value="Carniceria" th:selected="${comercio.tipo == 'Carniceria'}">Carniceria</option>
+                                <option value="Kiosco" th:selected="${comercio.tipo == 'Kiosco'}">Kiosco</option>
+                                <option value="Supermercado" th:selected="${comercio.tipo == 'Supermercado'}">Supermercado</option>
+                                <option value="Otro" th:selected="${comercio.tipo == 'Otro'}">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="cm-fila cm-fila-2">
+                        <div class="cm-campo">
+                            <label class="cm-etiqueta" for="direccion-comercio">Dirección</label>
+                            <input type="text" name="direccion" id="direccion-comercio" class="cm-control"
+                                   th:value="${comercio.direccion}" maxlength="200" required>
+                        </div>
+                        <div class="cm-campo">
+                            <label class="cm-etiqueta" for="localidad-comercio">Localidad</label>
+                            <select name="localidad" id="localidad-comercio" class="cm-control" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Almirante Brown" th:selected="${comercio.localidad == 'Almirante Brown'}">Almirante Brown</option>
+                                <option value="Avellaneda" th:selected="${comercio.localidad == 'Avellaneda'}">Avellaneda</option>
+                                <option value="Bahia Blanca" th:selected="${comercio.localidad == 'Bahia Blanca'}">Bahía Blanca</option>
+                                <option value="Berazategui" th:selected="${comercio.localidad == 'Berazategui'}">Berazategui</option>
+                                <option value="Berisso" th:selected="${comercio.localidad == 'Berisso'}">Berisso</option>
+                                <option value="Brandsen" th:selected="${comercio.localidad == 'Brandsen'}">Brandsen</option>
+                                <option value="Buenos Aires" th:selected="${comercio.localidad == 'Buenos Aires'}">Buenos Aires (CABA)</option>
+                                <option value="Campana" th:selected="${comercio.localidad == 'Campana'}">Campana</option>
+                                <option value="Canuelas" th:selected="${comercio.localidad == 'Canuelas'}">Cañuelas</option>
+                                <option value="Ensenada" th:selected="${comercio.localidad == 'Ensenada'}">Ensenada</option>
+                                <option value="Escobar" th:selected="${comercio.localidad == 'Escobar'}">Escobar</option>
+                                <option value="Esteban Echeverria" th:selected="${comercio.localidad == 'Esteban Echeverria'}">Esteban Echeverría</option>
+                                <option value="Exaltacion de la Cruz" th:selected="${comercio.localidad == 'Exaltacion de la Cruz'}">Exaltación de la Cruz</option>
+                                <option value="Ezeiza" th:selected="${comercio.localidad == 'Ezeiza'}">Ezeiza</option>
+                                <option value="Florencio Varela" th:selected="${comercio.localidad == 'Florencio Varela'}">Florencio Varela</option>
+                                <option value="General Las Heras" th:selected="${comercio.localidad == 'General Las Heras'}">General Las Heras</option>
+                                <option value="General Rodriguez" th:selected="${comercio.localidad == 'General Rodriguez'}">General Rodríguez</option>
+                                <option value="Hurlingham" th:selected="${comercio.localidad == 'Hurlingham'}">Hurlingham</option>
+                                <option value="Ituzaingo" th:selected="${comercio.localidad == 'Ituzaingo'}">Ituzaingó</option>
+                                <option value="Jose C. Paz" th:selected="${comercio.localidad == 'Jose C. Paz'}">José C. Paz</option>
+                                <option value="La Matanza" th:selected="${comercio.localidad == 'La Matanza'}">La Matanza</option>
+                                <option value="La Plata" th:selected="${comercio.localidad == 'La Plata'}">La Plata</option>
+                                <option value="Lanus" th:selected="${comercio.localidad == 'Lanus'}">Lanús</option>
+                                <option value="Lobos" th:selected="${comercio.localidad == 'Lobos'}">Lobos</option>
+                                <option value="Lomas de Zamora" th:selected="${comercio.localidad == 'Lomas de Zamora'}">Lomas de Zamora</option>
+                                <option value="Lujan" th:selected="${comercio.localidad == 'Lujan'}">Luján</option>
+                                <option value="Magdalena" th:selected="${comercio.localidad == 'Magdalena'}">Magdalena</option>
+                                <option value="Malvinas Argentinas" th:selected="${comercio.localidad == 'Malvinas Argentinas'}">Malvinas Argentinas</option>
+                                <option value="Mar del Plata" th:selected="${comercio.localidad == 'Mar del Plata'}">Mar del Plata</option>
+                                <option value="Marcos Paz" th:selected="${comercio.localidad == 'Marcos Paz'}">Marcos Paz</option>
+                                <option value="Merlo" th:selected="${comercio.localidad == 'Merlo'}">Merlo</option>
+                                <option value="Moreno" th:selected="${comercio.localidad == 'Moreno'}">Moreno</option>
+                                <option value="Moron" th:selected="${comercio.localidad == 'Moron'}">Morón</option>
+                                <option value="Navarro" th:selected="${comercio.localidad == 'Navarro'}">Navarro</option>
+                                <option value="Pilar" th:selected="${comercio.localidad == 'Pilar'}">Pilar</option>
+                                <option value="Presidente Peron" th:selected="${comercio.localidad == 'Presidente Peron'}">Presidente Perón</option>
+                                <option value="Punta Indio" th:selected="${comercio.localidad == 'Punta Indio'}">Punta Indio</option>
+                                <option value="Quilmes" th:selected="${comercio.localidad == 'Quilmes'}">Quilmes</option>
+                                <option value="Ramallo" th:selected="${comercio.localidad == 'Ramallo'}">Ramallo</option>
+                                <option value="San Fernando" th:selected="${comercio.localidad == 'San Fernando'}">San Fernando</option>
+                                <option value="San Isidro" th:selected="${comercio.localidad == 'San Isidro'}">San Isidro</option>
+                                <option value="San Martin" th:selected="${comercio.localidad == 'San Martin'}">San Martín</option>
+                                <option value="San Miguel" th:selected="${comercio.localidad == 'San Miguel'}">San Miguel</option>
+                                <option value="San Nicolas" th:selected="${comercio.localidad == 'San Nicolas'}">San Nicolás</option>
+                                <option value="San Vicente" th:selected="${comercio.localidad == 'San Vicente'}">San Vicente</option>
+                                <option value="Tigre" th:selected="${comercio.localidad == 'Tigre'}">Tigre</option>
+                                <option value="Tres de Febrero" th:selected="${comercio.localidad == 'Tres de Febrero'}">Tres de Febrero</option>
+                                <option value="Vicente Lopez" th:selected="${comercio.localidad == 'Vicente Lopez'}">Vicente López</option>
+                                <option value="Zarate" th:selected="${comercio.localidad == 'Zarate'}">Zárate</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="cm-campo">
+                        <div class="cm-ubicacion-barra">
+                            <span class="cm-etiqueta">Ubicación en el mapa</span>
+                            <button type="button" id="btn-buscar-ubicacion"
+                                    class="cm-btn cm-btn-claro cm-btn-chico"
+                                    th:attr="data-url=@{/comercio/ubicaciones/sugerencias}">
+                                <i class="bi bi-search" aria-hidden="true"></i> Buscar en el mapa
                             </button>
-                        </form>
+                        </div>
+                        <p id="estado-ubicacion" class="cm-estado-ubicacion" role="status" aria-live="polite">
+                            Si cambiás la dirección, buscala para confirmar dónde queda tu local.
+                        </p>
+                        <div id="sugerencias-ubicacion" class="list-group"></div>
+                        <div id="mapa-ubicacion" class="cm-mapa"
+                             th:attr="data-lat=${comercio.latitud},data-lon=${comercio.longitud}"></div>
+                        <p class="cm-ayuda">
+                            Si el marcador no quedó justo en tu local, arrastralo o tocá el mapa donde está la puerta.
+                        </p>
+                        <input type="hidden" name="latitudConfirmada" id="latitud-confirmada">
+                        <input type="hidden" name="longitudConfirmada" id="longitud-confirmada">
                     </div>
-                </div>
 
-            </div>
+                    <div class="cm-campo">
+                        <label class="cm-etiqueta" for="descripcion-comercio">Descripción <span class="cm-opcional">(opcional)</span></label>
+                        <textarea id="descripcion-comercio" name="descripcion" class="cm-control" rows="3"
+                                  th:text="${comercio.descripcion}"
+                                  placeholder="Contá algo sobre tu comercio..."></textarea>
+                    </div>
 
-            <!-- COLUMNA DERECHA: datos del comercio editables -->
-            <div class="col-lg-8">
-                <div class="card shadow-sm">
-                    <div class="card-body">
+                    <div class="cm-acciones cm-barra-guardar">
+                        <button type="submit" id="btn-guardar-perfil" class="cm-btn cm-btn-principal">
+                            <i class="bi bi-check2" aria-hidden="true"></i> Guardar cambios
+                        </button>
+                    </div>
+                </form>
+            </section>
 
-                        <!-- Avatar + upload centrado -->
-                        <div class="text-center mb-4">
-                            <img th:if="${comercio.tieneFoto()}"
-                                 th:src="@{/comercio/{id}/foto(id=${comercio.id})}"
-                                 class="rounded-circle"
-                                 style="width:90px;height:90px;object-fit:cover;border:3px solid #e9ecef;"
-                                 alt="Logo del comercio"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div id="foto-inicial-comercio" aria-hidden="true"
-                                 style="width:90px;height:90px;border-radius:50%;background:#198754;color:#fff;font-size:2rem;font-weight:700;align-items:center;justify-content:center;margin:0 auto;"
-                                 th:styleappend="${comercio.tieneFoto()} ? 'display:none;' : 'display:flex;'">
-                                <span th:text="${#strings.toUpperCase(#strings.substring(comercio.nombre,0,1))}"></span>
-                            </div>
-                            <div class="mt-2">
-                                <form th:action="@{/comercio/perfil/foto}" method="post" enctype="multipart/form-data">
-                                    <label class="btn btn-outline-secondary btn-sm">
-                                        <i class="bi bi-camera"></i> Cambiar foto
-                                        <input type="file" name="foto" accept="image/jpeg,image/png,image/webp"
-                                               style="display:none" onchange="this.form.submit()">
-                                    </label>
-                                </form>
-                                <div th:if="${param.fotoActualizada}" class="alert alert-success py-1 px-2 small mt-1">
-                                    Foto actualizada.
-                                </div>
-                                <div th:if="${param.errorFoto}" class="alert alert-danger py-1 px-2 small mt-1">Solo
-                                    JPG/PNG/WEBP hasta 5 MB.
-                                </div>
-                            </div>
+            <!-- Verificación, cuenta y contraseña -->
+            <div class="cm-area-resto">
+
+                <section class="cm-tarjeta" aria-labelledby="titulo-verificacion">
+                    <h2 class="cm-seccion-titulo" id="titulo-verificacion">
+                        <span class="cm-icono" aria-hidden="true"><i class="bi bi-patch-check"></i></span>
+                        Verificación
+                    </h2>
+
+                    <div class="cm-verificacion" th:if="${comercio.verificado}" id="estado-verificado">
+                        <span class="cm-chip cm-chip-ok"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> Comercio verificado</span>
+                        <p>Tu comercio cuenta con la insignia de verificación.</p>
+                    </div>
+
+                    <th:block th:unless="${comercio.verificado}">
+                        <div class="cm-verificacion" th:if="${comercio.solicitudVerificacion}" id="estado-pendiente">
+                            <span class="cm-chip cm-chip-aviso"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Solicitud pendiente</span>
+                            <p>Tu solicitud de verificación está pendiente de revisión.</p>
                         </div>
 
-                        <!-- Título + botones -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0"><i class="bi bi-shop me-2"></i>Datos del comercio</h5>
-                            <div>
-                                <a th:href="@{/comercio/{id}(id=${comercio.id})}"
-                                   class="btn btn-outline-secondary btn-sm">
-                                    <i class="bi bi-eye me-1"></i> Ver página pública
-                                </a>
-                                <a th:href="@{/comercio/perfil/horarios}" class="btn btn-outline-secondary btn-sm ms-2">
-                                    <i class="bi bi-clock me-1"></i> Horarios
-                                </a>
-                            </div>
-                        </div>
-                        <hr>
-
-                        <form th:action="@{/comercio/perfil/editar}" method="POST">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Nombre del comercio</label>
-                                    <input type="text" name="nombre" class="form-control"
-                                           th:value="${comercio.nombre}" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Tipo</label>
-                                    <select name="tipo" class="form-select" required>
-                                        <option value="">Seleccioná un tipo...</option>
-                                        <option value="Almacen" th:selected="${comercio.tipo == 'Almacen'}">Almacen
-                                        </option>
-                                        <option value="Verduleria" th:selected="${comercio.tipo == 'Verduleria'}">
-                                            Verduleria
-                                        </option>
-                                        <option value="Carniceria" th:selected="${comercio.tipo == 'Carniceria'}">
-                                            Carniceria
-                                        </option>
-                                        <option value="Kiosco" th:selected="${comercio.tipo == 'Kiosco'}">Kiosco
-                                        </option>
-                                        <option value="Supermercado" th:selected="${comercio.tipo == 'Supermercado'}">
-                                            Supermercado
-                                        </option>
-                                        <option value="Otro" th:selected="${comercio.tipo == 'Otro'}">Otro</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="direccion-comercio">Dirección</label>
-                                    <input type="text" name="direccion" id="direccion-comercio" class="form-control"
-                                           th:value="${comercio.direccion}" maxlength="200" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="localidad-comercio">Localidad</label>
-                                    <select name="localidad" id="localidad-comercio" class="form-select" required>
-                                        <option value="">Seleccionar...</option>
-                                        <option value="Almirante Brown"
-                                                th:selected="${comercio.localidad == 'Almirante Brown'}">Almirante Brown
-                                        </option>
-                                        <option value="Avellaneda" th:selected="${comercio.localidad == 'Avellaneda'}">
-                                            Avellaneda
-                                        </option>
-                                        <option value="Bahia Blanca"
-                                                th:selected="${comercio.localidad == 'Bahia Blanca'}">Bahía Blanca
-                                        </option>
-                                        <option value="Berazategui"
-                                                th:selected="${comercio.localidad == 'Berazategui'}">Berazategui
-                                        </option>
-                                        <option value="Berisso" th:selected="${comercio.localidad == 'Berisso'}">
-                                            Berisso
-                                        </option>
-                                        <option value="Brandsen" th:selected="${comercio.localidad == 'Brandsen'}">
-                                            Brandsen
-                                        </option>
-                                        <option value="Buenos Aires"
-                                                th:selected="${comercio.localidad == 'Buenos Aires'}">Buenos Aires
-                                            (CABA)
-                                        </option>
-                                        <option value="Campana" th:selected="${comercio.localidad == 'Campana'}">
-                                            Campana
-                                        </option>
-                                        <option value="Canuelas" th:selected="${comercio.localidad == 'Canuelas'}">
-                                            Cañuelas
-                                        </option>
-                                        <option value="Ensenada" th:selected="${comercio.localidad == 'Ensenada'}">
-                                            Ensenada
-                                        </option>
-                                        <option value="Escobar" th:selected="${comercio.localidad == 'Escobar'}">
-                                            Escobar
-                                        </option>
-                                        <option value="Esteban Echeverria"
-                                                th:selected="${comercio.localidad == 'Esteban Echeverria'}">Esteban
-                                            Echeverría
-                                        </option>
-                                        <option value="Exaltacion de la Cruz"
-                                                th:selected="${comercio.localidad == 'Exaltacion de la Cruz'}">
-                                            Exaltación de la Cruz
-                                        </option>
-                                        <option value="Ezeiza" th:selected="${comercio.localidad == 'Ezeiza'}">Ezeiza
-                                        </option>
-                                        <option value="Florencio Varela"
-                                                th:selected="${comercio.localidad == 'Florencio Varela'}">Florencio
-                                            Varela
-                                        </option>
-                                        <option value="General Las Heras"
-                                                th:selected="${comercio.localidad == 'General Las Heras'}">General Las
-                                            Heras
-                                        </option>
-                                        <option value="General Rodriguez"
-                                                th:selected="${comercio.localidad == 'General Rodriguez'}">General
-                                            Rodríguez
-                                        </option>
-                                        <option value="Hurlingham" th:selected="${comercio.localidad == 'Hurlingham'}">
-                                            Hurlingham
-                                        </option>
-                                        <option value="Ituzaingo" th:selected="${comercio.localidad == 'Ituzaingo'}">
-                                            Ituzaingó
-                                        </option>
-                                        <option value="Jose C. Paz"
-                                                th:selected="${comercio.localidad == 'Jose C. Paz'}">José C. Paz
-                                        </option>
-                                        <option value="La Matanza" th:selected="${comercio.localidad == 'La Matanza'}">
-                                            La Matanza
-                                        </option>
-                                        <option value="La Plata" th:selected="${comercio.localidad == 'La Plata'}">La
-                                            Plata
-                                        </option>
-                                        <option value="Lanus" th:selected="${comercio.localidad == 'Lanus'}">Lanús
-                                        </option>
-                                        <option value="Lobos" th:selected="${comercio.localidad == 'Lobos'}">Lobos
-                                        </option>
-                                        <option value="Lomas de Zamora"
-                                                th:selected="${comercio.localidad == 'Lomas de Zamora'}">Lomas de Zamora
-                                        </option>
-                                        <option value="Lujan" th:selected="${comercio.localidad == 'Lujan'}">Luján
-                                        </option>
-                                        <option value="Magdalena" th:selected="${comercio.localidad == 'Magdalena'}">
-                                            Magdalena
-                                        </option>
-                                        <option value="Malvinas Argentinas"
-                                                th:selected="${comercio.localidad == 'Malvinas Argentinas'}">Malvinas
-                                            Argentinas
-                                        </option>
-                                        <option value="Mar del Plata"
-                                                th:selected="${comercio.localidad == 'Mar del Plata'}">Mar del Plata
-                                        </option>
-                                        <option value="Marcos Paz" th:selected="${comercio.localidad == 'Marcos Paz'}">
-                                            Marcos Paz
-                                        </option>
-                                        <option value="Merlo" th:selected="${comercio.localidad == 'Merlo'}">Merlo
-                                        </option>
-                                        <option value="Moreno" th:selected="${comercio.localidad == 'Moreno'}">Moreno
-                                        </option>
-                                        <option value="Moron" th:selected="${comercio.localidad == 'Moron'}">Morón
-                                        </option>
-                                        <option value="Navarro" th:selected="${comercio.localidad == 'Navarro'}">
-                                            Navarro
-                                        </option>
-                                        <option value="Pilar" th:selected="${comercio.localidad == 'Pilar'}">Pilar
-                                        </option>
-                                        <option value="Presidente Peron"
-                                                th:selected="${comercio.localidad == 'Presidente Peron'}">Presidente
-                                            Perón
-                                        </option>
-                                        <option value="Punta Indio"
-                                                th:selected="${comercio.localidad == 'Punta Indio'}">Punta Indio
-                                        </option>
-                                        <option value="Quilmes" th:selected="${comercio.localidad == 'Quilmes'}">
-                                            Quilmes
-                                        </option>
-                                        <option value="Ramallo" th:selected="${comercio.localidad == 'Ramallo'}">
-                                            Ramallo
-                                        </option>
-                                        <option value="San Fernando"
-                                                th:selected="${comercio.localidad == 'San Fernando'}">San Fernando
-                                        </option>
-                                        <option value="San Isidro" th:selected="${comercio.localidad == 'San Isidro'}">
-                                            San Isidro
-                                        </option>
-                                        <option value="San Martin" th:selected="${comercio.localidad == 'San Martin'}">
-                                            San Martín
-                                        </option>
-                                        <option value="San Miguel" th:selected="${comercio.localidad == 'San Miguel'}">
-                                            San Miguel
-                                        </option>
-                                        <option value="San Nicolas"
-                                                th:selected="${comercio.localidad == 'San Nicolas'}">San Nicolás
-                                        </option>
-                                        <option value="San Vicente"
-                                                th:selected="${comercio.localidad == 'San Vicente'}">San Vicente
-                                        </option>
-                                        <option value="Tigre" th:selected="${comercio.localidad == 'Tigre'}">Tigre
-                                        </option>
-                                        <option value="Tres de Febrero"
-                                                th:selected="${comercio.localidad == 'Tres de Febrero'}">Tres de Febrero
-                                        </option>
-                                        <option value="Vicente Lopez"
-                                                th:selected="${comercio.localidad == 'Vicente Lopez'}">Vicente López
-                                        </option>
-                                        <option value="Zarate" th:selected="${comercio.localidad == 'Zarate'}">Zárate
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                                        <span class="form-label mb-0">Ubicación en el mapa</span>
-                                        <button type="button" id="btn-buscar-ubicacion"
-                                                class="btn btn-outline-primary btn-sm"
-                                                th:attr="data-url=@{/comercio/ubicaciones/sugerencias}">
-                                            <i class="bi bi-search me-1"></i> Buscar en el mapa
-                                        </button>
-                                    </div>
-                                    <p id="estado-ubicacion" class="small text-muted mb-2" role="status"
-                                       aria-live="polite">
-                                        Si cambiás la dirección, buscala para confirmar dónde queda tu local.
-                                    </p>
-                                    <div id="sugerencias-ubicacion" class="list-group mb-2"></div>
-                                    <div id="mapa-ubicacion" class="rounded border" style="height: 280px;"
-                                         th:attr="data-lat=${comercio.latitud},data-lon=${comercio.longitud}"></div>
-                                    <p class="small text-muted mt-1 mb-0">
-                                        Si el marcador no quedó justo en tu local, arrastralo o tocá el mapa donde está
-                                        la puerta.
-                                    </p>
-                                    <input type="hidden" name="latitudConfirmada" id="latitud-confirmada">
-                                    <input type="hidden" name="longitudConfirmada" id="longitud-confirmada">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Descripción</label>
-                                    <textarea name="descripcion" class="form-control" rows="3"
-                                              th:text="${comercio.descripcion}"
-                                              placeholder="Contá algo sobre tu comercio..."></textarea>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <button type="submit" id="btn-guardar-perfil" class="btn btn-primary">
-                                    <i class="bi bi-save me-1"></i> Guardar cambios
+                        <div class="cm-verificacion" th:unless="${comercio.solicitudVerificacion}" id="estado-sin-verificar">
+                            <span class="cm-chip cm-chip-neutro"><i class="bi bi-patch-question" aria-hidden="true"></i> Sin verificar</span>
+                            <p>Obtené la insignia de verificación para destacar tu comercio.</p>
+                            <form th:action="@{/comercio/perfil/solicitar-verificacion}" method="post">
+                                <button type="submit" id="btn-solicitar-verificacion" class="cm-btn cm-btn-claro cm-btn-bloque">
+                                    <i class="bi bi-patch-check" aria-hidden="true"></i> Solicitar verificación
                                 </button>
+                            </form>
+                        </div>
+                    </th:block>
+                </section>
+
+                <section class="cm-tarjeta" aria-labelledby="titulo-cuenta">
+                    <h2 class="cm-seccion-titulo" id="titulo-cuenta">
+                        <span class="cm-icono" aria-hidden="true"><i class="bi bi-person-circle"></i></span>
+                        Mi cuenta
+                    </h2>
+                    <dl class="cm-dato">
+                        <dt>Email</dt>
+                        <dd th:text="${usuario != null ? usuario.email : session['EMAIL']}">comercio@mail.com</dd>
+                    </dl>
+                    <dl class="cm-dato">
+                        <dt>Productos cargados</dt>
+                        <dd th:text="${cantidadProductos}">0</dd>
+                    </dl>
+                    <a th:href="@{/reporte/mis-productos}" class="cm-btn cm-btn-neutro cm-btn-bloque">
+                        <i class="bi bi-box-seam" aria-hidden="true"></i> Ver mis productos
+                    </a>
+                </section>
+
+                <section class="cm-tarjeta" aria-labelledby="titulo-clave">
+                    <h2 class="cm-seccion-titulo" id="titulo-clave">
+                        <span class="cm-icono" aria-hidden="true"><i class="bi bi-lock"></i></span>
+                        Cambiar contraseña
+                    </h2>
+                    <form th:action="@{/comercio/perfil/cambiar-contrasena}" method="POST">
+                        <div class="cm-campo">
+                            <label class="cm-etiqueta" for="contrasenaActual">Contraseña actual</label>
+                            <div class="cm-clave">
+                                <input type="password" id="contrasenaActual" name="contrasenaActual" class="cm-control"
+                                       autocomplete="current-password" required>
+                                <button type="button" class="cm-ver-clave" data-objetivo="contrasenaActual"
+                                        aria-label="Mostrar contraseña" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button>
                             </div>
-                        </form>
-                    </div>
-                </div>
+                        </div>
+                        <div class="cm-campo">
+                            <label class="cm-etiqueta" for="nuevaContrasena">Nueva contraseña</label>
+                            <div class="cm-clave">
+                                <input type="password" name="contrasenaNueva" id="nuevaContrasena" class="cm-control"
+                                       autocomplete="new-password" required>
+                                <button type="button" class="cm-ver-clave" data-objetivo="nuevaContrasena"
+                                        aria-label="Mostrar contraseña" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button>
+                            </div>
+                        </div>
+                        <div class="cm-campo">
+                            <label class="cm-etiqueta" for="confirmarContrasena">Confirmar nueva contraseña</label>
+                            <div class="cm-clave">
+                                <input type="password" name="confirmarContrasena" id="confirmarContrasena" class="cm-control"
+                                       autocomplete="new-password" required>
+                                <button type="button" class="cm-ver-clave" data-objetivo="confirmarContrasena"
+                                        aria-label="Mostrar contraseña" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button>
+                            </div>
+                        </div>
+                        <button type="submit" id="btn-cambiar-contrasena" class="cm-btn cm-btn-oscuro cm-btn-bloque">
+                            <i class="bi bi-shield-lock" aria-hidden="true"></i> Cambiar contraseña
+                        </button>
+                    </form>
+                </section>
             </div>
-
         </div>
-    </div>
+    </main>
+</th:block>
 
-</main>
+<script>
+    // Anillo de avance del perfil: se calcula con los pasos que ya vienen marcados desde el servidor
+    (function () {
+        var pasos = document.querySelectorAll('.pf-paso');
+        var hechos = document.querySelectorAll('.pf-paso.pf-hecho').length;
+        var anillo = document.getElementById('anillo-valor');
+        var numero = document.getElementById('porcentaje-perfil');
+        if (!pasos.length || !anillo || !numero) { return; }
 
+        var porcentaje = Math.round(hechos * 100 / pasos.length);
+        var circunferencia = 2 * Math.PI * 38;
+        var titulo = document.getElementById('titulo-progreso');
+        var detalle = document.getElementById('detalle-progreso');
+        var sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        anillo.style.strokeDasharray = circunferencia;
+        if (porcentaje === 100) {
+            titulo.textContent = '¡Perfil completo!';
+            detalle.textContent = 'Tu comercio tiene todo lo necesario para destacar.';
+            document.getElementById('progreso-perfil').classList.add('pf-completo');
+        } else {
+            titulo.textContent = 'Tu perfil está al ' + porcentaje + '%';
+            detalle.textContent = 'Te faltan ' + (pasos.length - hechos) + ' de ' + pasos.length + ' pasos. Tocá uno para ir directo.';
+        }
+
+        function dibujar(valor) {
+            anillo.style.strokeDashoffset = circunferencia * (1 - valor / 100);
+            numero.textContent = Math.round(valor) + '%';
+        }
+
+        if (sinMovimiento) {
+            dibujar(porcentaje);
+            return;
+        }
+        dibujar(0);
+        var inicio = null;
+        function paso(ahora) {
+            if (inicio === null) { inicio = ahora; }
+            var t = Math.min((ahora - inicio) / 1100, 1);
+            dibujar(porcentaje * (1 - Math.pow(1 - t, 3)));
+            if (t < 1) { window.requestAnimationFrame(paso); }
+        }
+        window.setTimeout(function () { window.requestAnimationFrame(paso); }, 350);
+    }());
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.querySelectorAll('.cm-ver-clave').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            var campo = document.getElementById(boton.dataset.objetivo);
+            var visible = campo.type === 'password';
+            campo.type = visible ? 'text' : 'password';
+            boton.setAttribute('aria-pressed', visible ? 'true' : 'false');
+            boton.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            boton.firstElementChild.className = visible ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+    });
+</script>
 <script th:if="${comercio != null}">
     (function () {
         const contenedor = document.getElementById('mapa-ubicacion');

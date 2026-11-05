@@ -1,14 +1,21 @@
 package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Comercio.MetodoPago;
 import com.tallerwebi.dominio.Comercio.Promocion;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Comercio.ServicioPromocion;
+import com.tallerwebi.dominio.Comercio.TipoPromocion;
+import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import jakarta.servlet.http.HttpServletRequest;
 import java.beans.PropertyEditorSupport;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
@@ -24,27 +31,32 @@ public class ControladorPromocion {
   private static final String ATRIBUTO_ERROR = "error";
   private static final String ATRIBUTO_PROMOCIONES = "promociones";
   private static final String VISTA_MIS_PROMOCIONES = "comercio/mis-promociones";
+  private static final String VISTA_PROMOCION_PRODUCTO = "comercio/promocion-producto";
+  private static final String VISTA_PROMOCION_METODO_PAGO = "comercio/promocion-metodo-pago";
   private static final String REDIRECT_MIS_PROMOCIONES = "redirect:/promociones/mis-promociones";
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String REDIRECT_HOME = "redirect:/home";
   private static final String REDIRECT_PERFIL_COMERCIO = "redirect:/comercio/perfil";
   private static final String ROL_COMERCIO = "COMERCIO";
   private static final String MENSAJE_DATOS_INVALIDOS =
-    "Revisá los datos: el precio y las fechas deben ser válidos.";
+    "Revisá los datos: el precio, el descuento y las fechas deben ser válidos.";
   private static final DateTimeFormatter FORMATO_FECHA_FORMULARIO = DateTimeFormatter.ofPattern(
     "yyyy-MM-dd'T'HH:mm"
   );
 
   private final ServicioPromocion servicioPromocion;
   private final ServicioComercio servicioComercio;
+  private final ServicioReporte servicioReporte;
 
   @Autowired
   public ControladorPromocion(
     ServicioPromocion servicioPromocion,
-    ServicioComercio servicioComercio
+    ServicioComercio servicioComercio,
+    ServicioReporte servicioReporte
   ) {
     this.servicioPromocion = servicioPromocion;
     this.servicioComercio = servicioComercio;
+    this.servicioReporte = servicioReporte;
   }
 
   // Los <input type="datetime-local"> mandan "2026-11-03T10:30": se lee y se vuelve a escribir
@@ -90,9 +102,44 @@ public class ControladorPromocion {
     return cargarMisPromociones(usuarioDeLaSesion(request));
   }
 
-  @PostMapping("/crear")
-  public ModelAndView crear(
+  @GetMapping("/nueva/producto")
+  public ModelAndView formularioPromocionDeProducto(HttpServletRequest request) {
+    ModelAndView rechazo = rechazarSiNoEsComercio(request);
+    if (rechazo != null) return rechazo;
+
+    return cargarFormulario(usuarioDeLaSesion(request), TipoPromocion.PRODUCTO, null, null);
+  }
+
+  @GetMapping("/nueva/metodo-pago")
+  public ModelAndView formularioPromocionDeMetodoPago(HttpServletRequest request) {
+    ModelAndView rechazo = rechazarSiNoEsComercio(request);
+    if (rechazo != null) return rechazo;
+
+    return cargarFormulario(usuarioDeLaSesion(request), TipoPromocion.METODO_PAGO, null, null);
+  }
+
+  @PostMapping("/crear/producto")
+  public ModelAndView crearPromocionDeProducto(
     @ModelAttribute(ATRIBUTO_PROMOCION) Promocion promocion,
+    BindingResult resultado,
+    HttpServletRequest request
+  ) {
+    return crear(promocion, TipoPromocion.PRODUCTO, resultado, request);
+  }
+
+  @PostMapping("/crear/metodo-pago")
+  public ModelAndView crearPromocionDeMetodoPago(
+    @ModelAttribute(ATRIBUTO_PROMOCION) Promocion promocion,
+    BindingResult resultado,
+    HttpServletRequest request
+  ) {
+    return crear(promocion, TipoPromocion.METODO_PAGO, resultado, request);
+  }
+
+  // El tipo lo decide la ruta, nunca el formulario: cada formulario crea solo su tipo.
+  private ModelAndView crear(
+    Promocion promocion,
+    TipoPromocion tipo,
     BindingResult resultado,
     HttpServletRequest request
   ) {
@@ -100,9 +147,10 @@ public class ControladorPromocion {
     if (rechazo != null) return rechazo;
 
     Long usuarioId = usuarioDeLaSesion(request);
+    promocion.setTipo(tipo);
 
     if (resultado.hasErrors()) {
-      return volverAlFormulario(usuarioId, MENSAJE_DATOS_INVALIDOS, promocion);
+      return cargarFormulario(usuarioId, tipo, MENSAJE_DATOS_INVALIDOS, promocion);
     }
 
     try {
@@ -110,7 +158,7 @@ public class ControladorPromocion {
 
       return new ModelAndView(REDIRECT_MIS_PROMOCIONES);
     } catch (IllegalArgumentException e) {
-      return volverAlFormulario(usuarioId, e.getMessage(), promocion);
+      return cargarFormulario(usuarioId, tipo, e.getMessage(), promocion);
     }
   }
 
@@ -126,7 +174,7 @@ public class ControladorPromocion {
 
       return new ModelAndView(REDIRECT_MIS_PROMOCIONES);
     } catch (IllegalArgumentException e) {
-      return volverAlFormulario(usuarioId, e.getMessage(), null);
+      return volverAMisPromociones(usuarioId, e.getMessage());
     }
   }
 
@@ -146,7 +194,7 @@ public class ControladorPromocion {
     return ((Number) request.getSession().getAttribute("ID")).longValue();
   }
 
-  private ModelAndView volverAlFormulario(Long usuarioId, String error, Promocion promocion) {
+  private ModelAndView volverAMisPromociones(Long usuarioId, String error) {
     ModelAndView mav = cargarMisPromociones(usuarioId);
 
     if (mav.getViewName().startsWith("redirect:")) {
@@ -154,9 +202,6 @@ public class ControladorPromocion {
     }
 
     mav.addObject(ATRIBUTO_ERROR, error);
-    if (promocion != null) {
-      mav.addObject(ATRIBUTO_PROMOCION, promocion);
-    }
 
     return mav;
   }
@@ -171,8 +216,50 @@ public class ControladorPromocion {
     ModelAndView mav = new ModelAndView(VISTA_MIS_PROMOCIONES);
 
     mav.addObject(ATRIBUTO_PROMOCIONES, servicioPromocion.listarPorComercio(comercio.getId()));
-    mav.addObject(ATRIBUTO_PROMOCION, new Promocion());
 
     return mav;
+  }
+
+  private ModelAndView cargarFormulario(
+    Long usuarioId,
+    TipoPromocion tipo,
+    String error,
+    Promocion promocion
+  ) {
+    Comercio comercio = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
+
+    if (comercio == null) {
+      return new ModelAndView(REDIRECT_PERFIL_COMERCIO);
+    }
+
+    ModelAndView mav;
+    if (tipo == TipoPromocion.METODO_PAGO) {
+      mav = new ModelAndView(VISTA_PROMOCION_METODO_PAGO);
+      mav.addObject("metodosPago", MetodoPago.values());
+    } else {
+      mav = new ModelAndView(VISTA_PROMOCION_PRODUCTO);
+      mav.addObject("productosDelComercio", nombresDeProductosDelComercio(comercio));
+    }
+
+    mav.addObject(ATRIBUTO_PROMOCION, promocion == null ? new Promocion() : promocion);
+    if (error != null) {
+      mav.addObject(ATRIBUTO_ERROR, error);
+    }
+
+    return mav;
+  }
+
+  // Sugerencias para el campo "producto": los que ya se reportaron en el comercio, sin repetir
+  private List<String> nombresDeProductosDelComercio(Comercio comercio) {
+    return new java.util.ArrayList<>(
+      servicioReporte
+        .buscarPorComercio(comercio.getId())
+        .stream()
+        .map(Reporte::getProducto)
+        .filter(Objects::nonNull)
+        .map(producto -> producto.getNombre())
+        .filter(Objects::nonNull)
+        .collect(Collectors.toCollection(TreeSet::new))
+    );
   }
 }

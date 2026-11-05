@@ -3,142 +3,536 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard</title>
+    <title>Dashboard — Precios de Barrio</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/comercio-panel.css}" />
+    <link rel="stylesheet" th:href="@{/css/dashboard-comercio.css}" />
 </head>
-<body>
+<body class="db-pagina">
+<script>
+    try { if (localStorage.getItem('db-tema') === 'oscuro') document.body.setAttribute('data-tema', 'oscuro'); } catch (e) { /* sin almacenamiento */ }
+</script>
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<div class="container mt-4">
+<main class="container db-contenedor">
 
-    <div class="mb-4">
-        <h2 class="mb-0"><i class="bi bi-bar-chart-line me-2"></i>Dashboard</h2>
-        <p class="text-muted" th:if="${comercio != null}" th:text="${comercio.nombre}"></p>
-    </div>
-
-    <!-- Tarjetas de métricas -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="card text-center shadow-sm h-100">
-                <div class="card-body">
-                    <i class="bi bi-tag-fill display-6 text-primary"></i>
-                    <h3 class="mt-2 mb-0 fw-bold" th:text="${totalPrecios}">0</h3>
-                    <p class="text-muted small mb-0">Precios cargados</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card text-center shadow-sm h-100">
-                <div class="card-body">
-                    <i class="bi bi-people-fill display-6 text-success"></i>
-                    <h3 class="mt-2 mb-0 fw-bold" th:text="${totalVecinos}">0</h3>
-                    <p class="text-muted small mb-0">Vecinos colaboradores</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card text-center shadow-sm h-100">
-                <div class="card-body">
-                    <i class="bi bi-exclamation-triangle-fill display-6 text-warning"></i>
-                    <h3 class="mt-2 mb-0 fw-bold" th:text="${totalDudosos}">0</h3>
-                    <p class="text-muted small mb-0">Reportes dudosos</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card text-center shadow-sm h-100">
-                <div class="card-body">
-                    <i class="bi bi-currency-dollar display-6 text-info"></i>
-                    <h3 class="mt-2 mb-0 fw-bold"
-                        th:text="${'$' + #numbers.formatDecimal(precioPromedio, 1, 'POINT', 2, 'COMMA')}">$0</h3>
-                    <p class="text-muted small mb-0">Precio promedio</p>
-                </div>
-            </div>
+    <!-- Navegación del panel y herramientas -->
+    <div class="db-superior">
+        <ul class="db-nav" aria-label="Secciones de tu comercio">
+            <li><a th:href="@{/comercio/dashboard}" aria-current="page">Dashboard</a></li>
+            <li><a th:href="@{/reporte/mis-productos}">Productos</a></li>
+            <li><a th:href="@{/reporte/mis-reportes}">Reportes</a></li>
+            <li><a th:href="@{/promociones/mis-promociones}">Promociones</a></li>
+            <li><a th:href="@{/comercio/perfil/horarios}">Horarios</a></li>
+            <li><a th:href="@{/comercio/perfil}">Mi comercio</a></li>
+        </ul>
+        <div class="db-herramientas">
+            <button type="button" class="db-herr" id="btn-exportar">
+                <i class="bi bi-download" aria-hidden="true"></i> Exportar
+            </button>
+            <button type="button" class="db-herr db-herr-icono" id="btn-tema" aria-pressed="false"
+                    aria-label="Activar modo oscuro" title="Modo oscuro">
+                <i class="bi bi-moon-stars" aria-hidden="true"></i>
+            </button>
         </div>
     </div>
 
-    <div class="row g-4">
+    <!-- Encabezado con cifras -->
+    <header class="db-encabezado">
+        <div>
+            <p class="db-comercio" th:if="${comercio != null}">
+                <i class="bi bi-shop" aria-hidden="true"></i>
+                <span th:text="${comercio.nombre}">Mi comercio</span>
+            </p>
+            <h1 id="titulo-pagina">Dashboard</h1>
+            <p class="db-subtitulo">Cómo te ven los vecinos: precios, colaboradores y lo que más se busca en tu zona.</p>
+        </div>
+
+        <div class="db-cifras" id="db-cifras" th:attr="data-total=${totalPrecios},data-dudosos=${totalDudosos}">
+            <div class="db-cifra">
+                <span class="db-cifra-nombre">Precios cargados</span>
+                <div class="db-cifra-fila">
+                    <span class="db-numero" id="total-precios" th:attr="data-valor=${totalPrecios}" th:text="${totalPrecios}">0</span>
+                </div>
+            </div>
+            <div class="db-cifra">
+                <span class="db-cifra-nombre">Vecinos colaboradores</span>
+                <div class="db-cifra-fila">
+                    <span class="db-numero" id="total-vecinos" th:attr="data-valor=${totalVecinos}" th:text="${totalVecinos}">0</span>
+                </div>
+            </div>
+            <div class="db-cifra">
+                <span class="db-cifra-nombre">Reportes dudosos</span>
+                <div class="db-cifra-fila">
+                    <span class="db-numero" id="total-dudosos" th:attr="data-valor=${totalDudosos}" th:text="${totalDudosos}">0</span>
+                    <span class="db-chip" id="chip-dudosos" hidden></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="db-grilla">
+
+        <!-- Confiabilidad + precio promedio -->
+        <section class="db-tarjeta db-conf" style="--i:0" aria-labelledby="db-t-conf">
+            <div class="db-tarjeta-cabecera">
+                <h2 id="db-t-conf">Confiabilidad de tus precios</h2>
+                <span class="db-icono" aria-hidden="true"><i class="bi bi-shield-check"></i></span>
+            </div>
+            <div class="db-conf-cuerpo">
+                <div>
+                    <span class="db-promedio-etiqueta">Precio promedio</span>
+                    <span class="db-promedio" id="precio-promedio"
+                          th:text="${'$' + #numbers.formatDecimal(precioPromedio, 1, 'POINT', 2, 'COMMA')}">$0</span>
+                    <p class="db-nota mt-2">Porcentaje de tus precios que los vecinos no marcaron como dudosos.</p>
+                </div>
+                <div class="db-medidor" id="db-medidor" role="img" aria-label="Confiabilidad de tus precios">
+                    <svg viewBox="0 0 200 110" aria-hidden="true">
+                        <path class="db-medidor-fondo" d="M12 100 A88 88 0 0 1 188 100" pathLength="100"/>
+                        <path class="db-medidor-valor" id="db-medidor-valor" d="M12 100 A88 88 0 0 1 188 100" pathLength="100"/>
+                    </svg>
+                    <div class="db-medidor-centro">
+                        <strong id="db-medidor-pct">—</strong>
+                        <span>confiables</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- Producto estrella -->
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-star-fill text-warning me-2"></i>Producto estrella</h5>
-                    <hr>
-                    <p class="fs-5 fw-semibold" th:text="${productoEstrella}">-</p>
-                    <p class="text-muted small">El producto más reportado por los vecinos en tu comercio.</p>
-                </div>
+        <section class="db-tarjeta db-verde db-estrella" style="--i:1" aria-labelledby="db-t-estrella">
+            <div class="db-tarjeta-cabecera">
+                <h2 id="db-t-estrella">Producto estrella</h2>
+                <span class="db-icono" aria-hidden="true"><i class="bi bi-star-fill"></i></span>
             </div>
-        </div>
+            <p class="db-estrella-nombre" id="producto-estrella" th:text="${productoEstrella}">-</p>
+            <p class="db-nota">El producto más reportado por los vecinos en tu comercio.</p>
+            <div class="db-pie">
+                <a th:href="@{/reporte}" class="db-boton-claro" id="btn-cargar-producto">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> Cargar producto
+                </a>
+            </div>
+        </section>
+
+        <!-- Más buscados -->
+        <section class="db-tarjeta db-negra db-buscados" style="--i:2" aria-labelledby="db-t-buscados">
+            <div class="db-tarjeta-cabecera">
+                <h2 id="db-t-buscados">Lo más buscado en tu zona</h2>
+                <span class="db-icono" aria-hidden="true"><i class="bi bi-fire"></i></span>
+            </div>
+            <p class="db-nota mb-3">Último mes, vecinos de tu localidad. Si lo vendés, cargalo.</p>
+            <p th:if="${productosMasBuscados == null or #lists.isEmpty(productosMasBuscados)}" class="db-sin-datos"
+               style="color:#0B1B2B">Todavía no hay datos suficientes en tu zona.</p>
+            <ol th:if="${productosMasBuscados != null and !#lists.isEmpty(productosMasBuscados)}" class="db-lista" id="db-buscados-lista">
+                <li th:each="prod, stat : ${productosMasBuscados}" th:attr="data-valor=${prod[2]}">
+                    <span class="db-puesto" th:text="${stat.count}">1</span>
+                    <span class="db-texto">
+                        <strong th:text="${prod[0]}">Producto</strong>
+                        <small th:text="${prod[1]}">Marca</small>
+                        <span class="db-progreso" aria-hidden="true"><i></i></span>
+                    </span>
+                    <span class="db-dato" th:text="${prod[2]} + ' reportes'">0 reportes</span>
+                </li>
+            </ol>
+        </section>
 
         <!-- Rangos etarios -->
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-people me-2"></i>Rangos etarios</h5>
-                    <hr>
-                    <div th:if="${rangosEtarios == null or #lists.isEmpty(rangosEtarios)}"
-                         class="text-muted small">Sin datos suficientes.</div>
-                    <table th:if="${rangosEtarios != null and !#lists.isEmpty(rangosEtarios)}"
-                           class="table table-sm table-borderless mb-0">
-                        <tbody>
-                        <tr th:each="rango : ${rangosEtarios}">
-                            <td th:text="${rango[0]}"></td>
-                            <td class="text-end fw-semibold" th:text="${rango[1]} + ' vecinos'"></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+        <section class="db-tarjeta db-rangos db-ancha" style="--i:3" aria-labelledby="db-t-rangos">
+            <div class="db-tarjeta-cabecera">
+                <h2 id="db-t-rangos">Rangos etarios</h2>
+                <span class="db-icono" aria-hidden="true"><i class="bi bi-people"></i></span>
             </div>
-        </div>
+            <p th:if="${rangosEtarios == null or #lists.isEmpty(rangosEtarios)}" class="db-sin-datos">
+                Todavía no hay datos suficientes. Aparecen cuando los vecinos reportan precios en tu comercio.
+            </p>
+            <div th:if="${rangosEtarios != null and !#lists.isEmpty(rangosEtarios)}" class="db-segmento" role="group"
+                 aria-label="Tipo de gráfico" id="db-segmento">
+                <button type="button" data-vista="barras" aria-pressed="true">Barras</button>
+                <button type="button" data-vista="linea" aria-pressed="false">Línea</button>
+                <button type="button" data-vista="dona" aria-pressed="false">Dona</button>
+            </div>
+            <div th:if="${rangosEtarios != null and !#lists.isEmpty(rangosEtarios)}" class="db-grafico" id="db-grafico">
+                <div class="db-vista db-vista-barras" id="vista-barras">
+                    <div class="db-barras" id="db-barras">
+                        <div class="db-barra" th:each="rango : ${rangosEtarios}" th:attr="data-valor=${rango[1]}">
+                            <span class="db-barra-valor" th:text="${rango[1]}">0</span>
+                            <span class="db-barra-col"></span>
+                            <span class="db-barra-nombre" th:text="${rango[0]}">18-25</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="db-vista db-vista-linea" id="vista-linea" hidden></div>
+                <div class="db-vista db-vista-dona" id="vista-dona" hidden></div>
+                <div class="db-tip" id="db-tip" role="status" hidden></div>
+            </div>
+            <p class="db-nota mt-3" th:if="${rangosEtarios != null and !#lists.isEmpty(rangosEtarios)}">Vecinos que reportaron precios en tu comercio, por edad.</p>
+        </section>
 
         <!-- Top vecinos -->
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-trophy-fill text-warning me-2"></i>Top vecinos</h5>
-                    <hr>
-                    <div th:if="${topVecinos == null or #lists.isEmpty(topVecinos)}"
-                         class="text-muted small">Sin datos suficientes.</div>
-                    <ol th:if="${topVecinos != null and !#lists.isEmpty(topVecinos)}"
-                        class="mb-0 ps-3">
-                        <li th:each="vecino,stat : ${topVecinos}"
-                            th:if="${stat.index < 5}"
-                            class="mb-2">
-                            <span th:text="${vecino[1]} + ' ' + ${vecino[2]}"></span>
-                            <span class="badge bg-primary ms-1"
-                                  th:text="${vecino[3]} + ' reportes'"></span>
-                        </li>
-                    </ol>
-                </div>
+        <section class="db-tarjeta db-claro db-top" style="--i:4" aria-labelledby="db-t-top">
+            <div class="db-tarjeta-cabecera">
+                <h2 id="db-t-top">Top vecinos</h2>
+                <span class="db-icono" aria-hidden="true"><i class="bi bi-trophy-fill"></i></span>
             </div>
-        </div>
-        <!-- Productos más buscados en la zona -->
-        <div class="col-md-12 col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-fire text-danger me-2"></i>Productos más buscados en la zona</h5>
-                    <p class="text-muted small">Los productos que más buscan los vecinos de tu localidad en el último mes.</p>
-                    <hr>
-                    <div th:if="${productosMasBuscados == null or #lists.isEmpty(productosMasBuscados)}"
-                         class="text-muted small">Sin datos suficientes en tu zona.</div>
-                    <ol th:if="${productosMasBuscados != null and !#lists.isEmpty(productosMasBuscados)}"
-                        class="mb-0 ps-3">
-                        <li th:each="prod, stat : ${productosMasBuscados}" class="mb-2">
-                            <span class="fw-semibold" th:text="${prod[0]}"></span>
-                            <span class="text-muted small" th:text="' · ' + ${prod[1]}"></span>
-                            <span class="badge bg-danger ms-1" th:text="${prod[2]} + ' reportes'"></span>
-                        </li>
-                    </ol>
-                </div>
-            </div>
-        </div>
+            <p th:if="${topVecinos == null or #lists.isEmpty(topVecinos)}" class="db-sin-datos">
+                Todavía no hay vecinos que hayan reportado en tu comercio.
+            </p>
+            <ol th:if="${topVecinos != null and !#lists.isEmpty(topVecinos)}" class="db-lista">
+                <li th:each="vecino,stat : ${topVecinos}" th:if="${stat.index < 5}">
+                    <span class="db-avatar" aria-hidden="true"
+                          th:text="${vecino[1] != null and !#strings.isEmpty(vecino[1]) ? #strings.toUpperCase(#strings.substring(vecino[1],0,1)) : '?'}">V</span>
+                    <span class="db-texto"><strong th:text="${vecino[1]} + ' ' + ${vecino[2]}">Vecino</strong></span>
+                    <span class="db-dato" th:text="${vecino[3]} + ' reportes'">0 reportes</span>
+                </li>
+            </ol>
+        </section>
     </div>
-</div>
+</main>
+
+<div class="db-toast" id="db-toast" role="status" aria-live="polite"><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span id="db-toast-texto"></span></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        var sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var cuerpo = document.body;
+        var NS = 'http://www.w3.org/2000/svg';
+
+        function crear(nombre, atributos) {
+            var el = document.createElementNS(NS, nombre);
+            Object.keys(atributos || {}).forEach(function (k) { el.setAttribute(k, atributos[k]); });
+            return el;
+        }
+
+        /* ---------- Cifras que suben hasta su valor ---------- */
+        document.querySelectorAll('.db-numero[data-valor]').forEach(function (el) {
+            var meta = parseInt(el.dataset.valor, 10);
+            if (isNaN(meta) || sinMovimiento || meta === 0) return;
+            var inicio = null;
+            function paso(t) {
+                if (inicio === null) inicio = t;
+                var p = Math.min((t - inicio) / 900, 1);
+                el.textContent = Math.round(meta * (1 - Math.pow(1 - p, 3)));
+                if (p < 1) requestAnimationFrame(paso);
+            }
+            el.textContent = '0';
+            requestAnimationFrame(paso);
+        });
+
+        /* ---------- Confiabilidad = precios no marcados como dudosos ---------- */
+        var cifras = document.getElementById('db-cifras');
+        var total = parseInt(cifras.dataset.total, 10);
+        var dudosos = parseInt(cifras.dataset.dudosos, 10);
+        var pctEl = document.getElementById('db-medidor-pct');
+        var arco = document.getElementById('db-medidor-valor');
+        var medidor = document.getElementById('db-medidor');
+        var chip = document.getElementById('chip-dudosos');
+        if (!isNaN(total) && total > 0 && !isNaN(dudosos)) {
+            var pct = Math.max(0, Math.min(100, Math.round((total - dudosos) * 100 / total)));
+            medidor.setAttribute('aria-label', 'Confiabilidad de tus precios: ' + pct + '%');
+            if (sinMovimiento) {
+                pctEl.textContent = pct + '%';
+            } else {
+                var t0 = null;
+                (function contar(t) {
+                    if (t0 === null) t0 = t;
+                    var p = Math.min((t - t0) / 1100, 1);
+                    pctEl.textContent = Math.round(pct * (1 - Math.pow(1 - p, 3))) + '%';
+                    if (p < 1) requestAnimationFrame(contar);
+                })(performance.now());
+            }
+            requestAnimationFrame(function () { arco.style.strokeDasharray = pct + ' 100'; });
+            chip.hidden = false;
+            chip.textContent = dudosos === 0 ? 'ninguno' : Math.round(dudosos * 100 / total) + '% del total';
+            if (dudosos > 0) chip.classList.add('db-chip-aviso');
+        } else {
+            pctEl.textContent = 'Sin datos';
+        }
+
+        /* ---------- Barras de progreso de los más buscados ---------- */
+        var filas = document.querySelectorAll('#db-buscados-lista li');
+        var maxBuscado = 0;
+        filas.forEach(function (li) { maxBuscado = Math.max(maxBuscado, parseInt(li.dataset.valor, 10) || 0); });
+        filas.forEach(function (li, i) {
+            var barra = li.querySelector('.db-progreso');
+            var v = parseInt(li.dataset.valor, 10) || 0;
+            barra.style.setProperty('--n', i);
+            requestAnimationFrame(function () {
+                barra.style.setProperty('--w', (maxBuscado > 0 ? Math.max(6, Math.round(v * 100 / maxBuscado)) : 0) + '%');
+            });
+        });
+
+        /* ---------- Rangos etarios: barras, línea y dona ---------- */
+        var grafico = document.getElementById('db-grafico');
+        if (grafico) {
+            var tip = document.getElementById('db-tip');
+            var barras = grafico.querySelectorAll('#db-barras .db-barra');
+            var datos = Array.prototype.map.call(barras, function (b) {
+                return {
+                    nombre: b.querySelector('.db-barra-nombre').textContent.trim(),
+                    valor: parseInt(b.dataset.valor, 10) || 0
+                };
+            });
+            var maximo = Math.max.apply(null, datos.map(function (d) { return d.valor; }).concat([0]));
+            var suma = datos.reduce(function (a, d) { return a + d.valor; }, 0);
+
+            barras.forEach(function (b, i) {
+                var v = datos[i].valor;
+                b.style.setProperty('--h', (maximo > 0 ? Math.max(6, Math.round(v * 100 / maximo)) : 6) + '%');
+                b.style.setProperty('--n', i);
+                if (maximo > 0 && v === maximo) b.classList.add('db-barra-max');
+            });
+
+            function etiquetaVecinos(v) { return v + (v === 1 ? ' vecino' : ' vecinos'); }
+            function ocultarTip() { tip.hidden = true; }
+            function mostrarTip(x, y, d) {
+                tip.innerHTML = '';
+                var t = document.createElement('strong');
+                t.textContent = d.nombre;
+                tip.appendChild(t);
+                tip.appendChild(document.createTextNode(etiquetaVecinos(d.valor)));
+                tip.style.left = x + 'px';
+                tip.style.top = y + 'px';
+                tip.hidden = false;
+            }
+
+            /* --- Línea --- */
+            var vistaLinea = document.getElementById('vista-linea');
+            function dibujarLinea() {
+                var W = Math.max(grafico.clientWidth, 260), H = 230;
+                var pad = {l: 34, r: 18, t: 22, b: 34};
+                var tope = Math.max(maximo, 1);
+                var n = datos.length;
+                var base = H - pad.b;
+                function px(i) { return n === 1 ? (pad.l + (W - pad.r)) / 2 : pad.l + i * (W - pad.l - pad.r) / (n - 1); }
+                function py(v) { return base - v / tope * (H - pad.t - pad.b); }
+                var svg = crear('svg', {viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, class: 'db-svg', role: 'img',
+                    'aria-label': 'Vecinos por rango etario, gráfico de línea'});
+                var defs = crear('defs');
+                var grad = crear('linearGradient', {id: 'db-degradado', x1: 0, y1: 0, x2: 0, y2: 1});
+                grad.appendChild(crear('stop', {offset: '0%', 'stop-color': '#138A57', 'stop-opacity': '.35'}));
+                grad.appendChild(crear('stop', {offset: '100%', 'stop-color': '#138A57', 'stop-opacity': '0'}));
+                defs.appendChild(grad);
+                svg.appendChild(defs);
+
+                for (var g = 0; g <= 3; g++) {
+                    var val = Math.round(tope * g / 3), y = py(tope * g / 3);
+                    svg.appendChild(crear('line', {x1: pad.l, x2: W - pad.r, y1: y, y2: y, class: 'db-eje-linea'}));
+                    var tx = crear('text', {x: pad.l - 8, y: y + 4, 'text-anchor': 'end', class: 'db-eje-texto'});
+                    tx.textContent = val;
+                    svg.appendChild(tx);
+                }
+                datos.forEach(function (d, i) {
+                    var tx = crear('text', {x: px(i), y: H - 10, 'text-anchor': 'middle', class: 'db-eje-texto'});
+                    tx.textContent = d.nombre;
+                    svg.appendChild(tx);
+                });
+
+                if (n > 1) {
+                    var pts = datos.map(function (d, i) { return [px(i), py(d.valor)]; });
+                    var ruta = 'M' + pts[0][0] + ',' + pts[0][1];
+                    for (var i = 0; i < n - 1; i++) {
+                        var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+                        var c1y = Math.min(base, Math.max(pad.t, p1[1] + (p2[1] - p0[1]) / 6));
+                        var c2y = Math.min(base, Math.max(pad.t, p2[1] - (p3[1] - p1[1]) / 6));
+                        ruta += ' C' + (p1[0] + (p2[0] - p0[0]) / 6) + ',' + c1y + ' ' + (p2[0] - (p3[0] - p1[0]) / 6) + ',' + c2y + ' ' + p2[0] + ',' + p2[1];
+                    }
+                    svg.appendChild(crear('path', {d: ruta + ' L' + pts[n - 1][0] + ',' + base + ' L' + pts[0][0] + ',' + base + ' Z', class: 'db-area'}));
+                    svg.appendChild(crear('path', {d: ruta, class: 'db-trazo', pathLength: 1}));
+                }
+                var guia = crear('line', {x1: 0, x2: 0, y1: pad.t - 6, y2: base, class: 'db-guia'});
+                svg.appendChild(guia);
+
+                var puntos = datos.map(function (d, i) {
+                    var c = crear('circle', {cx: px(i), cy: py(d.valor), r: 5.5, class: 'db-punto', tabindex: 0,
+                        'aria-label': d.nombre + ': ' + etiquetaVecinos(d.valor)});
+                    c.style.setProperty('--n', i);
+                    svg.appendChild(c);
+                    return c;
+                });
+                function activar(i) {
+                    puntos.forEach(function (p, k) { p.classList.toggle('db-activo', k === i); });
+                    guia.setAttribute('x1', px(i)); guia.setAttribute('x2', px(i));
+                    guia.classList.add('db-visible');
+                    mostrarTip(px(i), py(datos[i].valor), datos[i]);
+                }
+                function soltar() {
+                    puntos.forEach(function (p) { p.classList.remove('db-activo'); });
+                    guia.classList.remove('db-visible');
+                    ocultarTip();
+                }
+                svg.addEventListener('pointermove', function (e) {
+                    var caja = svg.getBoundingClientRect();
+                    var x = (e.clientX - caja.left) * (W / caja.width);
+                    var mejor = 0;
+                    datos.forEach(function (d, i) { if (Math.abs(px(i) - x) < Math.abs(px(mejor) - x)) mejor = i; });
+                    activar(mejor);
+                });
+                svg.addEventListener('pointerleave', soltar);
+                puntos.forEach(function (p, i) {
+                    p.addEventListener('focus', function () { activar(i); });
+                    p.addEventListener('blur', soltar);
+                });
+
+                vistaLinea.innerHTML = '';
+                vistaLinea.appendChild(svg);
+                if (sinMovimiento) svg.classList.add('db-dibuja');
+                else requestAnimationFrame(function () { requestAnimationFrame(function () { svg.classList.add('db-dibuja'); }); });
+            }
+
+            /* --- Dona --- */
+            var vistaDona = document.getElementById('vista-dona');
+            function dibujarDona() {
+                var R = 74, C = 2 * Math.PI * R;
+                var fila = document.createElement('div');
+                fila.className = 'db-dona-fila';
+                var svg = crear('svg', {viewBox: '0 0 210 210', class: 'db-dona-svg db-svg', role: 'img',
+                    'aria-label': 'Vecinos por rango etario, gráfico de dona'});
+                svg.appendChild(crear('circle', {cx: 105, cy: 105, r: R, fill: 'none', stroke: 'var(--db-grilla)', 'stroke-width': 26}));
+                var centroNum = crear('text', {x: 105, y: 108, class: 'db-dona-total'});
+                var centroTxt = crear('text', {x: 105, y: 128, class: 'db-dona-texto'});
+                function centro(num, txt) { centroNum.textContent = num; centroTxt.textContent = txt; }
+                centro(suma, 'vecinos');
+
+                var leyenda = document.createElement('ul');
+                leyenda.className = 'db-leyenda';
+                var segs = [], botones = [], acumulado = 0;
+                datos.forEach(function (d, i) {
+                    var largo = suma > 0 ? d.valor / suma * C : 0;
+                    var seg = crear('circle', {cx: 105, cy: 105, r: R, class: 'db-seg', stroke: 'var(--db-c' + (i % 6) + ')',
+                        'stroke-dasharray': '0 ' + C, 'stroke-dashoffset': -acumulado});
+                    seg.dataset.largo = Math.max(largo - (datos.length > 1 && largo > 3 ? 3 : 0), 0);
+                    acumulado += largo;
+                    svg.appendChild(seg); segs.push(seg);
+                    var li = document.createElement('li');
+                    var bt = document.createElement('button');
+                    bt.type = 'button';
+                    var punto = document.createElement('i');
+                    punto.style.background = 'var(--db-c' + (i % 6) + ')';
+                    var nom = document.createTextNode(d.nombre);
+                    var cant = document.createElement('span');
+                    cant.textContent = d.valor + (suma > 0 ? ' · ' + Math.round(d.valor * 100 / suma) + '%' : '');
+                    bt.appendChild(punto); bt.appendChild(nom); bt.appendChild(cant);
+                    li.appendChild(bt); leyenda.appendChild(li); botones.push(bt);
+                });
+                svg.appendChild(centroNum); svg.appendChild(centroTxt);
+
+                function resaltar(i) {
+                    segs.forEach(function (s, k) {
+                        s.classList.toggle('db-resaltado', k === i);
+                        s.classList.toggle('db-apagado', i !== null && k !== i);
+                        botones[k].classList.toggle('db-resaltado', k === i);
+                    });
+                    if (i === null) centro(suma, 'vecinos');
+                    else centro(datos[i].valor, datos[i].nombre);
+                }
+                segs.forEach(function (s, i) {
+                    s.addEventListener('pointerenter', function () { resaltar(i); });
+                    s.addEventListener('pointerleave', function () { resaltar(null); });
+                    botones[i].addEventListener('pointerenter', function () { resaltar(i); });
+                    botones[i].addEventListener('pointerleave', function () { resaltar(null); });
+                    botones[i].addEventListener('focus', function () { resaltar(i); });
+                    botones[i].addEventListener('blur', function () { resaltar(null); });
+                });
+                fila.appendChild(svg); fila.appendChild(leyenda);
+                vistaDona.innerHTML = ''; vistaDona.appendChild(fila);
+
+                function llenar() {
+                    segs.forEach(function (s) { s.setAttribute('stroke-dasharray', s.dataset.largo + ' ' + C); });
+                }
+                if (sinMovimiento) llenar();
+                else requestAnimationFrame(function () { requestAnimationFrame(llenar); });
+            }
+
+            /* --- Cambio de vista --- */
+            var vistas = {barras: document.getElementById('vista-barras'), linea: vistaLinea, dona: vistaDona};
+            var actual = 'barras';
+            function mostrar(nombre) {
+                ocultarTip();
+                actual = nombre;
+                Object.keys(vistas).forEach(function (k) { vistas[k].hidden = k !== nombre; });
+                if (nombre === 'linea') dibujarLinea();
+                if (nombre === 'dona') dibujarDona();
+                document.querySelectorAll('#db-segmento button').forEach(function (b) {
+                    b.setAttribute('aria-pressed', b.dataset.vista === nombre ? 'true' : 'false');
+                });
+            }
+            document.querySelectorAll('#db-segmento button').forEach(function (b) {
+                b.addEventListener('click', function () { if (b.dataset.vista !== actual) mostrar(b.dataset.vista); });
+            });
+            var espera = null;
+            window.addEventListener('resize', function () {
+                clearTimeout(espera);
+                espera = setTimeout(function () { if (actual === 'linea') dibujarLinea(); }, 180);
+            });
+            // Las barras muestran su valor al pasar el mouse o tocar
+            barras.forEach(function (b, i) {
+                b.addEventListener('pointerenter', function () { b.classList.add('db-barra-activa'); });
+                b.addEventListener('pointerleave', function () { b.classList.remove('db-barra-activa'); });
+            });
+        }
+
+        /* ---------- Aviso ---------- */
+        var toast = document.getElementById('db-toast');
+        var toastTexto = document.getElementById('db-toast-texto');
+        var toastTimer = null;
+        function avisar(texto) {
+            toastTexto.textContent = texto;
+            toast.classList.add('db-toast-visible');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { toast.classList.remove('db-toast-visible'); }, 3200);
+        }
+
+        /* ---------- Exportar resumen en CSV ---------- */
+        function celda(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
+        document.getElementById('btn-exportar').addEventListener('click', function () {
+            var filasCsv = [];
+            filasCsv.push(['Dato', 'Detalle', 'Valor']);
+            filasCsv.push(['Resumen', 'Precios cargados', document.getElementById('total-precios').dataset.valor]);
+            filasCsv.push(['Resumen', 'Vecinos colaboradores', document.getElementById('total-vecinos').dataset.valor]);
+            filasCsv.push(['Resumen', 'Reportes dudosos', document.getElementById('total-dudosos').dataset.valor]);
+            filasCsv.push(['Resumen', 'Precio promedio', document.getElementById('precio-promedio').textContent.trim()]);
+            filasCsv.push(['Resumen', 'Producto estrella', document.getElementById('producto-estrella').textContent.trim()]);
+            document.querySelectorAll('#db-barras .db-barra').forEach(function (b) {
+                filasCsv.push(['Rango etario', b.querySelector('.db-barra-nombre').textContent.trim(), b.dataset.valor]);
+            });
+            document.querySelectorAll('.db-top .db-lista li').forEach(function (li) {
+                filasCsv.push(['Top vecinos', li.querySelector('.db-texto strong').textContent.trim(), li.querySelector('.db-dato').textContent.trim()]);
+            });
+            document.querySelectorAll('#db-buscados-lista li').forEach(function (li) {
+                filasCsv.push(['Más buscados', li.querySelector('.db-texto strong').textContent.trim(), li.dataset.valor]);
+            });
+            var csv = '﻿' + filasCsv.map(function (f) { return f.map(celda).join(','); }).join('\r\n');
+            var url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'dashboard-comercio-' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+            avisar('Resumen exportado con éxito');
+        });
+
+        /* ---------- Modo claro / oscuro ---------- */
+        var botonTema = document.getElementById('btn-tema');
+        function aplicarTema(oscuro) {
+            if (oscuro) cuerpo.setAttribute('data-tema', 'oscuro'); else cuerpo.removeAttribute('data-tema');
+            botonTema.setAttribute('aria-pressed', oscuro ? 'true' : 'false');
+            botonTema.setAttribute('aria-label', oscuro ? 'Activar modo claro' : 'Activar modo oscuro');
+            botonTema.title = oscuro ? 'Modo claro' : 'Modo oscuro';
+            botonTema.firstElementChild.className = oscuro ? 'bi bi-sun' : 'bi bi-moon-stars';
+        }
+        aplicarTema(cuerpo.getAttribute('data-tema') === 'oscuro');
+        botonTema.addEventListener('click', function () {
+            var oscuro = cuerpo.getAttribute('data-tema') !== 'oscuro';
+            aplicarTema(oscuro);
+            try { localStorage.setItem('db-tema', oscuro ? 'oscuro' : 'claro'); } catch (e) { /* sin almacenamiento */ }
+        });
+    })();
+</script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>
