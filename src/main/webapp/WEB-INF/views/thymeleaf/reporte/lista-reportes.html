@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,242 +9,350 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" th:href="@{/css/reportar.css}" />
 </head>
 <body>
 <nav th:replace="~{navbar :: navbar}"></nav>
-<div class="container mt-4">
-    <h2 id="titulo-pagina">Reporta el precio del producto para ayudar a tus vecinos</h2>
 
-    <!-- Botones cargar solo para no-COMERCIO -->
-    <div th:if="${comercioDelUsuario == null}" class="d-flex gap-2 mt-3 mb-4">
-        <a th:href="@{/reporte}" class="btn btn-primary">
-            <i class="bi bi-pencil-square"></i> Cargar manualmente
-        </a>
-        <a th:href="@{/reporte/ticket}" class="btn btn-outline-primary">
-            <i class="bi bi-receipt"></i> Cargar por ticket
-        </a>
+<header class="rp-cabecera">
+    <div class="container">
+        <h1 id="titulo-pagina">Reporta el precio del producto para ayudar a tus vecinos</h1>
+        <p class="rp-subtitulo">Con una foto y el precio alcanza. Cada reporte le muestra a otro vecino dónde conviene comprar.</p>
+
+        <!-- Cargar manualmente / por ticket: solo para no-COMERCIO -->
+        <div th:if="${comercioDelUsuario == null}" class="rp-modo" role="navigation" aria-label="Forma de cargar el precio">
+            <a th:href="@{/reporte}" class="activo" aria-current="page">
+                <i class="bi bi-pencil-square" aria-hidden="true"></i> Cargar manualmente
+            </a>
+            <a th:href="@{/reporte/ticket}">
+                <i class="bi bi-receipt" aria-hidden="true"></i> Cargar por ticket
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="container rp-principal">
+
+    <div th:if="${guardado}" id="alerta-reporte-guardado" class="rp-alerta rp-alerta-ok" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div>
+            <strong>¡Reporte guardado con éxito!</strong>
+            Gracias por ayudar al barrio. Podés cargar otro abajo o
+            <a th:href="@{/producto/buscar}">ver los precios</a>.
+        </div>
+    </div>
+    <div th:if="${error}" id="error" class="rp-alerta rp-alerta-error" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div th:text="${error}"></div>
     </div>
 
-    <h4 class="mt-5">Cargar precio</h4>
-    <form th:action="@{/reporte}" method="post" class="mt-3">
-        <h6 class="text-muted mt-3">Foto del producto</h6>
+    <form id="form-reporte" th:action="@{/reporte}" method="post" class="rp-formulario" novalidate
+          th:attr="data-url-reconocer=@{/reporte/ticket/reconocer-producto}">
 
-        <div class="mb-3">
-            <input type="file"
-                   id="foto"
-                   class="form-control"
-                   accept="image/*">
-            <input type="hidden" name="fotoBase64" id="foto-base64">
-        </div>
+        <div class="rp-columna">
 
-        <!-- Modal del recortador -->
-        <div class="modal fade" id="modalCropper" tabindex="-1" data-bs-backdrop="static">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Recortar foto</h5>
+            <!-- 1. Producto -->
+            <section class="rp-seccion" aria-labelledby="rp-t-producto">
+                <div class="rp-seccion-cabeza">
+                    <span class="rp-paso" aria-hidden="true">1</span>
+                    <div>
+                        <h2 id="rp-t-producto">El producto</h2>
+                        <p class="rp-seccion-ayuda">Si subís una foto, intentamos completar los datos por vos.</p>
                     </div>
-                    <div class="modal-body" style="max-height: 60vh; overflow: hidden;">
-                        <img id="imagen-a-recortar" src="" alt="Foto a recortar"
-                             style="max-width: 100%; display: block;">
-                    </div>
-                    <div class="modal-footer d-flex justify-content-between align-items-center">
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary" id="btn-rotar-izq"
-                                    title="Rotar 90° izquierda">
-                                <i class="bi bi-arrow-counterclockwise"></i> -90°
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" id="btn-rotar-der"
-                                    title="Rotar 90° derecha">
-                                <i class="bi bi-arrow-clockwise"></i> +90°
-                            </button>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-danger" id="btn-cancelar-crop">
-                                Cancelar
-                            </button>
-                            <button type="button" class="btn btn-primary" id="btn-confirmar-crop">
-                                <i class="bi bi-check-lg"></i> Usar foto
+                </div>
+
+                <div class="rp-campo">
+                    <span class="rp-etiqueta">Foto del producto <span class="rp-opcional">(opcional)</span></span>
+                    <input type="file" id="foto" class="rp-solo-lectores" accept="image/*">
+                    <label for="foto" class="rp-subida" id="rp-zona-foto">
+                        <i class="bi bi-camera" aria-hidden="true"></i>
+                        <strong>Sacar o elegir una foto</strong>
+                        <span>Después la podés recortar</span>
+                    </label>
+                    <input type="hidden" name="fotoBase64" id="foto-base64">
+
+                    <div id="preview-foto" class="rp-previa" style="display: none;">
+                        <img id="img-preview" src="" alt="Vista previa de la foto del producto">
+                        <div class="rp-previa-texto">
+                            <strong>Foto lista</strong>
+                            <p id="estado-foto" class="rp-estado-foto" role="status" aria-live="polite"></p>
+                            <button type="button" class="rp-btn rp-btn-claro rp-btn-chico" id="btn-cambiar-foto">
+                                <i class="bi bi-pencil" aria-hidden="true"></i> Cambiar foto
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div id="preview-foto" class="mt-2" style="display: none;">
-            <img id="img-preview" src="" alt="Vista previa"
-                 style="max-height: 150px; border-radius: 8px; border: 1px solid #dee2e6;">
-            <br>
-            <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="btn-cambiar-foto">
-                <i class="bi bi-pencil"></i> Cambiar foto
-            </button>
+
+                <!-- Modal del recortador -->
+                <div class="modal fade" id="modalCropper" tabindex="-1" data-bs-backdrop="static" aria-labelledby="rp-t-recorte">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="rp-t-recorte">Recortar foto</h5>
+                            </div>
+                            <div class="modal-body" style="max-height: 60vh; overflow: hidden;">
+                                <img id="imagen-a-recortar" src="" alt="Foto a recortar"
+                                     style="max-width: 100%; display: block;">
+                            </div>
+                            <div class="modal-footer d-flex justify-content-between align-items-center">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="rp-btn rp-btn-claro rp-btn-chico" id="btn-rotar-izq"
+                                            title="Rotar 90° a la izquierda" aria-label="Rotar 90° a la izquierda">
+                                        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> -90°
+                                    </button>
+                                    <button type="button" class="rp-btn rp-btn-claro rp-btn-chico" id="btn-rotar-der"
+                                            title="Rotar 90° a la derecha" aria-label="Rotar 90° a la derecha">
+                                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> +90°
+                                    </button>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="rp-btn rp-btn-texto rp-btn-chico" id="btn-cancelar-crop">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" class="rp-btn rp-btn-principal rp-btn-chico" id="btn-confirmar-crop">
+                                        <i class="bi bi-check-lg" aria-hidden="true"></i> Usar foto
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rp-campo">
+                    <label class="rp-etiqueta" for="producto-nombre">Nombre del producto</label>
+                    <input type="text" name="producto.nombre" id="producto-nombre" class="rp-control"
+                           placeholder="Ej: Leche entera" list="lista-productos" autocomplete="off">
+                    <datalist id="lista-productos">
+                        <option th:each="p : ${productos}" th:value="${p.nombre}"></option>
+                    </datalist>
+                </div>
+
+                <div class="rp-fila rp-fila-2">
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" for="producto-marca">Marca</label>
+                        <input type="text" name="producto.marca" id="producto-marca" class="rp-control"
+                               placeholder="Ej: La Serenísima" list="lista-marcas" autocomplete="off">
+                        <datalist id="lista-marcas">
+                            <option th:each="p : ${productos}" th:value="${p.marca}"></option>
+                        </datalist>
+                    </div>
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" for="producto-categoria">Categoría</label>
+                        <select name="producto.categoria" id="producto-categoria" class="rp-control">
+                            <option value="">Seleccionar categoría</option>
+                            <option value="Almacen">Almacén</option>
+                            <option value="Bebidas con alcohol">Bebidas con alcohol</option>
+                            <option value="Bebidas sin alcohol">Bebidas sin alcohol</option>
+                            <option value="Carnes y aves">Carnes y aves</option>
+                            <option value="Cereales y legumbres">Cereales y legumbres</option>
+                            <option value="Condimentos y salsas">Condimentos y salsas</option>
+                            <option value="Congelados">Congelados</option>
+                            <option value="Enlatados y conservas">Enlatados y conservas</option>
+                            <option value="Farmacia y perfumeria">Farmacia y perfumería</option>
+                            <option value="Ferreteria y bazar">Ferretería y bazar</option>
+                            <option value="Fiambres y embutidos">Fiambres y embutidos</option>
+                            <option value="Higiene personal">Higiene personal</option>
+                            <option value="Lacteos">Lácteos</option>
+                            <option value="Limpieza del hogar">Limpieza del hogar</option>
+                            <option value="Mascotas">Mascotas</option>
+                            <option value="Panaderia y reposteria">Panadería y repostería</option>
+                            <option value="Pescados y mariscos">Pescados y mariscos</option>
+                            <option value="Productos de dietetica">Productos de dietética</option>
+                            <option value="Snacks y golosinas">Snacks y golosinas</option>
+                            <option value="Tabaco">Tabaco</option>
+                            <option value="Verduras y frutas">Verduras y frutas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="rp-campo">
+                    <label class="rp-etiqueta" for="producto-unidad">Unidad o presentación</label>
+                    <input type="text" name="producto.unidad" id="producto-unidad" class="rp-control"
+                           placeholder="Ej: 1kg, 900ml" autocomplete="off">
+                    <div class="rp-sugeridos" role="group" aria-label="Unidades frecuentes">
+                        <button type="button" class="rp-sugerido" data-unidad="500g">500g</button>
+                        <button type="button" class="rp-sugerido" data-unidad="1kg">1kg</button>
+                        <button type="button" class="rp-sugerido" data-unidad="500ml">500ml</button>
+                        <button type="button" class="rp-sugerido" data-unidad="1l">1l</button>
+                        <button type="button" class="rp-sugerido" data-unidad="1.5l">1.5l</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Comercio -->
+            <section class="rp-seccion" aria-labelledby="rp-t-comercio">
+                <div class="rp-seccion-cabeza">
+                    <span class="rp-paso" aria-hidden="true">2</span>
+                    <div>
+                        <h2 id="rp-t-comercio">El comercio</h2>
+                        <p class="rp-seccion-ayuda">¿Dónde viste este precio?</p>
+                    </div>
+                </div>
+
+                <!-- COMERCIO: campos fijos (solo lectura) + hidden fields -->
+                <div th:if="${comercioDelUsuario != null}">
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" for="comercio-nombre-fijo">Comercio</label>
+                        <input type="text" id="comercio-nombre-fijo" class="rp-control"
+                               th:value="${comercioDelUsuario.nombre}" readonly>
+                        <input type="hidden" name="comercio.nombre" th:value="${comercioDelUsuario.nombre}">
+                    </div>
+                    <div class="rp-fila rp-fila-2">
+                        <div class="rp-campo">
+                            <label class="rp-etiqueta" for="comercio-direccion-fija">Dirección</label>
+                            <input type="text" id="comercio-direccion-fija" class="rp-control"
+                                   th:value="${comercioDelUsuario.direccion}" readonly>
+                            <input type="hidden" name="comercio.direccion" th:value="${comercioDelUsuario.direccion}">
+                        </div>
+                        <div class="rp-campo">
+                            <label class="rp-etiqueta" for="comercio-localidad-fija">Localidad</label>
+                            <input type="text" id="comercio-localidad-fija" class="rp-control"
+                                   th:value="${comercioDelUsuario.localidad}" readonly>
+                            <input type="hidden" name="comercio.localidad" th:value="${comercioDelUsuario.localidad}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Otros roles: campos editables -->
+                <div th:if="${comercioDelUsuario == null}">
+                    <div class="rp-campo">
+                        <label class="rp-etiqueta" for="comercio-nombre">Nombre del comercio</label>
+                        <input type="text" name="comercio.nombre" id="comercio-nombre" class="rp-control"
+                               placeholder="Ej: Almacén Don Pepe" list="lista-comercios" autocomplete="off">
+                        <datalist id="lista-comercios">
+                            <option th:each="c : ${comercios}" th:value="${c.nombre}"></option>
+                        </datalist>
+                    </div>
+                    <div class="rp-fila rp-fila-2">
+                        <div class="rp-campo">
+                            <label class="rp-etiqueta" for="comercio-direccion">Dirección</label>
+                            <input type="text" name="comercio.direccion" id="comercio-direccion" class="rp-control"
+                                   placeholder="Calle y altura" list="lista-direcciones" autocomplete="off">
+                            <datalist id="lista-direcciones">
+                                <option th:each="c : ${comercios}" th:value="${c.direccion}"></option>
+                            </datalist>
+                        </div>
+                        <div class="rp-campo">
+                            <label class="rp-etiqueta" for="comercio-localidad">Partido / localidad</label>
+                            <select name="comercio.localidad" id="comercio-localidad" class="rp-control">
+                                <option value="">Seleccionar partido/localidad</option>
+                                <option value="Almirante Brown">Almirante Brown</option>
+                                <option value="Avellaneda">Avellaneda</option>
+                                <option value="Bahia Blanca">Bahía Blanca</option>
+                                <option value="Berazategui">Berazategui</option>
+                                <option value="Berisso">Berisso</option>
+                                <option value="Brandsen">Brandsen</option>
+                                <option value="Buenos Aires">Buenos Aires (CABA)</option>
+                                <option value="Campana">Campana</option>
+                                <option value="Canuelas">Cañuelas</option>
+                                <option value="Ensenada">Ensenada</option>
+                                <option value="Escobar">Escobar</option>
+                                <option value="Esteban Echeverria">Esteban Echeverría</option>
+                                <option value="Exaltacion de la Cruz">Exaltación de la Cruz</option>
+                                <option value="Ezeiza">Ezeiza</option>
+                                <option value="Florencio Varela">Florencio Varela</option>
+                                <option value="General Las Heras">General Las Heras</option>
+                                <option value="General Rodriguez">General Rodríguez</option>
+                                <option value="Hurlingham">Hurlingham</option>
+                                <option value="Ituzaingo">Ituzaingó</option>
+                                <option value="Jose C. Paz">José C. Paz</option>
+                                <option value="La Matanza">La Matanza</option>
+                                <option value="La Plata">La Plata</option>
+                                <option value="Lanus">Lanús</option>
+                                <option value="Lobos">Lobos</option>
+                                <option value="Lomas de Zamora">Lomas de Zamora</option>
+                                <option value="Lujan">Luján</option>
+                                <option value="Magdalena">Magdalena</option>
+                                <option value="Malvinas Argentinas">Malvinas Argentinas</option>
+                                <option value="Mar del Plata">Mar del Plata</option>
+                                <option value="Marcos Paz">Marcos Paz</option>
+                                <option value="Merlo">Merlo</option>
+                                <option value="Moreno">Moreno</option>
+                                <option value="Moron">Morón</option>
+                                <option value="Navarro">Navarro</option>
+                                <option value="Pilar">Pilar</option>
+                                <option value="Presidente Peron">Presidente Perón</option>
+                                <option value="Punta Indio">Punta Indio</option>
+                                <option value="Quilmes">Quilmes</option>
+                                <option value="Ramallo">Ramallo</option>
+                                <option value="San Fernando">San Fernando</option>
+                                <option value="San Isidro">San Isidro</option>
+                                <option value="San Martin">San Martín</option>
+                                <option value="San Miguel">San Miguel</option>
+                                <option value="San Nicolas">San Nicolás</option>
+                                <option value="San Vicente">San Vicente</option>
+                                <option value="Tigre">Tigre</option>
+                                <option value="Tres de Febrero">Tres de Febrero</option>
+                                <option value="Vicente Lopez">Vicente López</option>
+                                <option value="Zarate">Zárate</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="rp-ubicar">
+                        <button type="button" id="btn-buscar-ubicacion-reporte" class="rp-btn rp-btn-claro rp-btn-chico"
+                                th:attr="data-url=@{/reporte/ubicaciones/sugerencias}">
+                            <i class="bi bi-geo-alt" aria-hidden="true"></i> Buscar en el mapa
+                        </button>
+                        <p id="estado-ubicacion-reporte" class="rp-ubicar-estado" role="status" aria-live="polite">
+                            Opcional: ubicá el local en el mapa para que otros vecinos lo encuentren.
+                        </p>
+                        <div id="sugerencias-ubicacion-reporte" class="rp-sugerencias"></div>
+                        <div id="mapa-ubicacion-reporte" class="rp-mapa d-none"
+                             role="application" aria-label="Mapa para ubicar el comercio"></div>
+                        <input type="hidden" name="comercio.latitud" id="comercio-latitud">
+                        <input type="hidden" name="comercio.longitud" id="comercio-longitud">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Precio -->
+            <section class="rp-seccion" aria-labelledby="rp-t-precio">
+                <div class="rp-seccion-cabeza">
+                    <span class="rp-paso" aria-hidden="true">3</span>
+                    <div>
+                        <h2 id="rp-t-precio">El precio</h2>
+                        <p class="rp-seccion-ayuda">El que viste en la góndola o en la caja.</p>
+                    </div>
+                </div>
+                <label class="rp-etiqueta rp-solo-lectores" for="precio">Precio en pesos</label>
+                <div class="rp-precio" id="rp-caja-precio">
+                    <span aria-hidden="true">$</span>
+                    <input type="number" step="0.01" min="0" inputmode="decimal" name="precio" id="precio"
+                           placeholder="0,00">
+                </div>
+            </section>
         </div>
 
-        <h6 class="text-muted mt-3">Datos del producto</h6>
-        <div class="mb-3">
-            <input type="text" name="producto.nombre" id="producto-nombre" class="form-control" placeholder="Nombre del producto" list="lista-productos" autocomplete="off">
-            <datalist id="lista-productos">
-                <option th:each="p : ${productos}" th:value="${p.nombre}"></option>
-            </datalist>
-        </div>
-        <div class="mb-3">
-            <input type="text" name="producto.marca" id="producto-marca" class="form-control" placeholder="Marca" list="lista-marcas" autocomplete="off">
-            <datalist id="lista-marcas">
-                <option th:each="p : ${productos}" th:value="${p.marca}"></option>
-            </datalist>
-        </div>
-        <div class="mb-3">
-            <select name="producto.categoria" id="producto-categoria" class="form-select">
-                <option value="">Seleccionar categoria</option>
-                <option value="Almacen">Almacén</option>
-                <option value="Bebidas con alcohol">Bebidas con alcohol</option>
-                <option value="Bebidas sin alcohol">Bebidas sin alcohol</option>
-                <option value="Carnes y aves">Carnes y aves</option>
-                <option value="Cereales y legumbres">Cereales y legumbres</option>
-                <option value="Condimentos y salsas">Condimentos y salsas</option>
-                <option value="Congelados">Congelados</option>
-                <option value="Enlatados y conservas">Enlatados y conservas</option>
-                <option value="Farmacia y perfumeria">Farmacia y perfumería</option>
-                <option value="Ferreteria y bazar">Ferretería y bazar</option>
-                <option value="Fiambres y embutidos">Fiambres y embutidos</option>
-                <option value="Higiene personal">Higiene personal</option>
-                <option value="Lacteos">Lácteos</option>
-                <option value="Limpieza del hogar">Limpieza del hogar</option>
-                <option value="Mascotas">Mascotas</option>
-                <option value="Panaderia y reposteria">Panadería y repostería</option>
-                <option value="Pescados y mariscos">Pescados y mariscos</option>
-                <option value="Productos de dietetica">Productos de dietética</option>
-                <option value="Snacks y golosinas">Snacks y golosinas</option>
-                <option value="Tabaco">Tabaco</option>
-                <option value="Verduras y frutas">Verduras y frutas</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <input type="text" name="producto.unidad" id="producto-unidad" class="form-control" placeholder="Unidad (ej: 1kg, 900ml)">
-        </div>
-
-        <h6 class="text-muted mt-3">Datos del comercio</h6>
-
-        <!-- COMERCIO: campos fijos (solo lectura) + hidden fields -->
-        <div th:if="${comercioDelUsuario != null}">
-            <div class="mb-3">
-                <input type="text"
-                       class="form-control"
-                       th:value="${comercioDelUsuario.nombre}"
-                       readonly>
-                <input type="hidden" name="comercio.nombre" th:value="${comercioDelUsuario.nombre}">
-            </div>
-            <div class="mb-3">
-                <input type="text"
-                       class="form-control"
-                       th:value="${comercioDelUsuario.direccion}"
-                       readonly>
-                <input type="hidden" name="comercio.direccion" th:value="${comercioDelUsuario.direccion}">
-            </div>
-            <div class="mb-3">
-                <input type="text"
-                       class="form-control"
-                       th:value="${comercioDelUsuario.localidad}"
-                       readonly>
-                <input type="hidden" name="comercio.localidad" th:value="${comercioDelUsuario.localidad}">
-            </div>
-        </div>
-
-        <!-- Otros roles: campos editables -->
-        <div th:if="${comercioDelUsuario == null}">
-            <div class="mb-3">
-                <input type="text" name="comercio.nombre" id="comercio-nombre" class="form-control" placeholder="Nombre del comercio" list="lista-comercios" autocomplete="off">
-                <datalist id="lista-comercios">
-                    <option th:each="c : ${comercios}" th:value="${c.nombre}"></option>
-                </datalist>
-            </div>
-            <div class="mb-3">
-                <input type="text" name="comercio.direccion" id="comercio-direccion" class="form-control" placeholder="Direccion" list="lista-direcciones" autocomplete="off">
-                <datalist id="lista-direcciones">
-                    <option th:each="c : ${comercios}" th:value="${c.direccion}"></option>
-                </datalist>
-            </div>
-            <div class="mb-3">
-                <select name="comercio.localidad" id="comercio-localidad" class="form-select">
-                    <option value="">Seleccionar partido/localidad</option>
-                    <option value="Almirante Brown">Almirante Brown</option>
-                    <option value="Avellaneda">Avellaneda</option>
-                    <option value="Bahia Blanca">Bahía Blanca</option>
-                    <option value="Berazategui">Berazategui</option>
-                    <option value="Berisso">Berisso</option>
-                    <option value="Brandsen">Brandsen</option>
-                    <option value="Buenos Aires">Buenos Aires (CABA)</option>
-                    <option value="Campana">Campana</option>
-                    <option value="Canuelas">Cañuelas</option>
-                    <option value="Ensenada">Ensenada</option>
-                    <option value="Escobar">Escobar</option>
-                    <option value="Esteban Echeverria">Esteban Echeverría</option>
-                    <option value="Exaltacion de la Cruz">Exaltación de la Cruz</option>
-                    <option value="Ezeiza">Ezeiza</option>
-                    <option value="Florencio Varela">Florencio Varela</option>
-                    <option value="General Las Heras">General Las Heras</option>
-                    <option value="General Rodriguez">General Rodríguez</option>
-                    <option value="Hurlingham">Hurlingham</option>
-                    <option value="Ituzaingo">Ituzaingó</option>
-                    <option value="Jose C. Paz">José C. Paz</option>
-                    <option value="La Matanza">La Matanza</option>
-                    <option value="La Plata">La Plata</option>
-                    <option value="Lanus">Lanús</option>
-                    <option value="Lobos">Lobos</option>
-                    <option value="Lomas de Zamora">Lomas de Zamora</option>
-                    <option value="Lujan">Luján</option>
-                    <option value="Magdalena">Magdalena</option>
-                    <option value="Malvinas Argentinas">Malvinas Argentinas</option>
-                    <option value="Mar del Plata">Mar del Plata</option>
-                    <option value="Marcos Paz">Marcos Paz</option>
-                    <option value="Merlo">Merlo</option>
-                    <option value="Moreno">Moreno</option>
-                    <option value="Moron">Morón</option>
-                    <option value="Navarro">Navarro</option>
-                    <option value="Pilar">Pilar</option>
-                    <option value="Presidente Peron">Presidente Perón</option>
-                    <option value="Punta Indio">Punta Indio</option>
-                    <option value="Quilmes">Quilmes</option>
-                    <option value="Ramallo">Ramallo</option>
-                    <option value="San Fernando">San Fernando</option>
-                    <option value="San Isidro">San Isidro</option>
-                    <option value="San Martin">San Martín</option>
-                    <option value="San Miguel">San Miguel</option>
-                    <option value="San Nicolas">San Nicolás</option>
-                    <option value="San Vicente">San Vicente</option>
-                    <option value="Tigre">Tigre</option>
-                    <option value="Tres de Febrero">Tres de Febrero</option>
-                    <option value="Vicente Lopez">Vicente López</option>
-                    <option value="Zarate">Zárate</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <button type="button" id="btn-buscar-ubicacion-reporte" class="btn btn-outline-primary btn-sm"
-                        th:attr="data-url=@{/reporte/ubicaciones/sugerencias}">
-                    <i class="bi bi-geo-alt"></i> Buscar en el mapa
-                </button>
-                <p id="estado-ubicacion-reporte" class="small text-muted mt-2 mb-2" role="status" aria-live="polite">
-                    Opcional: ubicá el local en el mapa para que otros vecinos lo encuentren.
+        <!-- Resumen -->
+        <aside class="rp-resumen" aria-label="Resumen de tu reporte">
+            <div class="rp-vista-previa">
+                <h2>Así se va a ver</h2>
+                <p class="rp-vp-producto rp-vp-vacio" id="rp-vp-producto">Nombre del producto</p>
+                <p class="rp-vp-detalle" id="rp-vp-detalle"></p>
+                <p class="rp-vp-comercio rp-vp-vacio" id="rp-vp-comercio">
+                    <i class="bi bi-shop" aria-hidden="true"></i> <span>Comercio</span>
                 </p>
-                <div id="sugerencias-ubicacion-reporte" class="list-group mb-2"></div>
-                <div id="mapa-ubicacion-reporte" class="rounded border d-none" style="height: 260px;"
-                     role="application" aria-label="Mapa para ubicar el comercio"></div>
-                <input type="hidden" name="comercio.latitud" id="comercio-latitud">
-                <input type="hidden" name="comercio.longitud" id="comercio-longitud">
-            </div>
-        </div>
+                <p class="rp-vp-precio" id="rp-vp-precio">$ —</p>
 
-        <h6 class="text-muted mt-3">Precio</h6>
-        <div class="mb-3">
-            <input type="number" step="0.01" name="precio" id="precio" class="form-control" placeholder="Precio">
-        </div>
-        <button type="submit" id="btn-guardar-reporte" class="btn btn-primary">Guardar reporte</button>
+                <div class="rp-progreso">
+                    <p class="rp-progreso-texto" id="rp-progreso-texto" aria-live="polite">0 datos completos</p>
+                    <div class="rp-barra" role="presentation"><span id="rp-progreso-barra"></span></div>
+                </div>
+            </div>
+
+            <button type="submit" id="btn-guardar-reporte" class="rp-btn rp-btn-principal rp-btn-bloque">
+                <i class="bi bi-check2-circle" aria-hidden="true"></i> Guardar reporte
+            </button>
+
+            <p class="rp-nota">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                <span>Se permite un reporte por producto y comercio por día. Si un precio no es real, otros vecinos pueden marcarlo como dudoso.</span>
+            </p>
+        </aside>
     </form>
-    <div th:if="${guardado}" id="alerta-reporte-guardado" class="alert alert-success mt-3" role="alert">
-        ¡Reporte guardado con éxito!
-    </div>
-    <div th:if="${error}" id="error" class="alert alert-danger mt-3" th:text="${error}"></div>
-</div>
+</main>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -252,17 +360,50 @@
     var cropper = null;
     var modalCropper = new bootstrap.Modal(document.getElementById('modalCropper'));
     var fotoBase64Recortada = null;
+    var formulario = document.getElementById('form-reporte');
 
-    document.getElementById('foto').addEventListener('change', function() {
+    function campo(id) { return document.getElementById(id); }
+
+    // ----- Foto: elegir, recortar y reconocer el producto -----
+    function mostrarEstadoFoto(texto, cargando) {
+        var estado = campo('estado-foto');
+        estado.replaceChildren();
+        if (!texto) { return; }
+        var icono = document.createElement(cargando ? 'span' : 'i');
+        icono.className = cargando ? 'rp-spinner' : 'bi bi-stars';
+        icono.setAttribute('aria-hidden', 'true');
+        estado.appendChild(icono);
+        estado.appendChild(document.createTextNode(texto));
+    }
+
+    function ponerValorReconocido(id, valor) {
+        var el = campo(id);
+        if (!valor || !el) { return; }
+        el.value = valor;
+        el.classList.remove('rp-autocompletado');
+        void el.offsetWidth;
+        el.classList.add('rp-autocompletado');
+    }
+
+    function quitarFoto() {
+        campo('foto').value = '';
+        fotoBase64Recortada = null;
+        campo('foto-base64').value = '';
+        campo('preview-foto').style.display = 'none';
+        campo('rp-zona-foto').hidden = false;
+        mostrarEstadoFoto('', false);
+    }
+
+    campo('foto').addEventListener('change', function () {
         if (!this.files.length) return;
         var file = this.files[0];
         var reader = new FileReader();
-        reader.onload = function(e) {
-            var imgEl = document.getElementById('imagen-a-recortar');
+        reader.onload = function (e) {
+            var imgEl = campo('imagen-a-recortar');
             imgEl.src = e.target.result;
             if (cropper) { cropper.destroy(); cropper = null; }
             modalCropper.show();
-            document.getElementById('modalCropper').addEventListener('shown.bs.modal', function init() {
+            campo('modalCropper').addEventListener('shown.bs.modal', function init() {
                 cropper = new Cropper(imgEl, {
                     aspectRatio: NaN,
                     viewMode: 1,
@@ -270,115 +411,219 @@
                     responsive: true,
                     restore: false
                 });
-                document.getElementById('modalCropper').removeEventListener('shown.bs.modal', init);
+                campo('modalCropper').removeEventListener('shown.bs.modal', init);
             });
         };
         reader.readAsDataURL(file);
     });
 
-    document.getElementById('btn-rotar-izq').addEventListener('click', function() {
-        if (cropper) cropper.rotate(-90);
-    });
-    document.getElementById('btn-rotar-der').addEventListener('click', function() {
-        if (cropper) cropper.rotate(90);
-    });
+    campo('btn-rotar-izq').addEventListener('click', function () { if (cropper) cropper.rotate(-90); });
+    campo('btn-rotar-der').addEventListener('click', function () { if (cropper) cropper.rotate(90); });
 
-    document.getElementById('btn-confirmar-crop').addEventListener('click', function() {
+    campo('btn-confirmar-crop').addEventListener('click', function () {
         if (!cropper) return;
         var canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200, imageSmoothingQuality: 'high' });
         fotoBase64Recortada = canvas.toDataURL('image/jpeg', 0.85);
-        document.getElementById('foto-base64').value = fotoBase64Recortada;
-        document.getElementById('img-preview').src = fotoBase64Recortada;
-        document.getElementById('preview-foto').style.display = 'block';
+        campo('foto-base64').value = fotoBase64Recortada;
+        campo('img-preview').src = fotoBase64Recortada;
+        campo('preview-foto').style.display = 'flex';
+        campo('rp-zona-foto').hidden = true;
         modalCropper.hide();
-        fetch('/reporte/ticket/reconocer-producto', {
+        mostrarEstadoFoto('Leyendo el producto de la foto…', true);
+        fetch(formulario.dataset.urlReconocer, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'imagenBase64=' + encodeURIComponent(fotoBase64Recortada)
         })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.error) return;
-                if (data.nombre) document.getElementById('producto-nombre').value = data.nombre;
-                if (data.marca)  document.getElementById('producto-marca').value = data.marca;
-                if (data.unidad) document.getElementById('producto-unidad').value = data.unidad;
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    mostrarEstadoFoto('No pudimos reconocer el producto: completalo a mano.', false);
+                    return;
+                }
+                ponerValorReconocido('producto-nombre', data.nombre);
+                ponerValorReconocido('producto-marca', data.marca);
+                ponerValorReconocido('producto-unidad', data.unidad);
                 if (data.categoria) {
-                    var sel = document.getElementById('producto-categoria');
+                    var sel = campo('producto-categoria');
                     for (var i = 0; i < sel.options.length; i++) {
                         if (sel.options[i].value === data.categoria) { sel.selectedIndex = i; break; }
                     }
                 }
+                mostrarEstadoFoto('Completamos los datos desde la foto. Revisalos antes de guardar.', false);
+                actualizarResumen();
             })
-            .catch(function() {});
+            .catch(function () {
+                mostrarEstadoFoto('No pudimos leer la foto ahora: completá los datos a mano.', false);
+            });
     });
 
-    document.getElementById('btn-cancelar-crop').addEventListener('click', function() {
-        document.getElementById('foto').value = '';
-        fotoBase64Recortada = null;
-        document.getElementById('foto-base64').value = '';
-        document.getElementById('preview-foto').style.display = 'none';
+    campo('btn-cancelar-crop').addEventListener('click', function () {
+        quitarFoto();
         modalCropper.hide();
     });
 
-    document.getElementById('btn-cambiar-foto').addEventListener('click', function() {
-        document.getElementById('foto').value = '';
-        fotoBase64Recortada = null;
-        document.getElementById('foto-base64').value = '';
-        document.getElementById('preview-foto').style.display = 'none';
-        document.getElementById('foto').click();
+    campo('btn-cambiar-foto').addEventListener('click', function () {
+        quitarFoto();
+        campo('foto').click();
     });
 
-    document.querySelector('form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        var formulario = this;
+    // ----- Unidades frecuentes -----
+    Array.prototype.forEach.call(document.querySelectorAll('.rp-sugerido'), function (boton) {
+        boton.addEventListener('click', function () {
+            campo('producto-unidad').value = boton.dataset.unidad;
+            campo('producto-unidad').dispatchEvent(new Event('input', { bubbles: true }));
+            campo('producto-unidad').focus();
+        });
+    });
 
-        var inputs = this.querySelectorAll('input[type="text"]');
-        inputs.forEach(function(input) { input.value = input.value.trim(); });
+    // ----- Resumen en vivo + avance -----
+    function valorDe(id) {
+        var el = campo(id);
+        return el ? el.value.trim() : '';
+    }
+
+    function dineroArgentino(texto) {
+        var numero = parseFloat(texto);
+        if (isNaN(numero) || numero <= 0) { return '$ —'; }
+        return '$ ' + numero.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function nombreDelComercio() {
+        var editable = campo('comercio-nombre');
+        if (editable) { return editable.value.trim(); }
+        var fijo = campo('comercio-nombre-fijo');
+        return fijo ? fijo.value.trim() : '';
+    }
+
+    function ponerTexto(id, texto, vacioTexto) {
+        var el = campo(id);
+        var destino = el.querySelector('span') || el;
+        destino.textContent = texto || vacioTexto;
+        el.classList.toggle('rp-vp-vacio', !texto);
+    }
+
+    function actualizarResumen() {
+        ponerTexto('rp-vp-producto', valorDe('producto-nombre'), 'Nombre del producto');
+        var detalle = [valorDe('producto-marca'), valorDe('producto-unidad')].filter(Boolean).join(' · ');
+        campo('rp-vp-detalle').textContent = detalle;
+        ponerTexto('rp-vp-comercio', nombreDelComercio(), 'Comercio');
+        campo('rp-vp-precio').textContent = dineroArgentino(valorDe('precio'));
+
+        var obligatorios = ['producto-nombre', 'producto-marca', 'producto-categoria', 'producto-unidad', 'precio'];
+        ['comercio-nombre', 'comercio-direccion', 'comercio-localidad'].forEach(function (id) {
+            if (campo(id)) { obligatorios.push(id); }
+        });
+        var completos = obligatorios.filter(function (id) {
+            return id === 'precio' ? parseFloat(valorDe(id)) > 0 : valorDe(id) !== '';
+        }).length;
+        // El comercio fijo (rol COMERCIO) ya viene completo
+        var total = obligatorios.length;
+        if (!campo('comercio-nombre')) { total += 3; completos += 3; }
+        campo('rp-progreso-texto').textContent = completos + ' de ' + total + ' datos completos';
+        campo('rp-progreso-barra').style.width = Math.round(completos / total * 100) + '%';
+    }
+
+    formulario.addEventListener('input', function (e) {
+        e.target.classList.remove('rp-invalido');
+        if (e.target.id === 'precio') { campo('rp-caja-precio').classList.remove('rp-invalido'); }
+        actualizarResumen();
+    });
+    formulario.addEventListener('change', actualizarResumen);
+    actualizarResumen();
+
+    // ----- Envío con validación -----
+    function marcarInvalido(id) {
+        var el = campo(id);
+        if (!el) { return; }
+        el.classList.add('rp-invalido');
+        el.setAttribute('aria-invalid', 'true');
+        if (id === 'precio') { campo('rp-caja-precio').classList.add('rp-invalido'); }
+    }
+
+    function mostrarError(texto) {
+        var errorDiv = campo('error');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.id = 'error';
+            errorDiv.className = 'rp-alerta rp-alerta-error';
+            errorDiv.setAttribute('role', 'alert');
+            formulario.parentNode.insertBefore(errorDiv, formulario);
+        }
+        errorDiv.replaceChildren();
+        var icono = document.createElement('i');
+        icono.className = 'bi bi-exclamation-triangle-fill';
+        icono.setAttribute('aria-hidden', 'true');
+        var mensaje = document.createElement('div');
+        mensaje.textContent = texto;
+        errorDiv.appendChild(icono);
+        errorDiv.appendChild(mensaje);
+        errorDiv.style.display = 'flex';
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    formulario.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        Array.prototype.forEach.call(this.querySelectorAll('input[type="text"]'), function (input) {
+            input.value = input.value.trim();
+        });
+        Array.prototype.forEach.call(this.querySelectorAll('.rp-invalido'), function (el) {
+            el.classList.remove('rp-invalido');
+            el.removeAttribute('aria-invalid');
+        });
 
         var errores = [];
-        if (!document.getElementById('producto-nombre').value) errores.push('Nombre del producto');
-        if (!document.getElementById('producto-marca').value) errores.push('Marca');
-        if (!document.getElementById('producto-categoria').value) errores.push('Categoría');
-        if (!document.getElementById('producto-unidad').value) errores.push('Unidad');
-
-        // Validar comercio solo si los campos existen (no COMERCIO role)
-        var campoComercioNombre = document.getElementById('comercio-nombre');
-        var campoComercioDir = document.getElementById('comercio-direccion');
-        var campoComercioLoc = document.getElementById('comercio-localidad');
-        if (campoComercioNombre && !campoComercioNombre.value) errores.push('Nombre del comercio');
-        if (campoComercioDir && !campoComercioDir.value) errores.push('Dirección');
-        if (campoComercioLoc && !campoComercioLoc.value) errores.push('Localidad');
-
-        if (!document.getElementById('precio').value || parseFloat(document.getElementById('precio').value) <= 0) errores.push('Precio');
+        function exigir(id, nombre) {
+            var el = campo(id);
+            if (el && !el.value) { errores.push(nombre); marcarInvalido(id); }
+        }
+        exigir('producto-nombre', 'Nombre del producto');
+        exigir('producto-marca', 'Marca');
+        exigir('producto-categoria', 'Categoría');
+        exigir('producto-unidad', 'Unidad');
+        // El comercio solo se valida si los campos existen (rol distinto de COMERCIO)
+        exigir('comercio-nombre', 'Nombre del comercio');
+        exigir('comercio-direccion', 'Dirección');
+        exigir('comercio-localidad', 'Localidad');
+        if (!campo('precio').value || parseFloat(campo('precio').value) <= 0) {
+            errores.push('Precio');
+            marcarInvalido('precio');
+        }
 
         if (errores.length > 0) {
-            var errorDiv = document.getElementById('error');
-            if (!errorDiv) {
-                errorDiv = document.createElement('div');
-                errorDiv.id = 'error';
-                errorDiv.className = 'alert alert-danger mt-3';
-                formulario.parentNode.insertBefore(errorDiv, formulario.nextSibling);
-            }
-            errorDiv.textContent = 'Completá los siguientes campos: ' + errores.join(', ');
-            errorDiv.style.display = 'block';
+            mostrarError('Completá los siguientes campos: ' + errores.join(', '));
+            var primero = this.querySelector('.rp-invalido');
+            if (primero) { primero.focus({ preventScroll: true }); }
             return;
         }
 
-        var errorDiv = document.getElementById('error');
+        var errorDiv = campo('error');
         if (errorDiv) errorDiv.style.display = 'none';
 
-        if (fotoBase64Recortada) { formulario.submit(); return; }
+        var boton = campo('btn-guardar-reporte');
+        var enviar = function () {
+            boton.disabled = true;
+            boton.textContent = 'Guardando…';
+            formulario.submit();
+        };
 
-        var foto = document.getElementById('foto');
-        if (!foto.files.length) { formulario.submit(); return; }
+        if (fotoBase64Recortada) { enviar(); return; }
+
+        var foto = campo('foto');
+        if (!foto.files.length) { enviar(); return; }
 
         var lector = new FileReader();
-        lector.onload = function(evento) {
-            document.getElementById('foto-base64').value = evento.target.result;
-            formulario.submit();
+        lector.onload = function (evento) {
+            campo('foto-base64').value = evento.target.result;
+            enviar();
         };
         lector.readAsDataURL(foto.files[0]);
     });
+
+    // Si volvió con "guardado", lleva la vista al aviso
+    var avisoGuardado = campo('alerta-reporte-guardado');
+    if (avisoGuardado) { avisoGuardado.scrollIntoView({ block: 'center' }); }
 </script>
 <script>
     // "Buscar en el mapa": el vecino confirma dónde está el local antes de reportar.
@@ -455,7 +700,7 @@
                 const item = document.createElement('button');
                 item.type = 'button';
                 item.id = 'opcion-ubicacion-reporte-' + indice;
-                item.className = 'list-group-item list-group-item-action';
+                item.className = 'rp-sugerencia';
                 item.setAttribute('aria-pressed', 'false');
                 // textContent y no innerHTML: el texto viene de un servicio externo
                 item.textContent = sugerencia.nomenclatura;

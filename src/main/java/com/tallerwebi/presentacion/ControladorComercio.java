@@ -71,6 +71,11 @@ public class ControladorComercio {
     ModelAndView mav = new ModelAndView("comercio/comercios");
     mav.addObject(VISTA_COMERCIO, comercio);
     mav.addObject("reportes", reportes);
+    if (comercio != null) {
+      // Sin horarios cargados "abierto" queda en null y la vista muestra "Sin horario cargado"
+      mav.addObject("abierto", servicioComercio.estaAbierto(id));
+      mav.addObject("horarios", servicioComercio.obtenerHorarios(id));
+    }
     return mav;
   }
 

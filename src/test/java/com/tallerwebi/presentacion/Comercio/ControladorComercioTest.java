@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Comercio.HorarioComercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Comercio.UbicacionSugerida;
 import com.tallerwebi.dominio.Reporte.Reporte;
@@ -70,6 +71,42 @@ public class ControladorComercioTest {
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/comercios"));
     assertThat(modelAndView.getModel().get("comercio"), is(comercio));
     verify(this.servicioComercioMock, times(1)).buscarComercio(1L);
+  }
+
+  @Test
+  public void elDetalleDelComercioIncluyeSiEstaAbiertoYSusHorarios() {
+    Comercio comercio = new Comercio();
+    HorarioComercio horario = new HorarioComercio();
+    when(this.servicioComercioMock.buscarComercio(1L)).thenReturn(comercio);
+    when(this.servicioComercioMock.estaAbierto(1L)).thenReturn(true);
+    when(this.servicioComercioMock.obtenerHorarios(1L)).thenReturn(Arrays.asList(horario));
+
+    ModelAndView modelAndView = this.controladorComercio.buscarPorId(1L);
+
+    assertThat(modelAndView.getModel().get("abierto"), is(true));
+    assertThat(modelAndView.getModel().get("horarios"), is(Arrays.asList(horario)));
+  }
+
+  @Test
+  public void elDetalleSinHorariosCargadosNoTieneEstadoDeApertura() {
+    Comercio comercio = new Comercio();
+    when(this.servicioComercioMock.buscarComercio(1L)).thenReturn(comercio);
+    when(this.servicioComercioMock.estaAbierto(1L)).thenReturn(null);
+
+    ModelAndView modelAndView = this.controladorComercio.buscarPorId(1L);
+
+    assertThat(modelAndView.getModel().get("abierto"), is(nullValue()));
+    assertThat(modelAndView.getModel().get("horarios"), is(Collections.emptyList()));
+  }
+
+  @Test
+  public void elDetalleDeUnComercioInexistenteNoConsultaHorarios() {
+    when(this.servicioComercioMock.buscarComercio(99L)).thenReturn(null);
+
+    ModelAndView modelAndView = this.controladorComercio.buscarPorId(99L);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("comercio/comercios"));
+    verify(this.servicioComercioMock, never()).obtenerHorarios(anyLong());
   }
 
   @Test

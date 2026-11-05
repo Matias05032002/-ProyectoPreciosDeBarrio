@@ -337,6 +337,44 @@ public class ControladorReporteTest {
   }
 
   @Test
+  public void analizarTicketSinNombreDeComercioDevuelveError() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioComercioMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    ModelAndView mav = controladorReporte.analizarTicket(
+      "data:image/jpeg;base64,AQID",
+      "  ",
+      "Calle 1",
+      "La Matanza",
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/subir-ticket"));
+    assertThat(
+      mav.getModel().get("error"),
+      is("Completá el nombre, la dirección y la localidad del comercio")
+    );
+    verifyNoInteractions(servicioOcrMock);
+  }
+
+  @Test
+  public void analizarTicketSinLocalidadDeComercioDevuelveError() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioComercioMock.listarTodos()).thenReturn(Collections.emptyList());
+
+    ModelAndView mav = controladorReporte.analizarTicket(
+      "data:image/jpeg;base64,AQID",
+      "Almacen",
+      "Calle 1",
+      "",
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/subir-ticket"));
+    assertThat(mav.getModel().containsKey("error"), is(true));
+  }
+
+  @Test
   public void guardarTicketRedirigeAlLoginSiNoHaySesion()
     throws CamposObligatoriosVacios, ReporteExistente, UnidadInvalida, PrecioIncorrecto {
     when(sessionMock.getAttribute("ROL")).thenReturn(null);

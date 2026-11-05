@@ -42,6 +42,7 @@ public class ControladorReporte {
   private ServicioLogin servicioLogin;
   private ServicioPaginador servicioPaginador;
   private static final String VISTA_REPORTES = "reporte/lista-reportes";
+  private static final String VISTA_SUBIR_TICKET = "reporte/subir-ticket";
   private static final String NOMBRE_PRODUCTOS = "productos";
   private static final String NOMBRE_COMERCIOS = "comercios";
   private static final String NOMBRE_REPORTES = "reportes";
@@ -395,7 +396,7 @@ public class ControladorReporte {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    ModelAndView mav = new ModelAndView("reporte/subir-ticket");
+    ModelAndView mav = new ModelAndView(VISTA_SUBIR_TICKET);
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
     return mav;
   }
@@ -412,8 +413,14 @@ public class ControladorReporte {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     if (ticketBase64 == null || ticketBase64.isBlank()) {
-      ModelAndView mav = new ModelAndView("reporte/subir-ticket");
+      ModelAndView mav = new ModelAndView(VISTA_SUBIR_TICKET);
       mav.addObject(NOMBRE_ERROR, "Debes subir una foto del ticket");
+      mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+      return mav;
+    }
+    if (faltanDatosDelComercio(comercioNombre, comercioDireccion, comercioLocalidad)) {
+      ModelAndView mav = new ModelAndView(VISTA_SUBIR_TICKET);
+      mav.addObject(NOMBRE_ERROR, "Completá el nombre, la dirección y la localidad del comercio");
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
       return mav;
     }
@@ -428,7 +435,7 @@ public class ControladorReporte {
       mav.addObject("comercioLocalidad", comercioLocalidad);
       return mav;
     } catch (Exception e) {
-      ModelAndView mav = new ModelAndView("reporte/subir-ticket");
+      ModelAndView mav = new ModelAndView(VISTA_SUBIR_TICKET);
       mav.addObject(
         NOMBRE_ERROR,
         "No pudimos leer el ticket en este momento. " +
@@ -437,6 +444,14 @@ public class ControladorReporte {
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
       return mav;
     }
+  }
+
+  private boolean faltanDatosDelComercio(String nombre, String direccion, String localidad) {
+    return estaVacio(nombre) || estaVacio(direccion) || estaVacio(localidad);
+  }
+
+  private boolean estaVacio(String texto) {
+    return texto == null || texto.isBlank();
   }
 
   @RequestMapping(path = "/ticket/guardar", method = RequestMethod.POST)

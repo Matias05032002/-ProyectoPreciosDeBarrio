@@ -7,242 +7,254 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/main.css}"/>
+    <link rel="stylesheet" th:href="@{/css/cuenta.css}"/>
 </head>
-<body class="perfil-page">
+<body>
 
 <nav th:replace="~{navbar :: navbar}"></nav>
 
-<main class="container py-5">
-    <div class="perfil-header">
-        <h1 class="fw-bold">Mi perfil</h1>
-        <p class="text-muted">Administrá tu cuenta y consultá tus reportes.</p>
+<header class="cu-cabecera">
+    <div class="container cu-persona">
+        <div class="cu-avatar" id="cu-avatar" aria-hidden="true"
+             th:attr="data-inicial=${usuario.nombre != null and !#strings.isEmpty(usuario.nombre) ? usuario.nombre : usuario.email}">?</div>
+        <div class="cu-persona-datos">
+            <h1 id="titulo-pagina"
+                th:text="${usuario.nombre != null and usuario.apellido != null and !#strings.isEmpty(usuario.nombre)} ? ${usuario.nombre + ' ' + usuario.apellido} : 'Mi perfil'">Mi perfil</h1>
+            <p class="cu-email" th:text="${usuario.email}">vecino@mail.com</p>
+            <ul class="cu-chips">
+                <li class="cu-chip">
+                    <i class="bi bi-person-badge" aria-hidden="true"></i>
+                    <span th:switch="${usuario.rol}">
+                        <span th:case="'USER'">Vecino</span>
+                        <span th:case="'COMERCIO'">Comercio</span>
+                        <span th:case="'ADMIN'">Administrador</span>
+                        <span th:case="*" th:text="${usuario.rol}"></span>
+                    </span>
+                </li>
+                <li class="cu-chip">
+                    <i class="bi bi-receipt" aria-hidden="true"></i>
+                    <span><span th:text="${cantidadReportes}">0</span> reportes realizados</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<main class="container cu-principal">
+
+    <div th:if="${param.emailActualizado}" class="cu-alerta cu-alerta-ok" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div>Email actualizado correctamente.</div>
+    </div>
+    <div th:if="${param.errorEmail}" class="cu-alerta cu-alerta-error" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div>No se pudo actualizar el email. Verificá que sea válido y que no esté registrado.</div>
+    </div>
+    <div th:if="${param.contrasenaActualizada}" class="cu-alerta cu-alerta-ok" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div>Contraseña actualizada correctamente.</div>
+    </div>
+    <div th:if="${param.errorContrasena}" class="cu-alerta cu-alerta-error" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div>No se pudo cambiar la contraseña. Verificá la contraseña actual y los requisitos de la nueva.</div>
+    </div>
+    <div th:if="${errorDatos}" id="error-datos" class="cu-alerta cu-alerta-error alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div th:text="${errorDatos}">Error</div>
+    </div>
+    <div th:if="${param.datosActualizados}" class="cu-alerta cu-alerta-ok" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div>Datos personales actualizados correctamente.</div>
     </div>
 
-    <div th:if="${param.emailActualizado}" class="alert alert-success">
-        Email actualizado correctamente.
-    </div>
-    <div th:if="${param.errorEmail}" class="alert alert-danger">
-        No se pudo actualizar el email. Verificá que sea válido y que no esté registrado.
-    </div>
-    <div th:if="${param.contrasenaActualizada}" class="alert alert-success">
-        Contraseña actualizada correctamente.
-    </div>
-    <div th:if="${param.errorContrasena}" class="alert alert-danger">
-        No se pudo cambiar la contraseña. Verificá la contraseña actual y los requisitos de la nueva.
-    </div>
-    <div th:if="${errorDatos}" id="error-datos" class="alert alert-danger" th:text="${errorDatos}"></div>
-    <div th:if="${param.datosActualizados}" class="alert alert-success">
-        Datos personales actualizados correctamente.
-    </div>
-    <div class="row g-4">
-        <div class="col-lg-4 perfil-sidebar">
-            <section class="card shadow-sm border-0 mb-4">
-                <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Datos de la cuenta</h2>
+    <div class="cu-perfil">
 
-                    <p class="mb-2">
-                        <strong>Email:</strong>
-                        <span th:text="${usuario.email}"></span>
-                    </p>
+        <!-- Reportes -->
+        <section class="cu-tarjeta" aria-labelledby="cu-t-reportes">
+            <h2 id="cu-t-reportes">Mis reportes recientes</h2>
 
-                    <p class="mb-3">
-                        <strong>Rol:</strong>
-                        <span th:switch="${usuario.rol}">
-                            <span th:case="'USER'">Vecino</span>
-                            <span th:case="'COMERCIO'">Comercio</span>
-                            <span th:case="'ADMIN'">Administrador</span>
-                            <span th:case="*" th:text="${usuario.rol}"></span>
-                        </span>
-                    </p>
+            <div th:if="${#lists.isEmpty(reportes)}" class="cu-vacio">
+                <span class="cu-icono"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+                <p>Todavía no realizaste ningún reporte. Cada precio que cargues le sirve a otro vecino.</p>
+                <a th:href="@{/reporte}" class="cu-btn cu-btn-principal">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> Reportar un precio
+                </a>
+            </div>
 
-                    <div class="perfil-stat">
-                        <div class="stat-label">Reportes realizados</div>
-                        <div class="stat-value"
-                             th:text="${cantidadReportes}">0
-                        </div>
+            <ul th:unless="${#lists.isEmpty(reportes)}" class="cu-reportes">
+                <li class="cu-reporte" th:each="reporte : ${reportes}">
+                    <div class="cu-reporte-datos">
+                        <h3 th:text="${reporte.producto.nombre}">Producto</h3>
+                        <p class="cu-reporte-meta">
+                            <span th:text="${reporte.comercio.nombre}">Comercio</span> ·
+                            <span th:text="${reporte.fechaDeReporte != null
+                                ? #temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')
+                                : '-'}">Fecha</span>
+                        </p>
                     </div>
+                    <div class="cu-reporte-derecha">
+                        <span class="cu-reporte-precio"
+                              th:text="${reporte.precio != null
+                                ? '$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')
+                                : 'Sin precio'}">$ 0,00</span>
+                        <a th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
+                           class="cu-btn cu-btn-claro cu-btn-chico">
+                            <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Ajustes de la cuenta -->
+        <div class="cu-lateral">
+
+            <!-- Verificación del comercio -->
+            <section th:if="${usuario.rol == 'COMERCIO' and comercio != null}"
+                     class="cu-tarjeta cu-verificacion" aria-labelledby="cu-t-verif">
+                <h2 id="cu-t-verif">Verificación del comercio</h2>
+
+                <div th:if="${comercio.verificado}">
+                    <span class="cu-chip cu-chip-verificado">
+                        <i class="bi bi-patch-check-fill" aria-hidden="true"></i> Comercio verificado
+                    </span>
+                    <p>Tu comercio cuenta con la insignia de verificación.</p>
+                </div>
+
+                <div th:unless="${comercio.verificado}">
+                    <span class="cu-chip"><i class="bi bi-patch-question" aria-hidden="true"></i> Comercio sin verificar</span>
+                    <p>Verificá tu comercio para obtener la insignia.</p>
+                    <button type="button" class="cu-btn cu-btn-principal cu-btn-bloque" style="margin-top:.85rem" disabled>
+                        Solicitar verificación (próximamente)
+                    </button>
                 </div>
             </section>
 
-            <section class="card shadow-sm border-0 mb-4">
-                <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Cambiar email</h2>
-
-                    <form th:action="@{/perfil/actualizar-email}" method="post">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Nuevo email</label>
-                            <input type="email" id="email" name="email"
-                                   class="form-control"
-                                   th:value="${usuario.email}"
-                                   required maxlength="255">
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            Guardar email
-                        </button>
-                    </form>
-                </div>
-            </section>
-
-            <section class="card shadow-sm border-0">
-                <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Cambiar contraseña</h2>
-
-                    <form th:action="@{/perfil/cambiar-contrasena}" method="post">
-                        <div class="mb-3">
-                            <label for="contrasenaActual" class="form-label">
-                                Contraseña actual
-                            </label>
-                            <input type="password" id="contrasenaActual"
-                                   name="contrasenaActual" class="form-control"
-                                   required autocomplete="current-password">
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="contrasenaNueva" class="form-label">
-                                Nueva contraseña
-                            </label>
-                            <input type="password" id="contrasenaNueva"
-                                   name="contrasenaNueva" class="form-control"
-                                   minlength="8" required
-                                   autocomplete="new-password">
-                            <div class="form-text">
-                                Mínimo 8 caracteres y al menos una mayúscula.
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-dark w-100">
-                            Cambiar contraseña
-                        </button>
-                    </form>
-                </div>
-            </section>
-
-            <section class="card shadow-sm border-0 mt-4">
-                <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Datos personales</h2>
-
+            <details class="cu-acordeon" open>
+                <summary>
+                    <span class="cu-icono"><i class="bi bi-person-lines-fill" aria-hidden="true"></i></span>
+                    Datos personales
+                    <i class="bi bi-chevron-down cu-flecha" aria-hidden="true"></i>
+                </summary>
+                <div class="cu-acordeon-cuerpo">
                     <form th:action="@{/perfil/actualizar-datos}" method="post">
-                        <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre</label>
+                        <div class="cu-campo">
+                            <label for="nombre" class="cu-etiqueta">Nombre</label>
                             <input type="text" id="nombre" name="nombre"
-                                   class="form-control"
+                                   class="cu-control"
                                    th:value="${usuario.nombre}"
                                    maxlength="100" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="apellido" class="form-label">Apellido</label>
+                        <div class="cu-campo">
+                            <label for="apellido" class="cu-etiqueta">Apellido</label>
                             <input type="text" id="apellido" name="apellido"
-                                   class="form-control"
+                                   class="cu-control"
                                    th:value="${usuario.apellido}"
                                    maxlength="100" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="fechaNacimiento" class="form-label">Fecha de nacimiento</label>
+                        <div class="cu-campo">
+                            <label for="fechaNacimiento" class="cu-etiqueta">Fecha de nacimiento</label>
                             <input type="date" id="fechaNacimiento" name="fechaNacimiento"
-                                   class="form-control"
+                                   class="cu-control"
                                    th:value="${usuario.fechaNacimiento}"
                                    min="1900-01-01"
                                    th:max="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="cu-btn cu-btn-principal cu-btn-bloque">
                             Guardar datos
                         </button>
                     </form>
                 </div>
-            </section>
-        </div>
+            </details>
 
-        <!-- Verificación del comercio -->
-        <div th:if="${usuario.rol == 'COMERCIO' and comercio != null}"
-             class="card mt-4">
-
-            <div class="card-body">
-                <h5 class="card-title">Verificación del comercio</h5>
-
-                <div th:if="${comercio.verificado}">
-            <span class="badge bg-primary">
-                ✔ Comercio verificado
-            </span>
-                    <p class="mt-2">
-                        Tu comercio cuenta con la insignia de verificación.
-                    </p>
+            <details class="cu-acordeon" th:open="${param.errorEmail != null}">
+                <summary>
+                    <span class="cu-icono"><i class="bi bi-envelope" aria-hidden="true"></i></span>
+                    Cambiar email
+                    <i class="bi bi-chevron-down cu-flecha" aria-hidden="true"></i>
+                </summary>
+                <div class="cu-acordeon-cuerpo">
+                    <form th:action="@{/perfil/actualizar-email}" method="post">
+                        <div class="cu-campo">
+                            <label for="email" class="cu-etiqueta">Nuevo email</label>
+                            <input type="email" id="email" name="email"
+                                   class="cu-control"
+                                   th:value="${usuario.email}"
+                                   required maxlength="255">
+                        </div>
+                        <button type="submit" class="cu-btn cu-btn-principal cu-btn-bloque">
+                            Guardar email
+                        </button>
+                    </form>
                 </div>
+            </details>
 
-                <div th:unless="${comercio.verificado}">
-            <span class="badge bg-secondary">
-                Comercio sin verificar
-            </span>
-                    <p class="mt-2">
-                        Verificá tu comercio para obtener la insignia.
-                    </p>
+            <details class="cu-acordeon" th:open="${param.errorContrasena != null}">
+                <summary>
+                    <span class="cu-icono"><i class="bi bi-shield-lock" aria-hidden="true"></i></span>
+                    Cambiar contraseña
+                    <i class="bi bi-chevron-down cu-flecha" aria-hidden="true"></i>
+                </summary>
+                <div class="cu-acordeon-cuerpo">
+                    <form th:action="@{/perfil/cambiar-contrasena}" method="post">
+                        <div class="cu-campo">
+                            <label for="contrasenaActual" class="cu-etiqueta">Contraseña actual</label>
+                            <div class="cu-clave">
+                                <input type="password" id="contrasenaActual"
+                                       name="contrasenaActual" class="cu-control"
+                                       required autocomplete="current-password">
+                                <button type="button" class="cu-ver-clave" data-objetivo="contrasenaActual"
+                                        aria-label="Mostrar contraseña">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
 
-                    <button type="button" class="btn btn-primary">
-                        Solicitar verificación
-                    </button>
+                        <div class="cu-campo">
+                            <label for="contrasenaNueva" class="cu-etiqueta">Nueva contraseña</label>
+                            <div class="cu-clave">
+                                <input type="password" id="contrasenaNueva"
+                                       name="contrasenaNueva" class="cu-control"
+                                       minlength="8" required
+                                       autocomplete="new-password">
+                                <button type="button" class="cu-ver-clave" data-objetivo="contrasenaNueva"
+                                        aria-label="Mostrar contraseña">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <p class="cu-ayuda">Mínimo 8 caracteres y al menos una mayúscula.</p>
+                        </div>
+
+                        <button type="submit" class="cu-btn cu-btn-oscuro cu-btn-bloque">
+                            Cambiar contraseña
+                        </button>
+                    </form>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-lg-8">
-            <section class="card shadow-sm border-0 perfil-reportes h-100">
-                <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Mis reportes recientes</h2>
-
-                    <div th:if="${#lists.isEmpty(reportes)}"
-                         class="text-center py-5">
-                        <p class="text-muted mb-0">
-                            Todavía no realizaste ningún reporte.
-                        </p>
-                    </div>
-
-                    <div th:unless="${#lists.isEmpty(reportes)}"
-                         class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Comercio</th>
-                                <th>Precio</th>
-                                <th>Fecha</th>
-                                <th></th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="reporte : ${reportes}">
-                                <td th:text="${reporte.producto.nombre}">
-                                    Producto
-                                </td>
-                                <td th:text="${reporte.comercio.nombre}">
-                                    Comercio
-                                </td>
-                                <td th:text="${reporte.precio != null
-        ? '$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')
-        : 'Sin precio'}">
-                                    $ 0,00
-                                </td>
-                                <td th:text="${reporte.fechaDeReporte != null
-        ? #temporals.format(reporte.fechaDeReporte, 'dd/MM/yyyy HH:mm')
-        : '-'}">
-                                    Fecha
-                                </td>
-                                <td>
-                                    <a th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
-                                       class="btn btn-outline-primary btn-sm">
-                                        Editar
-                                    </a>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+            </details>
         </div>
     </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Inicial del avatar
+    var avatar = document.getElementById('cu-avatar');
+    var texto = (avatar.getAttribute('data-inicial') || '').trim();
+    if (texto) { avatar.textContent = texto.charAt(0).toUpperCase(); }
+
+    // Mostrar / ocultar contraseña
+    Array.prototype.forEach.call(document.querySelectorAll('.cu-ver-clave'), function (boton) {
+        boton.addEventListener('click', function () {
+            var campo = document.getElementById(boton.dataset.objetivo);
+            var visible = campo.type === 'text';
+            campo.type = visible ? 'password' : 'text';
+            boton.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+            boton.querySelector('i').className = visible ? 'bi bi-eye' : 'bi bi-eye-slash';
+        });
+    });
+</script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>
