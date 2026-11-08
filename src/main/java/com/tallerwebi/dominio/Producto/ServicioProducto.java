@@ -14,16 +14,16 @@ public interface ServicioProducto {
   List<ProductoConPrecio> buscarProductosConPrecio(
     String nombre,
     Usuario usuario,
-    OrdenProducto orden,
+    List<OrdenProducto> ordenes,
     Double latUsuario,
     Double lngUsuario
   );
-  // Igual que el anterior pero limitado a un rubro (ej. "Lacteos"); sin rubro trae todos
+
   List<ProductoConPrecio> buscarProductosConPrecio(
     String nombre,
     String categoria,
     Usuario usuario,
-    OrdenProducto orden,
+    List<OrdenProducto> ordenes,
     Double latUsuario,
     Double lngUsuario
   );

@@ -87,7 +87,7 @@ public class ControladorProductoTest {
       this.servicioProductoMock.buscarProductosConPrecio(
           "Leche",
           null,
-          OrdenProducto.PRECIO,
+          List.of(OrdenProducto.PRECIO),
           null,
           null
         )
@@ -125,7 +125,13 @@ public class ControladorProductoTest {
     );
     when(sessionMock.getAttribute("ID")).thenReturn(10L);
     when(
-      servicioProductoMock.buscarProductosConPrecio("Leche", null, OrdenProducto.PRECIO, null, null)
+      servicioProductoMock.buscarProductosConPrecio(
+        "Leche",
+        null,
+        List.of(OrdenProducto.PRECIO),
+        null,
+        null
+      )
     )
       .thenReturn(Collections.singletonList(dto));
     when(servicioPaginadorMock.calcularTotalPaginas(1, 9)).thenReturn(1);
@@ -151,7 +157,7 @@ public class ControladorProductoTest {
       this.servicioProductoMock.buscarProductosConPrecio(
           "Producto Inexistente",
           null,
-          OrdenProducto.PRECIO,
+          List.of(OrdenProducto.PRECIO),
           null,
           null
         )
@@ -193,7 +199,7 @@ public class ControladorProductoTest {
         "",
         "Lacteos",
         null,
-        OrdenProducto.PRECIO,
+        List.of(OrdenProducto.PRECIO),
         null,
         null
       )
@@ -441,5 +447,58 @@ public class ControladorProductoTest {
       .thenReturn(Collections.emptyList());
 
     assertThat(controladorProducto.preciosEnCadaLocal(99L), is(empty()));
+  }
+
+  private ModelAndView buscarOrdenandoPor(String orden) {
+    return controladorProducto.buscarProducto("Leche", orden, null, -34.6, -58.4, 0, requestMock);
+  }
+
+  @Test
+  public void buscarConVariosCriteriosSeLosPasaAlServicioEnOrdenDePrioridad() {
+    ModelAndView modelAndView = buscarOrdenandoPor("cercania,precio");
+
+    verify(servicioProductoMock)
+      .buscarProductosConPrecio(
+        "Leche",
+        null,
+        List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA),
+        -34.6,
+        -58.4
+      );
+    assertThat(modelAndView.getModel().get("orden"), equalTo("precio,cercania"));
+    assertThat(modelAndView.getModel().get("ordenes"), equalTo(List.of("precio", "cercania")));
+  }
+
+  @Test
+  public void buscarConLosTresCriteriosLosAplicaTodos() {
+    buscarOrdenandoPor("reciente,cercania,precio");
+
+    verify(servicioProductoMock)
+      .buscarProductosConPrecio(
+        "Leche",
+        null,
+        List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA, OrdenProducto.RECIENTE),
+        -34.6,
+        -58.4
+      );
+  }
+
+  @Test
+  public void buscarIgnoraLosCriteriosQueNoExistenYNoRepiteLosDuplicados() {
+    ModelAndView modelAndView = buscarOrdenandoPor("reciente,inventado,reciente");
+
+    verify(servicioProductoMock)
+      .buscarProductosConPrecio("Leche", null, List.of(OrdenProducto.RECIENTE), -34.6, -58.4);
+    assertThat(modelAndView.getModel().get("orden"), equalTo("reciente"));
+  }
+
+  @Test
+  public void buscarSinCriteriosValidosOrdenaPorPrecio() {
+    ModelAndView modelAndView = buscarOrdenandoPor("inventado");
+
+    verify(servicioProductoMock)
+      .buscarProductosConPrecio("Leche", null, List.of(OrdenProducto.PRECIO), -34.6, -58.4);
+    assertThat(modelAndView.getModel().get("orden"), equalTo("precio"));
+    assertThat(buscarOrdenandoPor("").getModel().get("orden"), equalTo("precio"));
   }
 }

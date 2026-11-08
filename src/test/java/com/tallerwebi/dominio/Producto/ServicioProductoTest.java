@@ -139,7 +139,7 @@ public class ServicioProductoTest {
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
       "algo",
       null,
-      OrdenProducto.PRECIO,
+      List.of(OrdenProducto.PRECIO),
       null,
       null
     );
@@ -157,7 +157,7 @@ public class ServicioProductoTest {
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
       "Leche",
       null,
-      OrdenProducto.PRECIO,
+      List.of(OrdenProducto.PRECIO),
       null,
       null
     );
@@ -177,7 +177,7 @@ public class ServicioProductoTest {
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
       "Aceite",
       null,
-      OrdenProducto.RECIENTE,
+      List.of(OrdenProducto.RECIENTE),
       null,
       null
     );
@@ -197,7 +197,7 @@ public class ServicioProductoTest {
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
       "X",
       null,
-      OrdenProducto.PRECIO,
+      List.of(OrdenProducto.PRECIO),
       null,
       null
     );
@@ -212,7 +212,7 @@ public class ServicioProductoTest {
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
       "Y",
       null,
-      OrdenProducto.PRECIO,
+      List.of(OrdenProducto.PRECIO),
       null,
       null
     );
@@ -244,7 +244,7 @@ public class ServicioProductoTest {
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
       "Pan",
       null,
-      OrdenProducto.PRECIO,
+      List.of(OrdenProducto.PRECIO),
       -34.6100,
       -58.3800
     );
@@ -462,7 +462,7 @@ public class ServicioProductoTest {
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
       "Leche",
       null,
-      OrdenProducto.RECIENTE,
+      List.of(OrdenProducto.RECIENTE),
       null,
       null
     );
@@ -482,6 +482,171 @@ public class ServicioProductoTest {
     assertThat(resultado.size(), equalTo(2));
   }
 
+  // --- varios criterios a la vez: se aplican por prioridad (precio, cercanía, reciente) ---
+
+  // El usuario está en el Obelisco; "cerca" queda a unos 0,9 km y "lejos" a unos 56 km
+  private static final double LAT_USUARIO = -34.6037;
+  private static final double LNG_USUARIO = -58.3816;
+
+  private Reporte crearReporteConUbicacion(
+    Long productoId,
+    Long comercioId,
+    Double precio,
+    LocalDateTime fecha,
+    Double latitud,
+    Double longitud
+  ) {
+    Reporte reporte = crearReporteEnLocal(productoId, comercioId, precio, fecha, 0);
+    when(reporte.getComercio().getLatitud()).thenReturn(latitud);
+    when(reporte.getComercio().getLongitud()).thenReturn(longitud);
+    return reporte;
+  }
+
+  private Reporte enLaCuadra(Long productoId, Long comercioId, Double precio, LocalDateTime fecha) {
+    return crearReporteConUbicacion(productoId, comercioId, precio, fecha, -34.6100, -58.3900);
+  }
+
+  private Reporte enLaPlata(Long productoId, Long comercioId, Double precio, LocalDateTime fecha) {
+    return crearReporteConUbicacion(productoId, comercioId, precio, fecha, -34.9215, -57.9545);
+  }
+
+  private List<ProductoConPrecio> buscarOrdenandoPor(List<OrdenProducto> ordenes) {
+    return servicioProducto.buscarProductosConPrecio(
+      "Leche",
+      null,
+      ordenes,
+      LAT_USUARIO,
+      LNG_USUARIO
+    );
+  }
+
+  @Test
+  public void conPrecioYCercaniaElPrecioEmpataYDecideLaCercania() {
+    Reporte lejos = enLaPlata(1L, 10L, 100.0, ahora());
+    Reporte cerca = enLaCuadra(1L, 20L, 100.0, ahora());
+    dadoQueLaBusquedaDevuelve("Leche", lejos, cerca);
+
+    List<ProductoConPrecio> resultado = buscarOrdenandoPor(
+      List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
+    );
+
+    assertThat(
+      resultado.get(0).getDistanciaKm() < resultado.get(1).getDistanciaKm(),
+      equalTo(true)
+    );
+  }
+
+  @Test
+  public void conPrecioYCercaniaElPrecioTienePrioridadSobreLaCercania() {
+    Reporte baratoYLejos = enLaPlata(1L, 10L, 100.0, ahora());
+    Reporte carioYCerca = enLaCuadra(1L, 20L, 300.0, ahora());
+    dadoQueLaBusquedaDevuelve("Leche", carioYCerca, baratoYLejos);
+
+    List<ProductoConPrecio> resultado = buscarOrdenandoPor(
+      List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
+    );
+
+    assertThat(precios(resultado), equalTo(Arrays.asList(100.0, 300.0)));
+  }
+
+  @Test
+  public void conPrecioYCercaniaSigueAgrupandoLosResultadosPorProducto() {
+    Reporte aBarato = enLaCuadra(1L, 10L, 10.0, ahora());
+    Reporte aCaro = enLaPlata(1L, 20L, 50.0, ahora());
+    Reporte bMedio = enLaCuadra(2L, 10L, 20.0, ahora());
+    Reporte bCaro = enLaPlata(2L, 20L, 30.0, ahora());
+    dadoQueLaBusquedaDevuelve("Leche", aCaro, bCaro, bMedio, aBarato);
+
+    List<ProductoConPrecio> resultado = buscarOrdenandoPor(
+      List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
+    );
+
+    assertThat(precios(resultado), equalTo(Arrays.asList(10.0, 50.0, 20.0, 30.0)));
+  }
+
+  @Test
+  public void conCercaniaYRecienteLaCercaniaTienePrioridadYLaFechaDesempata() {
+    Reporte cercaPeroVieja = enLaCuadra(1L, 10L, 100.0, ahora().minusDays(9));
+    Reporte lejosPeroNueva = enLaPlata(1L, 20L, 100.0, ahora());
+    Reporte cercaYNueva = enLaCuadra(1L, 30L, 100.0, ahora().minusDays(1));
+    dadoQueLaBusquedaDevuelve("Leche", lejosPeroNueva, cercaPeroVieja, cercaYNueva);
+
+    List<ProductoConPrecio> resultado = buscarOrdenandoPor(
+      List.of(OrdenProducto.CERCANIA, OrdenProducto.RECIENTE)
+    );
+
+    assertThat(
+      resultado.stream().map(ProductoConPrecio::getFechaDeReporte).toList(),
+      equalTo(
+        Arrays.asList(
+          cercaYNueva.getFechaDeReporte(),
+          cercaPeroVieja.getFechaDeReporte(),
+          lejosPeroNueva.getFechaDeReporte()
+        )
+      )
+    );
+  }
+
+  @Test
+  public void conPrecioYRecientePrimeroElPrecioYDespuesLaFecha() {
+    Reporte igualVieja = enLaCuadra(1L, 10L, 100.0, ahora().minusDays(4));
+    Reporte igualNueva = enLaCuadra(1L, 20L, 100.0, ahora());
+    Reporte masBarataPeroVieja = enLaCuadra(1L, 30L, 80.0, ahora().minusDays(20));
+    dadoQueLaBusquedaDevuelve("Leche", igualVieja, masBarataPeroVieja, igualNueva);
+
+    List<ProductoConPrecio> resultado = buscarOrdenandoPor(
+      List.of(OrdenProducto.PRECIO, OrdenProducto.RECIENTE)
+    );
+
+    assertThat(precios(resultado), equalTo(Arrays.asList(80.0, 100.0, 100.0)));
+    assertThat(resultado.get(1).getFechaDeReporte(), equalTo(igualNueva.getFechaDeReporte()));
+  }
+
+  @Test
+  public void laPrioridadNoDependeDelOrdenEnQueSePidenLosCriterios() {
+    Reporte lejos = enLaPlata(1L, 10L, 100.0, ahora());
+    Reporte cerca = enLaCuadra(1L, 20L, 100.0, ahora());
+    Reporte baratoYLejos = enLaPlata(1L, 30L, 90.0, ahora());
+    dadoQueLaBusquedaDevuelve("Leche", lejos, cerca, baratoYLejos);
+
+    List<Double> enOrden = precios(
+      buscarOrdenandoPor(List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA))
+    );
+    List<Double> alReves = precios(
+      buscarOrdenandoPor(List.of(OrdenProducto.CERCANIA, OrdenProducto.PRECIO))
+    );
+
+    assertThat(alReves, equalTo(enOrden));
+    assertThat(enOrden.get(0), equalTo(90.0));
+  }
+
+  @Test
+  public void conCercaniaSinUbicacionDelUsuarioLosDemasCriteriosDecidenElOrden() {
+    Reporte vieja = enLaCuadra(1L, 10L, 100.0, ahora().minusDays(6));
+    Reporte nueva = enLaCuadra(1L, 20L, 100.0, ahora());
+    dadoQueLaBusquedaDevuelve("Leche", vieja, nueva);
+
+    List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
+      "Leche",
+      null,
+      List.of(OrdenProducto.CERCANIA, OrdenProducto.RECIENTE),
+      null,
+      null
+    );
+
+    assertThat(resultado.get(0).getFechaDeReporte(), equalTo(nueva.getFechaDeReporte()));
+  }
+
+  @Test
+  public void sinCriteriosOrdenaPorPrecio() {
+    Reporte caro = crearReporteEnLocal(1L, 10L, 300.0, ahora(), 0);
+    Reporte barato = crearReporteEnLocal(1L, 20L, 200.0, ahora(), 0);
+    dadoQueLaBusquedaDevuelve("Leche", caro, barato);
+
+    assertThat(precios(buscarOrdenandoPor(List.of())), equalTo(Arrays.asList(200.0, 300.0)));
+    assertThat(precios(buscarOrdenandoPor(null)), equalTo(Arrays.asList(200.0, 300.0)));
+  }
+
   private LocalDateTime ahora() {
     return LocalDateTime.now();
   }
@@ -494,7 +659,7 @@ public class ServicioProductoTest {
     return servicioProducto.buscarProductosConPrecio(
       nombre,
       null,
-      OrdenProducto.PRECIO,
+      List.of(OrdenProducto.PRECIO),
       null,
       null
     );
@@ -505,7 +670,7 @@ public class ServicioProductoTest {
       nombre,
       categoria,
       null,
-      OrdenProducto.PRECIO,
+      List.of(OrdenProducto.PRECIO),
       null,
       null
     );

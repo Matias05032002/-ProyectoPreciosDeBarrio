@@ -69,11 +69,11 @@ public class ServicioProductoImpl implements ServicioProducto {
   public List<ProductoConPrecio> buscarProductosConPrecio(
     String nombre,
     Usuario usuario,
-    OrdenProducto orden,
+    List<OrdenProducto> ordenes,
     Double latUsuario,
     Double lngUsuario
   ) {
-    return buscarProductosConPrecio(nombre, null, usuario, orden, latUsuario, lngUsuario);
+    return buscarProductosConPrecio(nombre, null, usuario, ordenes, latUsuario, lngUsuario);
   }
 
   @Override
@@ -81,7 +81,7 @@ public class ServicioProductoImpl implements ServicioProducto {
     String nombre,
     String categoria,
     Usuario usuario,
-    OrdenProducto orden,
+    List<OrdenProducto> ordenes,
     Double latUsuario,
     Double lngUsuario
   ) {
@@ -111,7 +111,7 @@ public class ServicioProductoImpl implements ServicioProducto {
     }
 
     gruposPorProducto.values().forEach(this::marcarElMasBaratoDelGrupo);
-    return ordenar(gruposPorProducto, orden);
+    return ordenar(gruposPorProducto, ordenes);
   }
 
   // Las categorías se guardaron sin tildes ("Lacteos"): se comparan sin tildes ni mayúsculas
@@ -246,41 +246,59 @@ public class ServicioProductoImpl implements ServicioProducto {
 
   private List<ProductoConPrecio> ordenar(
     Map<Object, List<ProductoConPrecio>> gruposPorProducto,
-    OrdenProducto orden
+    List<OrdenProducto> pedidos
   ) {
-    if (OrdenProducto.CERCANIA.equals(orden)) {
-      List<ProductoConPrecio> resultado = aplanar(gruposPorProducto);
-      resultado.sort(
-        Comparator.comparing(
-          ProductoConPrecio::getDistanciaKm,
-          Comparator.nullsLast(Comparator.naturalOrder())
-        )
-      );
-      return resultado;
+    List<OrdenProducto> criterios = criteriosPorPrioridad(pedidos);
+    Comparator<ProductoConPrecio> comparador = criterios
+      .stream()
+      .map(this::comparadorDe)
+      .reduce(Comparator::thenComparing)
+      .orElseThrow();
+    if (criterios.contains(OrdenProducto.PRECIO)) {
+      return ordenarAgrupandoPorProducto(gruposPorProducto, comparador);
     }
-    if (OrdenProducto.RECIENTE.equals(orden)) {
-      List<ProductoConPrecio> resultado = aplanar(gruposPorProducto);
-      resultado.sort(
-        Comparator.comparing(
-          ProductoConPrecio::getFechaDeReporte,
-          Comparator.nullsLast(Comparator.reverseOrder())
-        )
-      );
-      return resultado;
-    }
-    return ordenarPorPrecioAgrupandoPorProducto(gruposPorProducto);
+    List<ProductoConPrecio> resultado = aplanar(gruposPorProducto);
+    resultado.sort(comparador);
+    return resultado;
   }
 
-  // Cada producto queda junto, con sus locales de más barato a más caro,
-  // y los productos se ordenan por su precio más bajo.
-  private List<ProductoConPrecio> ordenarPorPrecioAgrupandoPorProducto(
-    Map<Object, List<ProductoConPrecio>> gruposPorProducto
+  // Sin importar en qué orden se pidieron, se aplican por la prioridad del enum;
+  // sin ningún criterio se ordena por precio
+  private List<OrdenProducto> criteriosPorPrioridad(List<OrdenProducto> pedidos) {
+    List<OrdenProducto> criterios = new ArrayList<>();
+    for (OrdenProducto criterio : OrdenProducto.values()) {
+      if (pedidos != null && pedidos.contains(criterio)) criterios.add(criterio);
+    }
+    return criterios.isEmpty() ? List.of(OrdenProducto.PRECIO) : criterios;
+  }
+
+  private Comparator<ProductoConPrecio> comparadorDe(OrdenProducto criterio) {
+    if (OrdenProducto.CERCANIA.equals(criterio)) {
+      return Comparator.comparing(
+        ProductoConPrecio::getDistanciaKm,
+        Comparator.nullsLast(Comparator.naturalOrder())
+      );
+    }
+    if (OrdenProducto.RECIENTE.equals(criterio)) {
+      return Comparator.comparing(
+        ProductoConPrecio::getFechaDeReporte,
+        Comparator.nullsLast(Comparator.reverseOrder())
+      );
+    }
+    return Comparator.comparingDouble(ProductoConPrecio::getPrecioMinimo);
+  }
+
+  // Cada producto queda junto, con sus locales ordenados por los criterios pedidos,
+  // y los productos se ordenan por su mejor local.
+  private List<ProductoConPrecio> ordenarAgrupandoPorProducto(
+    Map<Object, List<ProductoConPrecio>> gruposPorProducto,
+    Comparator<ProductoConPrecio> comparador
   ) {
     List<List<ProductoConPrecio>> grupos = new ArrayList<>(gruposPorProducto.values());
     for (List<ProductoConPrecio> grupo : grupos) {
-      grupo.sort(Comparator.comparingDouble(ProductoConPrecio::getPrecioMinimo));
+      grupo.sort(comparador);
     }
-    grupos.sort(Comparator.comparingDouble(grupo -> grupo.get(0).getPrecioMinimo()));
+    grupos.sort(Comparator.comparing(grupo -> grupo.get(0), comparador));
 
     List<ProductoConPrecio> resultado = new ArrayList<>();
     grupos.forEach(resultado::addAll);

@@ -34,8 +34,6 @@ public class ControladorProducto {
   private static final String VISTA_PRODUCTOS = "producto/lista-productos";
   private static final String HISTORIAL_BUSQUEDAS = "HISTORIAL_BUSQUEDAS";
   private static final int MAX_HISTORIAL_BUSQUEDAS = 5;
-  private static final String ORDEN_RECIENTE = "reciente";
-  private static final String ORDEN_CERCANIA = "cercania";
 
   @Autowired
   public ControladorProducto(
@@ -84,7 +82,9 @@ public class ControladorProducto {
     String email = (String) request.getSession().getAttribute("EMAIL");
     Usuario usuario = email != null ? servicioLogin.buscarPorEmail(email) : null;
 
-    OrdenProducto ordenEnum = ordenDesde(orden);
+    // Se puede ordenar por varios criterios a la vez (?orden=precio,cercania)
+    List<OrdenProducto> ordenes = OrdenProducto.desde(orden);
+    List<String> clavesDeOrden = ordenes.stream().map(OrdenProducto::clave).toList();
     HttpSession session = request.getSession();
     String busquedaLimpia = nombre == null ? "" : nombre.trim();
     List<String> historial = actualizarHistorial(session, busquedaLimpia);
@@ -95,7 +95,7 @@ public class ControladorProducto {
       busquedaLimpia,
       categoria,
       usuario,
-      ordenEnum,
+      ordenes,
       lat,
       lng
     );
@@ -108,7 +108,8 @@ public class ControladorProducto {
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
     mav.addObject("productos", productos);
     mav.addObject("dudosoMarcado", dudosoMarcado != null && dudosoMarcado);
-    mav.addObject("orden", orden);
+    mav.addObject("orden", String.join(",", clavesDeOrden));
+    mav.addObject("ordenes", clavesDeOrden);
     mav.addObject("busqueda", busquedaLimpia);
     mav.addObject("categoria", categoria);
     mav.addObject("lat", lat);
@@ -122,12 +123,6 @@ public class ControladorProducto {
       agregarNotificacionDeValoracion(mav, productos);
     }
     return mav;
-  }
-
-  private OrdenProducto ordenDesde(String orden) {
-    if (ORDEN_RECIENTE.equals(orden)) return OrdenProducto.RECIENTE;
-    if (ORDEN_CERCANIA.equals(orden)) return OrdenProducto.CERCANIA;
-    return OrdenProducto.PRECIO;
   }
 
   // Guarda la búsqueda al principio del historial de la sesión (sin repetidas y con tope)
@@ -153,14 +148,21 @@ public class ControladorProducto {
     String busqueda,
     String categoria,
     Usuario usuario,
-    OrdenProducto orden,
+    List<OrdenProducto> ordenes,
     Double lat,
     Double lng
   ) {
     if (categoria == null) {
-      return servicioProducto.buscarProductosConPrecio(busqueda, usuario, orden, lat, lng);
+      return servicioProducto.buscarProductosConPrecio(busqueda, usuario, ordenes, lat, lng);
     }
-    return servicioProducto.buscarProductosConPrecio(busqueda, categoria, usuario, orden, lat, lng);
+    return servicioProducto.buscarProductosConPrecio(
+      busqueda,
+      categoria,
+      usuario,
+      ordenes,
+      lat,
+      lng
+    );
   }
 
   private void agregarNotificacionDeValoracion(
