@@ -28,6 +28,8 @@ public class ServicioReporteImpl implements ServicioReporte {
   private static final int DIAS_PLAZO_EDICION = 2;
   private static final double PRECIO_MAXIMO = 10_000_000.0;
   private static final int LARGO_MAXIMO_CORTO = 100;
+  // Entre cuántos de los últimos reportes se busca los más cercanos, para que sigan siendo "últimos"
+  private static final int CANDIDATOS_PARA_CERCANIA = 50;
 
   @Autowired
   public ServicioReporteImpl(
@@ -324,6 +326,19 @@ public class ServicioReporteImpl implements ServicioReporte {
       MetricasDeReportes.visibles(repositorioReporte.listarTodos()),
       limite
     );
+  }
+
+  @Override
+  public List<ReporteConDistancia> ultimosReportesVisiblesMasCercanos(
+    double latitud,
+    double longitud,
+    int limite
+  ) {
+    List<Reporte> recientes = MetricasDeReportes.masRecientes(
+      MetricasDeReportes.visibles(repositorioReporte.listarTodos()),
+      CANDIDATOS_PARA_CERCANIA
+    );
+    return MetricasDeReportes.masCercanos(recientes, latitud, longitud, limite);
   }
 
   @Override

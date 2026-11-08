@@ -8,6 +8,7 @@ import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.ItemTicket;
 import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Reporte.ReporteConDistancia;
 import com.tallerwebi.dominio.Reporte.ResumenDeActividad;
 import com.tallerwebi.dominio.Reporte.ServicioOcr;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
@@ -228,20 +229,53 @@ public class ControladorReporte {
     return servicioReporte
       .ultimosReportesVisibles(CANTIDAD_DE_ULTIMOS_REPORTES)
       .stream()
-      .map(r -> {
-        Map<String, Object> reporte = new java.util.LinkedHashMap<>();
-        reporte.put("id", r.getId());
-        reporte.put("producto", r.getProducto().getNombre());
-        reporte.put("marca", r.getProducto().getMarca());
-        reporte.put("unidad", r.getProducto().getUnidad());
-        reporte.put("precio", r.getPrecio());
-        reporte.put("comercio", r.getComercio().getNombre());
-        reporte.put("localidad", r.getComercio().getLocalidad());
-        reporte.put("tieneFoto", r.getFoto() != null && r.getFoto().length > 0);
-        reporte.put("fecha", r.getFechaDeReporte().toString());
+      .map(this::reporteParaElInicio)
+      .collect(java.util.stream.Collectors.toList());
+  }
+
+  // Lo mismo, pero los de los comercios más cercanos al vecino, con la distancia en km
+  @RequestMapping(path = "/ultimos-cercanos", method = RequestMethod.GET)
+  public ResponseEntity<List<Map<String, Object>>> ultimosReportesCercanos(
+    @RequestParam("lat") double latitud,
+    @RequestParam("lng") double longitud
+  ) {
+    if (!coordenadasValidas(latitud, longitud)) {
+      return ResponseEntity.badRequest().build();
+    }
+    List<Map<String, Object>> cercanos = servicioReporte
+      .ultimosReportesVisiblesMasCercanos(latitud, longitud, CANTIDAD_DE_ULTIMOS_REPORTES)
+      .stream()
+      .map(c -> {
+        Map<String, Object> reporte = reporteParaElInicio(c.reporte());
+        reporte.put("distanciaKm", Math.round(c.distanciaKm() * 10) / 10.0);
         return reporte;
       })
       .collect(java.util.stream.Collectors.toList());
+    return ResponseEntity.ok(cercanos);
+  }
+
+  private boolean coordenadasValidas(double latitud, double longitud) {
+    return (
+      Double.isFinite(latitud) &&
+      Double.isFinite(longitud) &&
+      Math.abs(latitud) <= 90 &&
+      Math.abs(longitud) <= 180
+    );
+  }
+
+  private Map<String, Object> reporteParaElInicio(Reporte ultimo) {
+    Map<String, Object> reporte = new java.util.LinkedHashMap<>();
+    reporte.put("id", ultimo.getId());
+    reporte.put("producto", ultimo.getProducto().getNombre());
+    reporte.put("marca", ultimo.getProducto().getMarca());
+    reporte.put("unidad", ultimo.getProducto().getUnidad());
+    reporte.put("precio", ultimo.getPrecio());
+    reporte.put("comercio", ultimo.getComercio().getNombre());
+    reporte.put("direccion", ultimo.getComercio().getDireccion());
+    reporte.put("localidad", ultimo.getComercio().getLocalidad());
+    reporte.put("tieneFoto", ultimo.getFoto() != null && ultimo.getFoto().length > 0);
+    reporte.put("fecha", ultimo.getFechaDeReporte().toString());
+    return reporte;
   }
 
   // Números de confianza del inicio: cuánto se reportó esta semana y en cuántos comercios hay precios

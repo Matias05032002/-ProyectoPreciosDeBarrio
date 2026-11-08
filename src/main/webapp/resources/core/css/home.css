@@ -885,6 +885,59 @@
     color: #B42318;
 }
 
+/* Filtro de los últimos precios: más recientes o más cercanos */
+
+.filtro-ultimos {
+    display: inline-flex;
+    gap: .25rem;
+    margin-bottom: .8rem;
+    padding: .25rem;
+    background: #EEF3F0;
+    border-radius: 14px;
+}
+
+.filtro-opcion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    min-height: 44px;
+    padding: 0 1rem;
+    color: #2F3C47;
+    font-size: .9375rem;
+    font-weight: 700;
+    background: transparent;
+    border: 0;
+    border-radius: 11px;
+    transition: background-color .2s ease, color .2s ease;
+}
+
+.filtro-opcion[aria-pressed="true"] {
+    color: #FFFFFF;
+    background: var(--verde-ref-oscuro);
+}
+
+.filtro-opcion:focus-visible {
+    outline: 3px solid var(--verde-ref);
+    outline-offset: 2px;
+}
+
+.estado-ultimos {
+    margin: 0 0 .8rem;
+    color: #3D4B58;
+    font-size: .875rem;
+}
+
+.estado-ultimos[hidden] {
+    display: none;
+}
+
+.precio-reportado .distancia,
+.precio-reportado .distancia i {
+    color: var(--verde-ref-oscuro);
+    font-weight: 700;
+}
+
 /* Tarjeta final: invita a reportar y llena los lugares que sobran */
 
 .precio-reportado.invitacion {

@@ -27,6 +27,16 @@ public interface ServicioReporte {
   /** Los últimos precios reportados, del más nuevo al más viejo, sin los marcados como dudosos. */
   List<Reporte> ultimosReportesVisibles(int limite);
 
+  /**
+   * De los últimos precios reportados, los de los comercios más cercanos a la ubicación dada,
+   * del más cerca al más lejos. Deja afuera dudosos y comercios sin ubicación.
+   */
+  List<ReporteConDistancia> ultimosReportesVisiblesMasCercanos(
+    double latitud,
+    double longitud,
+    int limite
+  );
+
   /** Reportes de los últimos 7 días y comercios con precios confiables. */
   ResumenDeActividad resumenDeActividad();
 
