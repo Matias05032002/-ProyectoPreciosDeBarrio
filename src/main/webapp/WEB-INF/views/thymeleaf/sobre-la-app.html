@@ -33,33 +33,63 @@
 
     <section class="cu-bloque" aria-labelledby="cu-t-hacer">
         <h2 id="cu-t-hacer">¿Qué podés hacer?</h2>
-        <ul class="cu-acciones-app">
+        <ul class="cu-acciones-app" th:unless="${session['ROL'] == 'COMERCIO'}">
             <li>
-                <a th:href="@{/producto}" class="cu-accion">
+                <a th:href="@{/producto}" id="accion-consultar-productos" class="cu-accion">
                     <span class="cu-icono"><i class="bi bi-search" aria-hidden="true"></i></span>
                     <strong>Consultar productos</strong>
                     <span>Buscá un producto y mirá en qué comercio está más barato.</span>
                 </a>
             </li>
             <li>
-                <a th:href="@{/comercio}" class="cu-accion">
+                <a th:href="@{/comercio}" id="accion-explorar-comercios" class="cu-accion">
                     <span class="cu-icono"><i class="bi bi-shop" aria-hidden="true"></i></span>
                     <strong>Explorar comercios</strong>
                     <span>Conocé los comercios del barrio, sus horarios y cómo llegar.</span>
                 </a>
             </li>
             <li>
-                <a th:href="@{/reporte}" class="cu-accion">
+                <a th:href="@{/reporte}" id="accion-reportar-precio" class="cu-accion">
                     <span class="cu-icono"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
                     <strong>Reportar un precio</strong>
                     <span>Compartí lo que viste en la góndola, a mano o con el ticket.</span>
                 </a>
             </li>
             <li>
-                <a th:href="@{/mis-listas}" class="cu-accion">
+                <a th:href="@{/mis-listas}" id="accion-armar-listas" class="cu-accion">
                     <span class="cu-icono"><i class="bi bi-list-check" aria-hidden="true"></i></span>
                     <strong>Armar tus listas</strong>
                     <span>Sumá productos y mirá el total estimado antes de salir.</span>
+                </a>
+            </li>
+        </ul>
+        <ul class="cu-acciones-app" th:if="${session['ROL'] == 'COMERCIO'}">
+            <li>
+                <a th:href="@{/reporte}" id="accion-cargar-productos" class="cu-accion">
+                    <span class="cu-icono"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
+                    <strong>Cargar tus productos</strong>
+                    <span>Sumá los productos de tu comercio con su precio.</span>
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/promociones/mis-promociones}" id="accion-mis-promociones" class="cu-accion">
+                    <span class="cu-icono"><i class="bi bi-megaphone" aria-hidden="true"></i></span>
+                    <strong>Publicar promociones</strong>
+                    <span>Creá ofertas por producto o por medio de pago para que los vecinos las vean.</span>
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/comercio/dashboard}" id="accion-dashboard" class="cu-accion">
+                    <span class="cu-icono"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
+                    <strong>Mirar tu dashboard</strong>
+                    <span>Mirá cuántos vecinos reportan en tu local, tu producto estrella y qué se busca en tu zona.</span>
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/comercio/perfil}" id="accion-perfil-comercio" class="cu-accion">
+                    <span class="cu-icono"><i class="bi bi-shop" aria-hidden="true"></i></span>
+                    <strong>Completar tu perfil</strong>
+                    <span>Cargá tu foto, tus horarios y ubicá tu local en el mapa para que te encuentren.</span>
                 </a>
             </li>
         </ul>
