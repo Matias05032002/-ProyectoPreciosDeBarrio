@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.Producto;
 
+import com.tallerwebi.dominio.Haversine;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.Usuario;
@@ -304,19 +305,7 @@ public class ServicioProductoImpl implements ServicioProducto {
     Double latC = reporte.getComercio().getLatitud();
     Double lngC = reporte.getComercio().getLongitud();
     if (latC != null && lngC != null) {
-      dto.setDistanciaKm(haversine(latUsuario, lngUsuario, latC, lngC));
+      dto.setDistanciaKm(Haversine.km(latUsuario, lngUsuario, latC, lngC));
     }
-  }
-
-  private double haversine(double lat1, double lon1, double lat2, double lon2) {
-    final int radioTierraKm = 6371;
-    double dLat = Math.toRadians(lat2 - lat1);
-    double dLon = Math.toRadians(lon2 - lon1);
-    double sinLat = Math.sin(dLat / 2);
-    double sinLon = Math.sin(dLon / 2);
-    double haversineA =
-      sinLat * sinLat +
-      Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * sinLon * sinLon;
-    return radioTierraKm * 2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA));
   }
 }

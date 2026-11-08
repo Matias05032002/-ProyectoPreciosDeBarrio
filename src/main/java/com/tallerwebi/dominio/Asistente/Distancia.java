@@ -1,10 +1,9 @@
 package com.tallerwebi.dominio.Asistente;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Haversine;
 
 final class Distancia {
-
-  private static final int RADIO_TIERRA_KM = 6371;
 
   private Distancia() {}
 
@@ -22,14 +21,6 @@ final class Distancia {
     if (comercio.getLatitud() == null || comercio.getLongitud() == null) {
       return 0.0;
     }
-    double dLat = Math.toRadians(comercio.getLatitud() - latitud);
-    double dLon = Math.toRadians(comercio.getLongitud() - longitud);
-    double haversine =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(Math.toRadians(latitud)) *
-        Math.cos(Math.toRadians(comercio.getLatitud())) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    return RADIO_TIERRA_KM * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+    return Haversine.km(latitud, longitud, comercio.getLatitud(), comercio.getLongitud());
   }
 }

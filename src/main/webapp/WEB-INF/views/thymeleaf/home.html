@@ -113,8 +113,13 @@
           </div>
           <a th:href="@{/reporte}" class="ver-todos">Ver todos <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
         </div>
+        <div id="filtro-ultimos" class="filtro-ultimos" role="group" aria-label="Ordenar los últimos precios">
+          <button type="button" id="filtro-recientes" class="filtro-opcion" aria-pressed="true">Más recientes</button>
+          <button type="button" id="filtro-cercanos" class="filtro-opcion" aria-pressed="false"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> Más cercanos</button>
+        </div>
+        <p id="estado-ultimos" class="estado-ultimos" role="status" hidden></p>
         <div id="ultimos-precios" class="ultimos-grid" aria-live="polite"
-             th:attr="data-url-ultimos=@{/reporte/ultimos},data-url-resumen=@{/reporte/resumen},data-url-reportar=@{/reporte},data-url-buscar=@{/producto/buscar},data-url-reporte=@{/reporte/}"></div>
+             th:attr="data-url-ultimos=@{/reporte/ultimos},data-url-cercanos=@{/reporte/ultimos-cercanos},data-url-resumen=@{/reporte/resumen},data-url-reportar=@{/reporte},data-url-buscar=@{/producto/buscar},data-url-reporte=@{/reporte/}"></div>
       </section>
 
       <section class="col-lg-4 seccion-inicio">
@@ -465,12 +470,14 @@
 </script>
 
 <script th:if="${session['ROL'] == 'USER'}">
-  // Últimos precios reportados: los trae de /reporte/ultimos y arma las tarjetas con la foto del
-  // reporte (o el ícono sin foto). Si sobra lugar en la última fila, la completa una invitación a reportar.
+  // Últimos precios reportados: los trae de /reporte/ultimos (o de /reporte/ultimos-cercanos si el
+  // vecino elige "Más cercanos") y arma las tarjetas con la foto del reporte (o el ícono sin foto).
+  // Si sobra lugar en la última fila, la completa una invitación a reportar.
   (function () {
     var grilla = document.getElementById('ultimos-precios');
     if (!grilla) { return; }
     var URL_ULTIMOS = grilla.getAttribute('data-url-ultimos');
+    var URL_CERCANOS = grilla.getAttribute('data-url-cercanos');
     var URL_RESUMEN = grilla.getAttribute('data-url-resumen');
     var URL_REPORTAR = grilla.getAttribute('data-url-reportar');
     var URL_BUSCAR = grilla.getAttribute('data-url-buscar');
@@ -478,6 +485,10 @@
     var MAXIMO_TARJETAS = 5;
     var invitacion = null;
     var cantidad = 0;
+    var botonRecientes = document.getElementById('filtro-recientes');
+    var botonCercanos = document.getElementById('filtro-cercanos');
+    var estadoUltimos = document.getElementById('estado-ultimos');
+    var pedido = 0;
 
     function precio(n) {
       return '$' + Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 });
@@ -549,6 +560,12 @@
       return contenedor;
     }
 
+    function distancia(km) {
+      if (km < 0.1) { return 'A menos de 100 m'; }
+      if (km < 1) { return 'A ' + Math.round(km * 1000) + ' m'; }
+      return 'A ' + km.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + ' km';
+    }
+
     function tarjetaDe(r) {
       var tarjeta = document.createElement('a');
       tarjeta.className = 'precio-reportado';
@@ -566,7 +583,11 @@
 
       tarjeta.appendChild(texto('span', 'monto', precio(r.precio)));
       tarjeta.appendChild(fila('shop', r.comercio));
-      if (r.localidad) { tarjeta.appendChild(fila('geo-alt-fill', r.localidad)); }
+      var lugar = [r.direccion, r.localidad].filter(Boolean).join(', ');
+      if (lugar) { tarjeta.appendChild(fila('geo-alt-fill', lugar)); }
+      if (typeof r.distanciaKm === 'number') {
+        tarjeta.appendChild(fila('signpost-2-fill', distancia(r.distanciaKm), 'distancia'));
+      }
       var estado = frescura(r.fecha);
       var cuando = hace(r.fecha) + (estado === 'viejo' ? ' · Desactualizado' : '');
       tarjeta.appendChild(fila('clock', cuando, 'frescura ' + estado));
@@ -629,10 +650,65 @@
 
     window.addEventListener('resize', completarFila);
 
-    fetch(URL_ULTIMOS, { headers: { 'Accept': 'application/json' } })
-            .then(function (r) { return r.ok ? r.json() : []; })
-            .catch(function () { return []; })
-            .then(pintar);
+    function avisar(mensaje) {
+      if (!estadoUltimos) { return; }
+      estadoUltimos.textContent = mensaje || '';
+      estadoUltimos.hidden = !mensaje;
+    }
+
+    function marcar(cercanos) {
+      if (!botonRecientes || !botonCercanos) { return; }
+      botonRecientes.setAttribute('aria-pressed', String(!cercanos));
+      botonCercanos.setAttribute('aria-pressed', String(cercanos));
+    }
+
+    function pedirJson(url) {
+      return fetch(url, { headers: { 'Accept': 'application/json' } })
+              .then(function (r) { return r.ok ? r.json() : []; })
+              .catch(function () { return []; });
+    }
+
+    function mostrarRecientes(mensaje) {
+      var este = ++pedido;
+      marcar(false);
+      avisar(mensaje);
+      pedirJson(URL_ULTIMOS).then(function (lista) { if (este === pedido) { pintar(lista); } });
+    }
+
+    function mostrarCercanos(lat, lng, este) {
+      pedirJson(URL_CERCANOS + '?lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng))
+              .then(function (lista) {
+                if (este !== pedido) { return; }
+                if (!lista.length) {
+                  mostrarRecientes('Todavía no hay precios reportados en comercios con ubicación cerca tuyo.');
+                  return;
+                }
+                avisar('');
+                pintar(lista);
+              });
+    }
+
+    function elegirCercanos() {
+      var este = ++pedido;
+      if (!navigator.geolocation) {
+        mostrarRecientes('Tu navegador no permite ver tu ubicación.');
+        return;
+      }
+      marcar(true);
+      avisar('Buscando tu ubicación…');
+      navigator.geolocation.getCurrentPosition(function (p) {
+        if (este === pedido) { mostrarCercanos(p.coords.latitude, p.coords.longitude, este); }
+      }, function () {
+        if (este === pedido) {
+          mostrarRecientes('Necesitamos tu ubicación para mostrarte los más cercanos. Activala en tu navegador.');
+        }
+      }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+    }
+
+    if (botonRecientes) { botonRecientes.addEventListener('click', function () { mostrarRecientes(''); }); }
+    if (botonCercanos) { botonCercanos.addEventListener('click', elegirCercanos); }
+
+    mostrarRecientes('');
 
     fetch(URL_RESUMEN, { headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.ok ? r.json() : null; })

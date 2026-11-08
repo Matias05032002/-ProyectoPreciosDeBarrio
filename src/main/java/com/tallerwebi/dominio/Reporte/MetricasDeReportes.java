@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.Reporte;
 
+import com.tallerwebi.dominio.Haversine;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -27,6 +28,36 @@ final class MetricasDeReportes {
     return visibles
       .stream()
       .sorted(Comparator.comparing(Reporte::getFechaDeReporte).reversed())
+      .limit(limite)
+      .collect(Collectors.toList());
+  }
+
+  // Los de comercios con ubicación, del más cercano al más lejano; a igual distancia, el más nuevo
+  static List<ReporteConDistancia> masCercanos(
+    List<Reporte> reportes,
+    double latitud,
+    double longitud,
+    int limite
+  ) {
+    return reportes
+      .stream()
+      .filter(r -> r.getComercio().getLatitud() != null && r.getComercio().getLongitud() != null)
+      .map(r ->
+        new ReporteConDistancia(
+          r,
+          Haversine.km(
+            latitud,
+            longitud,
+            r.getComercio().getLatitud(),
+            r.getComercio().getLongitud()
+          )
+        )
+      )
+      .sorted(
+        Comparator
+          .comparingDouble(ReporteConDistancia::distanciaKm)
+          .thenComparing(c -> c.reporte().getFechaDeReporte(), Comparator.reverseOrder())
+      )
       .limit(limite)
       .collect(Collectors.toList());
   }

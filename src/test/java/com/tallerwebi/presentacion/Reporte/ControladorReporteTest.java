@@ -13,6 +13,7 @@ import com.tallerwebi.dominio.Paginador.ServicioPaginador;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Reporte.Reporte;
+import com.tallerwebi.dominio.Reporte.ReporteConDistancia;
 import com.tallerwebi.dominio.Reporte.ServicioOcr;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
@@ -758,6 +759,52 @@ public class ControladorReporteTest {
     when(servicioReporteMock.ultimosReportesVisibles(6)).thenReturn(Collections.emptyList());
 
     assertThat(controladorReporte.ultimosReportes(), is(empty()));
+  }
+
+  @Test
+  public void ultimosReportesDeberiaIncluirLaDireccionDelComercio() {
+    Reporte reporte = reporteDe("Leche", 1150.0, java.time.LocalDateTime.of(2026, 11, 3, 19, 0), 0);
+    reporte.getComercio().setDireccion("Rivadavia 1234");
+    when(servicioReporteMock.ultimosReportesVisibles(6)).thenReturn(List.of(reporte));
+
+    List<java.util.Map<String, Object>> ultimos = controladorReporte.ultimosReportes();
+
+    assertThat(ultimos.get(0).get("direccion"), is("Rivadavia 1234"));
+  }
+
+  @Test
+  public void ultimosReportesCercanosDeberiaDevolverLoQueElServicioElige() {
+    Reporte reporte = reporteDe("Leche", 1150.0, java.time.LocalDateTime.of(2026, 11, 3, 19, 0), 0);
+    reporte.getComercio().setDireccion("Rivadavia 1234");
+    when(servicioReporteMock.ultimosReportesVisiblesMasCercanos(-34.6037, -58.3816, 6))
+      .thenReturn(List.of(new ReporteConDistancia(reporte, 1.2345)));
+
+    ResponseEntity<List<java.util.Map<String, Object>>> respuesta =
+      controladorReporte.ultimosReportesCercanos(-34.6037, -58.3816);
+
+    assertThat(respuesta.getStatusCode().value(), is(200));
+    java.util.Map<String, Object> primero = respuesta.getBody().get(0);
+    assertThat(primero.get("producto"), is("Leche"));
+    assertThat(primero.get("direccion"), is("Rivadavia 1234"));
+    assertThat(primero.get("distanciaKm"), is(1.2));
+  }
+
+  @Test
+  public void ultimosReportesCercanosConCoordenadasFueraDeRangoDeberiaResponderMalaSolicitud() {
+    assertThat(
+      controladorReporte.ultimosReportesCercanos(91.0, -58.0).getStatusCode().value(),
+      is(400)
+    );
+    assertThat(
+      controladorReporte.ultimosReportesCercanos(-34.0, 181.0).getStatusCode().value(),
+      is(400)
+    );
+    assertThat(
+      controladorReporte.ultimosReportesCercanos(-95.0, -58.0).getStatusCode().value(),
+      is(400)
+    );
+    verify(servicioReporteMock, never())
+      .ultimosReportesVisiblesMasCercanos(anyDouble(), anyDouble(), anyInt());
   }
 
   @Test

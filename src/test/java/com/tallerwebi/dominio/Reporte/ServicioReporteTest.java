@@ -747,6 +747,148 @@ public class ServicioReporteTest {
     assertThat(servicioReporte.ultimosReportesVisibles(6).size(), equalTo(6));
   }
 
+  // --- últimos precios más cercanos al vecino ---
+
+  // El vecino está en el Obelisco
+  private static final double LAT_VECINO = -34.6037;
+  private static final double LNG_VECINO = -58.3816;
+
+  private Reporte reporteEn(
+    String producto,
+    long comercioId,
+    LocalDateTime fecha,
+    Double latitud,
+    Double longitud
+  ) {
+    Reporte reporte = reporteVisible(producto, 100.0, fecha, 0);
+    reporte.getComercio().setId(comercioId);
+    reporte.getComercio().setLatitud(latitud);
+    reporte.getComercio().setLongitud(longitud);
+    return reporte;
+  }
+
+  // A unos 0,9 km, 4,4 km y 56 km del Obelisco
+  private Reporte reporteCerca(LocalDateTime fecha) {
+    return reporteEn("Cerca", 1L, fecha, -34.6100, -58.3900);
+  }
+
+  private Reporte reporteMedio(LocalDateTime fecha) {
+    return reporteEn("Medio", 2L, fecha, -34.5808, -58.4207);
+  }
+
+  private Reporte reporteLejos(LocalDateTime fecha) {
+    return reporteEn("Lejos", 3L, fecha, -34.9215, -57.9545);
+  }
+
+  @Test
+  public void ultimosReportesCercanosDeberiaOrdenarlosDelMasCercanoAlMasLejano() {
+    LocalDateTime ahora = LocalDateTime.now();
+    Reporte lejos = reporteLejos(ahora.minusHours(1));
+    Reporte cerca = reporteCerca(ahora.minusHours(5));
+    Reporte medio = reporteMedio(ahora.minusHours(3));
+    when(repositorioReporteMock.listarTodos()).thenReturn(List.of(lejos, cerca, medio));
+
+    List<ReporteConDistancia> resultado = servicioReporte.ultimosReportesVisiblesMasCercanos(
+      LAT_VECINO,
+      LNG_VECINO,
+      6
+    );
+
+    assertThat(
+      resultado.stream().map(ReporteConDistancia::reporte).toList(),
+      equalTo(List.of(cerca, medio, lejos))
+    );
+  }
+
+  @Test
+  public void ultimosReportesCercanosDeberiaIndicarLaDistanciaEnKilometros() {
+    when(repositorioReporteMock.listarTodos())
+      .thenReturn(List.of(reporteMedio(LocalDateTime.now().minusHours(1))));
+
+    List<ReporteConDistancia> resultado = servicioReporte.ultimosReportesVisiblesMasCercanos(
+      LAT_VECINO,
+      LNG_VECINO,
+      6
+    );
+
+    assertThat(resultado.get(0).distanciaKm(), org.hamcrest.Matchers.closeTo(4.4, 0.1));
+  }
+
+  @Test
+  public void ultimosReportesCercanosNoDeberiaIncluirDudososIncompletosNiComerciosSinUbicacion() {
+    LocalDateTime ahora = LocalDateTime.now();
+    Reporte confiable = reporteCerca(ahora.minusHours(1));
+    Reporte dudoso = reporteMedio(ahora.minusHours(1));
+    dudoso.setPuntuacion(Reporte.PUNTUACION_DUDOSO + 1);
+    Reporte sinPrecio = reporteMedio(ahora.minusHours(1));
+    sinPrecio.setPrecio(null);
+    Reporte sinUbicacion = reporteEn("Sin ubicacion", 4L, ahora.minusHours(1), null, null);
+    when(repositorioReporteMock.listarTodos())
+      .thenReturn(List.of(confiable, dudoso, sinPrecio, sinUbicacion));
+
+    List<ReporteConDistancia> resultado = servicioReporte.ultimosReportesVisiblesMasCercanos(
+      LAT_VECINO,
+      LNG_VECINO,
+      6
+    );
+
+    assertThat(
+      resultado.stream().map(ReporteConDistancia::reporte).toList(),
+      equalTo(List.of(confiable))
+    );
+  }
+
+  @Test
+  public void ultimosReportesCercanosDeberiaRespetarElLimite() {
+    LocalDateTime ahora = LocalDateTime.now();
+    List<Reporte> muchos = new ArrayList<>();
+    for (int i = 0; i < 9; i++) {
+      muchos.add(reporteEn("Producto " + i, i, ahora.minusHours(i), -34.60 - i * 0.01, -58.38));
+    }
+    when(repositorioReporteMock.listarTodos()).thenReturn(muchos);
+
+    assertThat(
+      servicioReporte.ultimosReportesVisiblesMasCercanos(LAT_VECINO, LNG_VECINO, 6).size(),
+      equalTo(6)
+    );
+  }
+
+  @Test
+  public void ultimosReportesCercanosSoloDeberiaConsiderarLosCincuentaMasRecientes() {
+    LocalDateTime ahora = LocalDateTime.now();
+    List<Reporte> reportes = new ArrayList<>();
+    for (int i = 0; i < 50; i++) {
+      reportes.add(reporteLejos(ahora.minusHours(i + 1)));
+    }
+    Reporte cercaPeroViejo = reporteCerca(ahora.minusDays(40));
+    reportes.add(cercaPeroViejo);
+    when(repositorioReporteMock.listarTodos()).thenReturn(reportes);
+
+    List<ReporteConDistancia> resultado = servicioReporte.ultimosReportesVisiblesMasCercanos(
+      LAT_VECINO,
+      LNG_VECINO,
+      6
+    );
+
+    assertThat(resultado.stream().anyMatch(r -> r.reporte() == cercaPeroViejo), equalTo(false));
+  }
+
+  @Test
+  public void ultimosReportesCercanosConLaMismaDistanciaDeberiaPonerPrimeroElMasReciente() {
+    LocalDateTime ahora = LocalDateTime.now();
+    Reporte viejo = reporteCerca(ahora.minusDays(2));
+    Reporte nuevo = reporteCerca(ahora.minusHours(1));
+    when(repositorioReporteMock.listarTodos()).thenReturn(List.of(viejo, nuevo));
+
+    List<ReporteConDistancia> resultado = servicioReporte.ultimosReportesVisiblesMasCercanos(
+      LAT_VECINO,
+      LNG_VECINO,
+      6
+    );
+
+    assertThat(resultado.get(0).reporte(), equalTo(nuevo));
+  }
+
   @Test
   public void resumenDeActividadDeberiaContarSoloLaUltimaSemanaYLosComerciosDistintos() {
     LocalDateTime ahora = LocalDateTime.now();
