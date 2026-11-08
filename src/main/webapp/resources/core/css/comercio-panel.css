@@ -1202,6 +1202,51 @@ select.cm-control {
     color: var(--verde-ref-oscuro);
 }
 
+.cm-promo-comercio {
+    flex-wrap: wrap;
+}
+
+.cm-distancia {
+    display: inline-flex;
+    align-items: center;
+    padding: .15rem .55rem;
+    color: var(--verde-ref-oscuro);
+    font-size: .8125rem;
+    font-weight: 700;
+    background: var(--verde-ref-claro);
+    border-radius: 999px;
+}
+
+.cm-distancia[hidden] {
+    display: none;
+}
+
+.cm-como-llegar {
+    align-self: flex-start;
+}
+
+.cm-distancias {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.cm-estado-distancia {
+    margin: 0;
+    color: #3D4B58;
+    font-size: .875rem;
+}
+
+.cm-estado-distancia[hidden] {
+    display: none;
+}
+
+.cm-btn[aria-pressed="true"] {
+    background: var(--verde-ref-claro);
+}
+
 .cm-promo form {
     margin-top: auto;
     padding-top: .35rem;

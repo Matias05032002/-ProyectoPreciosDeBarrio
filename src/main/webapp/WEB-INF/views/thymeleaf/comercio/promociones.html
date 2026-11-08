@@ -31,8 +31,17 @@
         <a th:href="@{/comercio}" class="cm-btn cm-btn-claro"><i class="bi bi-shop" aria-hidden="true"></i> Ver comercios</a>
     </div>
 
+    <div class="cm-distancias" th:unless="${#lists.isEmpty(promociones) and #lists.isEmpty(proximas)}">
+        <button type="button" id="btn-distancia-promociones" class="cm-btn cm-btn-claro cm-btn-chico" aria-pressed="false">
+            <i class="bi bi-crosshair" aria-hidden="true"></i>
+            <span>Ver qué tan lejos queda cada una</span>
+        </button>
+        <p id="estado-distancia" class="cm-estado-distancia" role="status" hidden></p>
+    </div>
+
     <div class="cm-grilla cm-grilla-3" th:unless="${#lists.isEmpty(promociones)}">
-        <article th:each="item : ${promociones}" th:id="'card-promocion-' + ${item.id}" class="cm-promo">
+        <article th:each="item : ${promociones}" th:id="'card-promocion-' + ${item.id}" class="cm-promo"
+                 th:attr="data-promocion-lat=${item.comercio.latitud},data-promocion-lng=${item.comercio.longitud}">
             <p class="pr-tipo" th:if="${item.tipo.name() == 'METODO_PAGO'}">
                 <i class="bi" th:classappend="${item.metodoPago.icono}" aria-hidden="true"></i>
                 <span th:text="${item.metodoPago.etiqueta}">Tarjeta de débito</span>
@@ -60,7 +69,16 @@
             <p class="cm-promo-comercio">
                 <i class="bi bi-shop" aria-hidden="true"></i>
                 <span th:text="${item.comercio.nombre}">Comercio</span>
+                <span class="cm-distancia" hidden></span>
             </p>
+            <th:block th:with="enlace=${T(com.tallerwebi.dominio.Comercio.EnlaceDeMapa).para(item.comercio)}">
+                <a th:if="${enlace != null}" th:href="${enlace}" target="_blank" rel="noopener"
+                   th:id="'como-llegar-promocion-' + ${item.id}"
+                   class="cm-btn cm-btn-claro cm-btn-chico cm-como-llegar"
+                   th:attr="aria-label='Cómo llegar a ' + ${item.comercio.nombre}">
+                    <i class="bi bi-signpost-split" aria-hidden="true"></i> Cómo llegar
+                </a>
+            </th:block>
         </article>
     </div>
 
@@ -68,7 +86,8 @@
         <h2 id="titulo-proximas" class="cm-seccion-titulo">Próximamente</h2>
         <p class="cm-subtitulo mb-3">Ofertas que todavía no empezaron. Anotate la fecha.</p>
         <div class="cm-grilla cm-grilla-3">
-            <article th:each="item : ${proximas}" th:id="'card-proxima-' + ${item.id}" class="cm-promo">
+            <article th:each="item : ${proximas}" th:id="'card-proxima-' + ${item.id}" class="cm-promo"
+                     th:attr="data-promocion-lat=${item.comercio.latitud},data-promocion-lng=${item.comercio.longitud}">
                 <p class="pr-tipo">
                     <i class="bi bi-hourglass-split" aria-hidden="true"></i>
                     <span>Próximamente</span>
@@ -87,13 +106,23 @@
                 <p class="cm-promo-comercio">
                     <i class="bi bi-shop" aria-hidden="true"></i>
                     <span th:text="${item.comercio.nombre}">Comercio</span>
+                    <span class="cm-distancia" hidden></span>
                 </p>
+                <th:block th:with="enlace=${T(com.tallerwebi.dominio.Comercio.EnlaceDeMapa).para(item.comercio)}">
+                    <a th:if="${enlace != null}" th:href="${enlace}" target="_blank" rel="noopener"
+                       th:id="'como-llegar-proxima-' + ${item.id}"
+                       class="cm-btn cm-btn-claro cm-btn-chico cm-como-llegar"
+                       th:attr="aria-label='Cómo llegar a ' + ${item.comercio.nombre}">
+                        <i class="bi bi-signpost-split" aria-hidden="true"></i> Cómo llegar
+                    </a>
+                </th:block>
             </article>
         </div>
     </section>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" th:src="@{/js/promociones.js}"></script>
 <div th:replace="~{don-peso :: don-peso}"></div>
 </body>
 </html>
