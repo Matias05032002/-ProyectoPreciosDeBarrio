@@ -17,10 +17,4 @@ public interface ServicioLogin {
   boolean cambiarContrasena(Long usuarioId, String contrasenaActual, String contrasenaNueva);
   void restablecerContrasena(Long usuarioId, String contrasenaNueva) throws ContrasenaInvalida;
   Usuario buscarPorId(Long id);
-  void actualizarDatosPersonales(
-    Long id,
-    String nombre,
-    String apellido,
-    java.time.LocalDate fechaNacimiento
-  );
 }

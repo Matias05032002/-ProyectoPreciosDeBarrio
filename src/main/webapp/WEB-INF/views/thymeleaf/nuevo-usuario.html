@@ -75,6 +75,13 @@
           </div>
 
           <div class="field">
+            <label for="fechaNacimiento">Fecha de nacimiento</label>
+            <input type="date" id="fechaNacimiento" name="fechaNacimiento" required
+                   min="1900-01-01"
+                   th:max="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+          </div>
+
+          <div class="field">
             <label for="localidad-u">Localidad</label>
             <div class="select-wrap">
               <select id="localidad-u" name="localidad" required>

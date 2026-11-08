@@ -61,6 +61,7 @@ public class ServicioLoginTest {
     usuario.setNombre("Matias");
     usuario.setApellido("Llanos");
     usuario.setLocalidad("Pilar");
+    usuario.setFechaNacimiento(LocalDate.of(1995, 4, 12));
     when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
 
     // ejecucion
@@ -310,6 +311,7 @@ public class ServicioLoginTest {
     usuario.setNombre("Matias");
     usuario.setApellido("Llanos");
     usuario.setLocalidad("Pilar");
+    usuario.setFechaNacimiento(LocalDate.of(1995, 4, 12));
     return usuario;
   }
 
@@ -397,87 +399,62 @@ public class ServicioLoginTest {
     verify(this.repositorioUsuarioMock).guardar(usuario);
   }
 
-  // --- validaciones del perfil ---
+  @Test
+  public void registrarVecinoSinFechaDeNacimientoDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = vecinoValido();
+    usuario.setFechaNacimiento(null);
 
-  private Usuario usuarioExistente() {
+    assertThat(
+      registrarYEsperarError(usuario).getMessage(),
+      equalTo("La fecha de nacimiento es obligatoria")
+    );
+  }
+
+  @Test
+  public void registrarVecinoConFechaDeNacimientoFuturaDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = vecinoValido();
+    usuario.setFechaNacimiento(LocalDate.now().plusDays(1));
+
+    assertThat(
+      registrarYEsperarError(usuario).getMessage(),
+      equalTo("La fecha de nacimiento no puede ser futura")
+    );
+  }
+
+  @Test
+  public void registrarVecinoConFechaDeNacimientoMuyAntiguaDeberiaLanzarDatosInvalidos() {
+    Usuario usuario = vecinoValido();
+    usuario.setFechaNacimiento(LocalDate.of(1850, 1, 1));
+
+    assertThat(
+      registrarYEsperarError(usuario).getMessage(),
+      equalTo("La fecha de nacimiento no es válida")
+    );
+  }
+
+  @Test
+  public void registrarVecinoDeberiaGuardarSuFechaDeNacimiento() throws Exception {
+    Usuario usuario = vecinoValido();
+    when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
+
+    this.servicioLogin.registrar(usuario);
+
+    assertThat(usuario.getFechaNacimiento(), equalTo(LocalDate.of(1995, 4, 12)));
+    verify(this.repositorioUsuarioMock).guardar(usuario);
+  }
+
+  @Test
+  public void registrarComercioSinFechaDeNacimientoNoDeberiaLanzarError() throws Exception {
     Usuario usuario = new Usuario();
-    usuario.setNombre("Matias");
-    usuario.setApellido("Llanos");
-    usuario.setFechaNacimiento(LocalDate.of(2002, 3, 5));
-    when(this.repositorioUsuarioMock.buscarPorId(1L)).thenReturn(usuario);
-    return usuario;
-  }
+    usuario.setEmail("comercio@test.com");
+    usuario.setPassword("Contrasena1");
+    usuario.setRol("COMERCIO");
+    usuario.setNombre("Almacen Don Jose");
+    when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
 
-  @Test
-  public void actualizarDatosPersonalesConNombreVacioDeberiaLanzarDatosInvalidos() {
-    Usuario usuario = usuarioExistente();
+    this.servicioLogin.registrar(usuario);
 
-    assertThrows(
-      DatosInvalidos.class,
-      () -> this.servicioLogin.actualizarDatosPersonales(1L, "  ", "Llanos", null)
-    );
-
-    assertThat(usuario.getNombre(), equalTo("Matias"));
-    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
-  }
-
-  @Test
-  public void actualizarDatosPersonalesConApellidoVacioDeberiaLanzarDatosInvalidos() {
-    usuarioExistente();
-
-    assertThrows(
-      DatosInvalidos.class,
-      () -> this.servicioLogin.actualizarDatosPersonales(1L, "Matias", "", null)
-    );
-    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
-  }
-
-  @Test
-  public void actualizarDatosPersonalesConFechaFuturaDeberiaLanzarDatosInvalidos() {
-    usuarioExistente();
-    LocalDate futura = LocalDate.of(2099, 1, 1);
-
-    DatosInvalidos error = assertThrows(
-      DatosInvalidos.class,
-      () -> this.servicioLogin.actualizarDatosPersonales(1L, "Matias", "Llanos", futura)
-    );
-
-    assertThat(error.getMessage(), equalTo("La fecha de nacimiento no puede ser futura"));
-    verify(this.repositorioUsuarioMock, never()).modificar(any(Usuario.class));
-  }
-
-  @Test
-  public void actualizarDatosPersonalesConFechaMuyAntiguaDeberiaLanzarDatosInvalidos() {
-    usuarioExistente();
-    LocalDate antigua = LocalDate.of(1850, 1, 1);
-
-    assertThrows(
-      DatosInvalidos.class,
-      () -> this.servicioLogin.actualizarDatosPersonales(1L, "Matias", "Llanos", antigua)
-    );
-  }
-
-  @Test
-  public void actualizarDatosPersonalesValidosDeberiaGuardarlos() {
-    Usuario usuario = usuarioExistente();
-    LocalDate fecha = LocalDate.of(1990, 6, 15);
-
-    this.servicioLogin.actualizarDatosPersonales(1L, " Ana ", " Perez ", fecha);
-
-    assertThat(usuario.getNombre(), equalTo("Ana"));
-    assertThat(usuario.getApellido(), equalTo("Perez"));
-    assertThat(usuario.getFechaNacimiento(), equalTo(fecha));
-    verify(this.repositorioUsuarioMock).modificar(usuario);
-  }
-
-  @Test
-  public void actualizarDatosPersonalesSinFechaDeberiaPermitirseYBorrarla() {
-    Usuario usuario = usuarioExistente();
-
-    this.servicioLogin.actualizarDatosPersonales(1L, "Matias", "Llanos", null);
-
-    assertThat(usuario.getFechaNacimiento(), equalTo(null));
-    verify(this.repositorioUsuarioMock).modificar(usuario);
+    verify(this.repositorioUsuarioMock).guardar(usuario);
   }
 
   // --- bloqueo por intentos fallidos ---

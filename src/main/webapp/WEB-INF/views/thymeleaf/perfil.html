@@ -60,14 +60,6 @@
         <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
         <div>No se pudo cambiar la contraseña. Verificá la contraseña actual y los requisitos de la nueva.</div>
     </div>
-    <div th:if="${errorDatos}" id="error-datos" class="cu-alerta cu-alerta-error alert-danger" role="alert">
-        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-        <div th:text="${errorDatos}">Error</div>
-    </div>
-    <div th:if="${param.datosActualizados}" class="cu-alerta cu-alerta-ok" role="status">
-        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
-        <div>Datos personales actualizados correctamente.</div>
-    </div>
 
     <div class="cu-perfil">
 
@@ -139,33 +131,21 @@
                     <i class="bi bi-chevron-down cu-flecha" aria-hidden="true"></i>
                 </summary>
                 <div class="cu-acordeon-cuerpo">
-                    <form th:action="@{/perfil/actualizar-datos}" method="post">
+                    <dl class="cu-datos-fijos" id="datos-personales">
                         <div class="cu-campo">
-                            <label for="nombre" class="cu-etiqueta">Nombre</label>
-                            <input type="text" id="nombre" name="nombre"
-                                   class="cu-control"
-                                   th:value="${usuario.nombre}"
-                                   maxlength="100" required>
+                            <dt class="cu-etiqueta">Nombre</dt>
+                            <dd id="dato-nombre" th:text="${usuario.nombre != null and !#strings.isEmpty(usuario.nombre)} ? ${usuario.nombre} : '-'">-</dd>
                         </div>
-                        <div class="cu-campo">
-                            <label for="apellido" class="cu-etiqueta">Apellido</label>
-                            <input type="text" id="apellido" name="apellido"
-                                   class="cu-control"
-                                   th:value="${usuario.apellido}"
-                                   maxlength="100" required>
+                        <div class="cu-campo" th:unless="${usuario.rol == 'COMERCIO'}">
+                            <dt class="cu-etiqueta">Apellido</dt>
+                            <dd id="dato-apellido" th:text="${usuario.apellido != null and !#strings.isEmpty(usuario.apellido)} ? ${usuario.apellido} : '-'">-</dd>
                         </div>
-                        <div class="cu-campo">
-                            <label for="fechaNacimiento" class="cu-etiqueta">Fecha de nacimiento</label>
-                            <input type="date" id="fechaNacimiento" name="fechaNacimiento"
-                                   class="cu-control"
-                                   th:value="${usuario.fechaNacimiento}"
-                                   min="1900-01-01"
-                                   th:max="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+                        <div class="cu-campo" th:unless="${usuario.rol == 'COMERCIO'}">
+                            <dt class="cu-etiqueta">Fecha de nacimiento</dt>
+                            <dd id="dato-fecha-nacimiento" th:text="${usuario.fechaNacimiento != null} ? ${#temporals.format(usuario.fechaNacimiento, 'dd/MM/yyyy')} : 'No cargada'">-</dd>
                         </div>
-                        <button type="submit" class="cu-btn cu-btn-principal cu-btn-bloque">
-                            Guardar datos
-                        </button>
-                    </form>
+                    </dl>
+                    <p class="cu-ayuda">Estos datos se cargan al registrarte y no se pueden modificar.</p>
                 </div>
             </details>
 

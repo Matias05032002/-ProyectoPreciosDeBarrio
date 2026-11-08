@@ -6,10 +6,8 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
-import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ControladorPerfil {
@@ -122,40 +119,5 @@ public class ControladorPerfil {
     }
 
     return new ModelAndView("redirect:/perfil?errorContrasena");
-  }
-
-  @RequestMapping(path = "/perfil/actualizar-datos", method = RequestMethod.POST)
-  public ModelAndView actualizarDatos(
-    @RequestParam(value = "nombre", required = false) String nombre,
-    @RequestParam(value = "apellido", required = false) String apellido,
-    @RequestParam(value = "fechaNacimiento", required = false) String fechaNacimiento,
-    HttpServletRequest request,
-    RedirectAttributes redirectAttrs
-  ) {
-    HttpSession sesion = request.getSession(false);
-
-    if (sesion == null || sesion.getAttribute("ID") == null) {
-      return new ModelAndView(REDIRECT_LOGIN);
-    }
-
-    Long usuarioId = Long.valueOf(sesion.getAttribute("ID").toString());
-
-    try {
-      java.time.LocalDate fecha = null;
-
-      if (fechaNacimiento != null && !fechaNacimiento.isBlank()) {
-        fecha = java.time.LocalDate.parse(fechaNacimiento);
-      }
-
-      servicioLogin.actualizarDatosPersonales(usuarioId, nombre, apellido, fecha);
-    } catch (DatosInvalidos e) {
-      redirectAttrs.addFlashAttribute("errorDatos", e.getMessage());
-      return new ModelAndView("redirect:/perfil");
-    } catch (DateTimeParseException e) {
-      redirectAttrs.addFlashAttribute("errorDatos", "La fecha de nacimiento no es válida");
-      return new ModelAndView("redirect:/perfil");
-    }
-
-    return new ModelAndView("redirect:/perfil?datosActualizados");
   }
 }

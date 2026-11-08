@@ -8,15 +8,12 @@ import com.tallerwebi.dominio.Comercio.ServicioComercio;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
-import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 public class ControladorPerfilTest {
 
@@ -25,7 +22,6 @@ public class ControladorPerfilTest {
   private ServicioReporte servicioReporteMock;
   private HttpServletRequest requestMock;
   private HttpSession sesionMock;
-  private RedirectAttributes redirectAttrs;
   private ServicioComercio servicioComercioMock;
 
   @BeforeEach
@@ -35,7 +31,6 @@ public class ControladorPerfilTest {
     servicioComercioMock = mock(ServicioComercio.class);
     requestMock = mock(HttpServletRequest.class);
     sesionMock = mock(HttpSession.class);
-    redirectAttrs = new RedirectAttributesModelMap();
 
     controladorPerfil =
       new ControladorPerfil(servicioLoginMock, servicioReporteMock, servicioComercioMock);
@@ -173,103 +168,17 @@ public class ControladorPerfilTest {
   }
 
   @Test
-  public void actualizarDatosSinSesionDeberiaRedirigirAlLogin() {
-    when(requestMock.getSession(false)).thenReturn(null);
-
-    ModelAndView resultado = controladorPerfil.actualizarDatos(
-      "Matias",
-      "Llanos",
-      null,
-      requestMock,
-      redirectAttrs
-    );
-
-    assertThat(resultado.getViewName(), equalTo("redirect:/login"));
-    verifyNoInteractions(servicioLoginMock);
-  }
-
-  @Test
-  public void actualizarDatosConSesionValidaDeberiaLlamarAlServicioYRedirigir() {
-    when(requestMock.getSession(false)).thenReturn(sesionMock);
-    when(sesionMock.getAttribute("ID")).thenReturn(1L);
-
-    ModelAndView resultado = controladorPerfil.actualizarDatos(
-      "Matias",
-      "Llanos",
-      "2002-03-05",
-      requestMock,
-      redirectAttrs
-    );
-
-    assertThat(resultado.getViewName(), equalTo("redirect:/perfil?datosActualizados"));
-    verify(servicioLoginMock)
-      .actualizarDatosPersonales(
-        eq(1L),
-        eq("Matias"),
-        eq("Llanos"),
-        any(java.time.LocalDate.class)
+  public void elPerfilNoDeberiaPermitirEditarLosDatosPersonales() {
+    for (java.lang.reflect.Method metodo : ControladorPerfil.class.getDeclaredMethods()) {
+      org.springframework.web.bind.annotation.RequestMapping mapeo = metodo.getAnnotation(
+        org.springframework.web.bind.annotation.RequestMapping.class
       );
-  }
-
-  @Test
-  public void actualizarDatosSinFechaDeberiaLlamarAlServicioConFechaNull() {
-    when(requestMock.getSession(false)).thenReturn(sesionMock);
-    when(sesionMock.getAttribute("ID")).thenReturn(1L);
-
-    ModelAndView resultado = controladorPerfil.actualizarDatos(
-      "Matias",
-      "Llanos",
-      null,
-      requestMock,
-      redirectAttrs
-    );
-
-    assertThat(resultado.getViewName(), equalTo("redirect:/perfil?datosActualizados"));
-    verify(servicioLoginMock)
-      .actualizarDatosPersonales(eq(1L), eq("Matias"), eq("Llanos"), eq(null));
-  }
-
-  @Test
-  public void actualizarDatosConDatosInvalidosDeberiaVolverAlPerfilConElMensaje() {
-    when(requestMock.getSession(false)).thenReturn(sesionMock);
-    when(sesionMock.getAttribute("ID")).thenReturn(1L);
-    doThrow(new DatosInvalidos("El nombre es obligatorio"))
-      .when(servicioLoginMock)
-      .actualizarDatosPersonales(eq(1L), eq(""), eq("Llanos"), eq(null));
-
-    ModelAndView resultado = controladorPerfil.actualizarDatos(
-      "",
-      "Llanos",
-      null,
-      requestMock,
-      redirectAttrs
-    );
-
-    assertThat(resultado.getViewName(), equalTo("redirect:/perfil"));
-    assertThat(
-      redirectAttrs.getFlashAttributes().get("errorDatos"),
-      equalTo("El nombre es obligatorio")
-    );
-  }
-
-  @Test
-  public void actualizarDatosConUnaFechaConFormatoRotoNoDeberiaDarError500() {
-    when(requestMock.getSession(false)).thenReturn(sesionMock);
-    when(sesionMock.getAttribute("ID")).thenReturn(1L);
-
-    ModelAndView resultado = controladorPerfil.actualizarDatos(
-      "Matias",
-      "Llanos",
-      "no-es-una-fecha",
-      requestMock,
-      redirectAttrs
-    );
-
-    assertThat(resultado.getViewName(), equalTo("redirect:/perfil"));
-    assertThat(
-      redirectAttrs.getFlashAttributes().get("errorDatos"),
-      equalTo("La fecha de nacimiento no es válida")
-    );
-    verify(servicioLoginMock, never()).actualizarDatosPersonales(any(), any(), any(), any());
+      if (mapeo != null) {
+        assertThat(
+          java.util.Arrays.asList(mapeo.path()).contains("/perfil/actualizar-datos"),
+          equalTo(false)
+        );
+      }
+    }
   }
 }
