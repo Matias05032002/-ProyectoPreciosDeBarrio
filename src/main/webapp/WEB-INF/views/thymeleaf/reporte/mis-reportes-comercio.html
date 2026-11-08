@@ -18,7 +18,7 @@
             <div class="cm-cabecera-texto">
                 <p class="cm-sobretitulo"><i class="bi bi-shop" aria-hidden="true"></i> Mi comercio</p>
                 <h1 id="titulo-pagina">Mis reportes</h1>
-                <p class="cm-subtitulo">Los precios que publicaste en tu comercio. Podés editarlos durante 2 días.</p>
+                <p class="cm-subtitulo">Los precios que publicaste en tu comercio. Podés editarlos durante 2 días y eliminarlos cuando quieras.</p>
             </div>
             <div class="cm-cabecera-acciones">
                 <a th:href="@{/reporte}" class="cm-btn cm-btn-principal">
@@ -34,6 +34,16 @@
     <div th:if="${param.editado}" id="alerta-reporte-editado" class="cm-alerta cm-alerta-ok alert-success" role="status">
         <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
         <div class="cm-alerta-texto">Reporte editado con éxito.</div>
+    </div>
+
+    <div th:if="${param.eliminado}" id="alerta-reporte-eliminado" class="cm-alerta cm-alerta-ok alert-success" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div class="cm-alerta-texto">Reporte eliminado.</div>
+    </div>
+
+    <div th:if="${param.errorEliminar}" id="alerta-reporte-error-eliminar" class="cm-alerta cm-alerta-error" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div class="cm-alerta-texto">No pudimos eliminar ese reporte porque no es tuyo o ya no existe.</div>
     </div>
 
     <div th:if="${#lists.isEmpty(reportes)}" id="mensaje-sin-reportes" class="cm-vacio">
@@ -65,16 +75,56 @@
                         <span th:text="${reporte.comercio.nombre}">Comercio</span>
                     </span>
                 </p>
-                <div class="cm-item-acciones"
-                     th:if="${reporte.fechaDeReporte != null and reporte.fechaDeReporte.isAfter(#temporals.createNow().minusDays(2))}">
-                    <a th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
+                <div class="cm-item-acciones">
+                    <a th:if="${reporte.fechaDeReporte != null and reporte.fechaDeReporte.isAfter(#temporals.createNow().minusDays(2))}"
+                       th:href="@{/reporte/{id}/editar(id=${reporte.id})}"
                        th:id="'btn-editar-reporte-' + ${reporte.id}"
                        class="cm-btn cm-btn-claro cm-btn-chico">
                         <i class="bi bi-pencil" aria-hidden="true"></i> Editar
                     </a>
+                    <button type="button"
+                            th:id="'btn-eliminar-reporte-' + ${reporte.id}"
+                            class="cm-btn cm-btn-peligro cm-btn-chico"
+                            data-bs-toggle="modal"
+                            th:attr="data-bs-target='#modal-eliminar-reporte-' + ${reporte.id}">
+                        <i class="bi bi-trash3" aria-hidden="true"></i> Eliminar
+                    </button>
                 </div>
             </div>
         </article>
+    </div>
+
+    <!-- Confirmación para eliminar: un modal por reporte, fuera de la grilla para que no lo recorte -->
+    <div class="modal fade" tabindex="-1" aria-hidden="true"
+         th:each="reporte : ${reportes}"
+         th:id="'modal-eliminar-reporte-' + ${reporte.id}"
+         th:attr="aria-labelledby='titulo-eliminar-reporte-' + ${reporte.id}">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" th:id="'titulo-eliminar-reporte-' + ${reporte.id}">¿Eliminar este reporte?</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1">
+                        <strong th:text="${reporte.producto.nombre}">Producto</strong>
+                        a <span th:text="${'$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')}">$0,00</span>
+                        en <span th:text="${reporte.comercio.nombre}">Comercio</span>.
+                    </p>
+                    <p class="mb-0">Los demás vecinos dejan de verlo y no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="cm-btn cm-btn-neutro cm-btn-chico" data-bs-dismiss="modal"
+                            th:id="'btn-cancelar-eliminar-reporte-' + ${reporte.id}">Cancelar</button>
+                    <form th:action="@{/reporte/{id}/eliminar(id=${reporte.id})}" method="post" class="m-0">
+                        <button type="submit" class="cm-btn cm-btn-peligro cm-btn-chico"
+                                th:id="'btn-confirmar-eliminar-reporte-' + ${reporte.id}">
+                            <i class="bi bi-trash3" aria-hidden="true"></i> Sí, eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Paginación -->

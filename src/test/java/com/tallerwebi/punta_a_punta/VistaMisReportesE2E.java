@@ -105,6 +105,41 @@ public class VistaMisReportesE2E {
   }
 
   @Test
+  void deberiaVerBotonEliminarEnSusReportes() {
+    dadoQueElUsuarioEstaLogueado();
+    dadoQuePublicoUnReporte();
+    VistaMisReportes vistaMisReportes = new VistaMisReportes(context.pages().get(0));
+    assertThat(vistaMisReportes.hayBotonEliminar(), is(true));
+  }
+
+  @Test
+  void alConfirmarLaEliminacionElReporteDesapareceYSeAvisa() {
+    dadoQueElUsuarioEstaLogueado();
+    dadoQuePublicoUnReporte();
+    VistaMisReportes vistaMisReportes = new VistaMisReportes(context.pages().get(0));
+
+    vistaMisReportes.darClickEnPrimerBotonEliminar();
+    vistaMisReportes.confirmarEliminacion();
+
+    // No crear nueva VistaMisReportes: el navigate() del constructor pisaría ?eliminado=true
+    assertThat(vistaMisReportes.hayMensajeEliminado(), is(true));
+    assertThat(vistaMisReportes.cantidadDeReportes(), is(0));
+    assertThat(vistaMisReportes.muestraMensajeSinReportes(), is(true));
+  }
+
+  @Test
+  void alCancelarLaEliminacionElReporteSigueEstando() {
+    dadoQueElUsuarioEstaLogueado();
+    dadoQuePublicoUnReporte();
+    VistaMisReportes vistaMisReportes = new VistaMisReportes(context.pages().get(0));
+
+    vistaMisReportes.darClickEnPrimerBotonEliminar();
+    vistaMisReportes.cancelarEliminacion();
+
+    assertThat(vistaMisReportes.cantidadDeReportes(), is(1));
+  }
+
+  @Test
   void alCambiarElComercioDeUnReporteNoDeberiaModificarseElComercioOriginal() {
     // El seed deja un reporte del usuario 1 en el comercio "Almacen Test"
     ReiniciarDB.sembrarProductoConReporte();

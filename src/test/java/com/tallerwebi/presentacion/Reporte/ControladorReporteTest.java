@@ -18,6 +18,7 @@ import com.tallerwebi.dominio.Reporte.ServicioOcr;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.AccesoDenegado;
 import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
 import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
 import com.tallerwebi.dominio.excepcion.ReporteExistente;
@@ -582,6 +583,58 @@ public class ControladorReporteTest {
 
     assertThat(mav.getViewName(), equalToIgnoringCase("reporte/editar-reporte"));
     assertThat(mav.getModel().get("reporte"), is(reporte));
+  }
+
+  // --- eliminarReporte ---
+
+  @Test
+  public void eliminarReporteRedirigeAlLoginSiNoHaySesion() {
+    when(sessionMock.getAttribute("ROL")).thenReturn(null);
+
+    ModelAndView mav = controladorReporte.eliminarReporte(1L, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+    verify(servicioReporteMock, never()).eliminarReporte(any(), any());
+  }
+
+  @Test
+  public void eliminarReporteExitosoRedirigeAMisReportesAvisandoQueSeElimino() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView mav = controladorReporte.eliminarReporte(5L, requestMock);
+
+    assertThat(
+      mav.getViewName(),
+      equalToIgnoringCase("redirect:/reporte/mis-reportes?eliminado=true")
+    );
+    verify(servicioReporteMock, times(1)).eliminarReporte(5L, 1L);
+  }
+
+  @Test
+  public void eliminarReporteTomaElUsuarioDeLaSesion() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("COMERCIO");
+    when(sessionMock.getAttribute("ID")).thenReturn(7L);
+
+    controladorReporte.eliminarReporte(5L, requestMock);
+
+    verify(servicioReporteMock, times(1)).eliminarReporte(5L, 7L);
+  }
+
+  @Test
+  public void eliminarReporteAjenoRedirigeAMisReportesConError() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    doThrow(new AccesoDenegado("No podés eliminar este reporte"))
+      .when(servicioReporteMock)
+      .eliminarReporte(5L, 1L);
+
+    ModelAndView mav = controladorReporte.eliminarReporte(5L, requestMock);
+
+    assertThat(
+      mav.getViewName(),
+      equalToIgnoringCase("redirect:/reporte/mis-reportes?errorEliminar=true")
+    );
   }
 
   // --- editarReporte ---

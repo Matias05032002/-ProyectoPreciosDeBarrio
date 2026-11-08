@@ -591,6 +591,64 @@ public class ServicioReporteTest {
 
   // --- helpers ---
 
+  // --- eliminarReporte ---
+
+  @Test
+  public void eliminarReporteDelAutorLoBorra() {
+    when(repositorioReporteMock.buscarReporte(1L))
+      .thenReturn(reporteEditable(1L, LocalDateTime.now().minusHours(1)));
+
+    servicioReporte.eliminarReporte(1L, 1L);
+
+    verify(repositorioReporteMock, times(1)).eliminarReporte(1L);
+  }
+
+  @Test
+  public void eliminarReporteDelAutorFueraDelPlazoDeEdicionTambienLoBorra() {
+    when(repositorioReporteMock.buscarReporte(1L))
+      .thenReturn(reporteEditable(1L, LocalDateTime.now().minusDays(30)));
+
+    servicioReporte.eliminarReporte(1L, 1L);
+
+    verify(repositorioReporteMock, times(1)).eliminarReporte(1L);
+  }
+
+  @Test
+  public void eliminarReporteDeOtroUsuarioLanzaAccesoDenegadoYNoBorra() {
+    when(repositorioReporteMock.buscarReporte(1L))
+      .thenReturn(reporteEditable(1L, LocalDateTime.now().minusHours(1)));
+
+    assertThrows(AccesoDenegado.class, () -> servicioReporte.eliminarReporte(1L, 2L));
+    verify(repositorioReporteMock, never()).eliminarReporte(any());
+  }
+
+  @Test
+  public void eliminarReporteInexistenteLanzaAccesoDenegadoYNoBorra() {
+    when(repositorioReporteMock.buscarReporte(99L)).thenReturn(null);
+
+    assertThrows(AccesoDenegado.class, () -> servicioReporte.eliminarReporte(99L, 1L));
+    verify(repositorioReporteMock, never()).eliminarReporte(any());
+  }
+
+  @Test
+  public void eliminarReporteSinUsuarioAsignadoLanzaAccesoDenegado() {
+    Reporte huerfano = reporteEditable(1L, LocalDateTime.now());
+    huerfano.setUsuario(null);
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(huerfano);
+
+    assertThrows(AccesoDenegado.class, () -> servicioReporte.eliminarReporte(1L, 1L));
+    verify(repositorioReporteMock, never()).eliminarReporte(any());
+  }
+
+  @Test
+  public void eliminarReporteSinUsuarioEnSesionLanzaAccesoDenegado() {
+    when(repositorioReporteMock.buscarReporte(1L))
+      .thenReturn(reporteEditable(1L, LocalDateTime.now()));
+
+    assertThrows(AccesoDenegado.class, () -> servicioReporte.eliminarReporte(1L, null));
+    verify(repositorioReporteMock, never()).eliminarReporte(any());
+  }
+
   private Producto productoValido(String nombre, String unidad) {
     Producto p = new Producto();
     p.setNombre(nombre);

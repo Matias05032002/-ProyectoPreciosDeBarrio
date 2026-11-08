@@ -442,6 +442,69 @@ public class RepositorioReporteTest {
     return reporte;
   }
 
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaEliminarUnReporte() {
+    Reporte reporte = dadoQueTengoUnReporte("Yerba", "Almacen", 100.0);
+    dadoQueExisteElReporte(reporte);
+
+    repositorioReporte.eliminarReporte(reporte.getId());
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    assertThat(repositorioReporte.buscarReporte(reporte.getId()), is(nullValue()));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void eliminarUnReporteNoBorraAlProductoNiAlComercio() {
+    Reporte reporte = dadoQueTengoUnReporte("Azucar", "Kiosco", 90.0);
+    dadoQueExisteElReporte(reporte);
+    Long productoId = reporte.getProducto().getId();
+    Long comercioId = reporte.getComercio().getId();
+
+    repositorioReporte.eliminarReporte(reporte.getId());
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    assertThat(
+      sessionFactory.getCurrentSession().get(Producto.class, productoId),
+      is(notNullValue())
+    );
+    assertThat(
+      sessionFactory.getCurrentSession().get(Comercio.class, comercioId),
+      is(notNullValue())
+    );
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void eliminarUnReporteConMarcasDeDudosoNoFalla() {
+    Reporte reporte = dadoQueTengoUnReporte("Aceite", "Almacen", 300.0);
+    dadoQueExisteElReporte(reporte);
+    com.tallerwebi.dominio.Usuario vecino = new com.tallerwebi.dominio.Usuario();
+    vecino.setEmail("vecino-dudoso-" + System.nanoTime() + "@test.com");
+    vecino.setNombre("Vecino");
+    vecino.setRol("USER");
+    vecino.setActivo(true);
+    vecino.setPassword("1234");
+    sessionFactory.getCurrentSession().persist(vecino);
+    repositorioReporte.marcarDudoso(reporte.getId(), vecino);
+
+    repositorioReporte.eliminarReporte(reporte.getId());
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    assertThat(repositorioReporte.buscarReporte(reporte.getId()), is(nullValue()));
+    assertThat(
+      sessionFactory.getCurrentSession().get(com.tallerwebi.dominio.Usuario.class, vecino.getId()),
+      is(notNullValue())
+    );
+  }
+
   private Reporte dadoQueTengoUnReporte(
     String nombreProducto,
     String nombreComercio,

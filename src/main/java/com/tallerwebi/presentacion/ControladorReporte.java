@@ -14,6 +14,7 @@ import com.tallerwebi.dominio.Reporte.ServicioOcr;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.AccesoDenegado;
 import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
 import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import com.tallerwebi.dominio.excepcion.PrecioIncorrecto;
@@ -357,6 +358,21 @@ public class ControladorReporte {
     return new ModelAndView("redirect:/reporte/mis-reportes?editado=true");
   }
 
+  @RequestMapping(path = "/{id}/eliminar", method = RequestMethod.POST)
+  public ModelAndView eliminarReporte(@PathVariable("id") Long id, HttpServletRequest request) {
+    if (request.getSession().getAttribute(SESSION_ROL) == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    // El dueño sale siempre de la sesión: lo que manda el cliente es solo el id del reporte
+    Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    try {
+      servicioReporte.eliminarReporte(id, usuarioId);
+    } catch (AccesoDenegado e) {
+      return new ModelAndView("redirect:/reporte/mis-reportes?errorEliminar=true");
+    }
+    return new ModelAndView("redirect:/reporte/mis-reportes?eliminado=true");
+  }
+
   private ModelAndView vistaConError(String mensaje, HttpServletRequest request) {
     ModelAndView mav = new ModelAndView(VISTA_REPORTES);
     mav.addObject(NOMBRE_ERROR, mensaje);
@@ -423,7 +439,7 @@ public class ControladorReporte {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    if (ticketBase64 == null || ticketBase64.isBlank()) {
+    if (estaVacio(ticketBase64)) {
       ModelAndView mav = new ModelAndView(VISTA_SUBIR_TICKET);
       mav.addObject(NOMBRE_ERROR, "Debes subir una foto del ticket");
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
@@ -572,7 +588,7 @@ public class ControladorReporte {
   }
 
   private String guardarFoto(Reporte reporte, String fotoBase64) {
-    if (fotoBase64 == null || fotoBase64.isBlank()) {
+    if (estaVacio(fotoBase64)) {
       return null;
     }
     if (!fotoBase64.startsWith("data:image/")) {
