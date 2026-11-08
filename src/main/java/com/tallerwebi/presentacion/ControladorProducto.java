@@ -37,10 +37,10 @@ public class ControladorProducto {
 
   @Autowired
   public ControladorProducto(
-          ServicioProducto servicioProducto,
-          ServicioLogin servicioLogin,
-          ServicioLista servicioLista,
-          ServicioPaginador servicioPaginador
+    ServicioProducto servicioProducto,
+    ServicioLogin servicioLogin,
+    ServicioLista servicioLista,
+    ServicioPaginador servicioPaginador
   ) {
     this.servicioProducto = servicioProducto;
     this.servicioLogin = servicioLogin;
@@ -71,13 +71,13 @@ public class ControladorProducto {
 
   @RequestMapping(path = "/buscar", method = RequestMethod.GET)
   public ModelAndView buscarProducto(
-          @RequestParam(value = "nombre", required = false, defaultValue = "") String nombre,
-          @RequestParam(value = "orden", required = false, defaultValue = "precio") String orden,
-          @RequestParam(value = "dudosoMarcado", required = false) Boolean dudosoMarcado,
-          @RequestParam(value = "lat", required = false) Double lat,
-          @RequestParam(value = "lng", required = false) Double lng,
-          @RequestParam(value = "pagina", required = false, defaultValue = "0") int pagina,
-          HttpServletRequest request
+    @RequestParam(value = "nombre", required = false, defaultValue = "") String nombre,
+    @RequestParam(value = "orden", required = false, defaultValue = "precio") String orden,
+    @RequestParam(value = "dudosoMarcado", required = false) Boolean dudosoMarcado,
+    @RequestParam(value = "lat", required = false) Double lat,
+    @RequestParam(value = "lng", required = false) Double lng,
+    @RequestParam(value = "pagina", required = false, defaultValue = "0") int pagina,
+    HttpServletRequest request
   ) {
     String email = (String) request.getSession().getAttribute("EMAIL");
     Usuario usuario = email != null ? servicioLogin.buscarPorEmail(email) : null;
@@ -92,12 +92,12 @@ public class ControladorProducto {
     // Rubro opcional (?categoria=Lacteos): llega por la URL de los atajos de la pantalla
     String categoria = rubroDe(request);
     List<ProductoConPrecio> todos = buscarSegunRubro(
-            busquedaLimpia,
-            categoria,
-            usuario,
-            ordenes,
-            lat,
-            lng
+      busquedaLimpia,
+      categoria,
+      usuario,
+      ordenes,
+      lat,
+      lng
     );
 
     // Paginación
@@ -145,29 +145,29 @@ public class ControladorProducto {
   }
 
   private List<ProductoConPrecio> buscarSegunRubro(
-          String busqueda,
-          String categoria,
-          Usuario usuario,
-          List<OrdenProducto> ordenes,
-          Double lat,
-          Double lng
+    String busqueda,
+    String categoria,
+    Usuario usuario,
+    List<OrdenProducto> ordenes,
+    Double lat,
+    Double lng
   ) {
     if (categoria == null) {
       return servicioProducto.buscarProductosConPrecio(busqueda, usuario, ordenes, lat, lng);
     }
     return servicioProducto.buscarProductosConPrecio(
-            busqueda,
-            categoria,
-            usuario,
-            ordenes,
-            lat,
-            lng
+      busqueda,
+      categoria,
+      usuario,
+      ordenes,
+      lat,
+      lng
     );
   }
 
   private void agregarNotificacionDeValoracion(
-          ModelAndView mav,
-          List<ProductoConPrecio> productos
+    ModelAndView mav,
+    List<ProductoConPrecio> productos
   ) {
     for (ProductoConPrecio producto : productos) {
       if (producto.getReporteId() != null && !producto.isYaMarcoDudoso()) {
@@ -186,15 +186,15 @@ public class ControladorProducto {
       Comercio comercio = reporte.getComercio();
       Producto producto = reporte.getProducto();
       ProductoConPrecio resumen = new ProductoConPrecio(
-              producto.getNombre(),
-              producto.getMarca(),
-              producto.getUnidad(),
-              producto.getCategoria(),
-              reporte.getPrecio(),
-              comercio.getNombre(),
-              reporte.getId(),
-              reporte.getFechaDeReporte(),
-              reporte.getPuntuacion()
+        producto.getNombre(),
+        producto.getMarca(),
+        producto.getUnidad(),
+        producto.getCategoria(),
+        reporte.getPrecio(),
+        comercio.getNombre(),
+        reporte.getId(),
+        reporte.getFechaDeReporte(),
+        reporte.getPuntuacion()
       );
       Map<String, Object> precio = new LinkedHashMap<>();
       precio.put("reporteId", reporte.getId());

@@ -31,7 +31,7 @@ public class ServicioProductoTest {
     this.repositorioProductoMock = mock(RepositorioProducto.class);
     this.repositorioReporteMock = mock(RepositorioReporte.class);
     this.servicioProducto =
-            new ServicioProductoImpl(this.repositorioProductoMock, this.repositorioReporteMock);
+      new ServicioProductoImpl(this.repositorioProductoMock, this.repositorioReporteMock);
   }
 
   @Test
@@ -62,7 +62,7 @@ public class ServicioProductoTest {
   @Test
   public void buscarProductoPorNombreSiNoExisteRetornaNull() {
     when(this.repositorioProductoMock.buscarProductoPorNombreExacto("Inexistente"))
-            .thenReturn(null);
+      .thenReturn(null);
 
     Producto resultado = this.servicioProducto.buscarProductoPorNombreExacto("Inexistente");
 
@@ -133,15 +133,15 @@ public class ServicioProductoTest {
   @Test
   public void buscarProductosConPrecioRetornaListaVaciaSiNoHayReportes() {
     when(this.repositorioProductoMock.buscarPorNombre("Leche"))
-            .thenReturn(Arrays.asList(new Producto()));
+      .thenReturn(Arrays.asList(new Producto()));
     when(this.repositorioReporteMock.listarTodos()).thenReturn(Collections.emptyList());
 
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
-            "algo",
-            null,
-            List.of(OrdenProducto.PRECIO),
-            null,
-            null
+      "algo",
+      null,
+      List.of(OrdenProducto.PRECIO),
+      null,
+      null
     );
 
     assertThat(resultado, equalTo(Collections.emptyList()));
@@ -152,14 +152,14 @@ public class ServicioProductoTest {
     com.tallerwebi.dominio.Reporte.Reporte reporte1 = crearReporteMock("Leche", 200.0, null);
     com.tallerwebi.dominio.Reporte.Reporte reporte2 = crearReporteMock("Leche", 100.0, null);
     when(this.repositorioReporteMock.buscarPorNombre("Leche"))
-            .thenReturn(Arrays.asList(reporte1, reporte2));
+      .thenReturn(Arrays.asList(reporte1, reporte2));
 
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
-            "Leche",
-            null,
-            List.of(OrdenProducto.PRECIO),
-            null,
-            null
+      "Leche",
+      null,
+      List.of(OrdenProducto.PRECIO),
+      null,
+      null
     );
 
     assertThat(resultado.get(0).getPrecioMinimo(), equalTo(100.0));
@@ -175,11 +175,11 @@ public class ServicioProductoTest {
     when(this.repositorioReporteMock.buscarPorNombre("Aceite")).thenReturn(Arrays.asList(r1, r2));
 
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
-            "Aceite",
-            null,
-            List.of(OrdenProducto.RECIENTE),
-            null,
-            null
+      "Aceite",
+      null,
+      List.of(OrdenProducto.RECIENTE),
+      null,
+      null
     );
 
     assertThat(resultado.get(0).getFechaDeReporte(), equalTo(reciente));
@@ -188,18 +188,18 @@ public class ServicioProductoTest {
   @Test
   public void buscarProductosConPrecioConReporteSinProductoLoIgnora() {
     com.tallerwebi.dominio.Reporte.Reporte reporteSinProducto = mock(
-            com.tallerwebi.dominio.Reporte.Reporte.class
+      com.tallerwebi.dominio.Reporte.Reporte.class
     );
     when(reporteSinProducto.getProducto()).thenReturn(null);
     when(this.repositorioReporteMock.buscarPorNombre("X"))
-            .thenReturn(Arrays.asList(reporteSinProducto));
+      .thenReturn(Arrays.asList(reporteSinProducto));
 
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
-            "X",
-            null,
-            List.of(OrdenProducto.PRECIO),
-            null,
-            null
+      "X",
+      null,
+      List.of(OrdenProducto.PRECIO),
+      null,
+      null
     );
 
     assertThat(resultado.size(), equalTo(0));
@@ -210,11 +210,11 @@ public class ServicioProductoTest {
     when(this.repositorioReporteMock.buscarPorNombre("Y")).thenReturn(null);
 
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
-            "Y",
-            null,
-            List.of(OrdenProducto.PRECIO),
-            null,
-            null
+      "Y",
+      null,
+      List.of(OrdenProducto.PRECIO),
+      null,
+      null
     );
 
     assertThat(resultado.size(), equalTo(0));
@@ -225,13 +225,13 @@ public class ServicioProductoTest {
     Producto producto = new Producto();
     producto.setNombre("Pan");
     com.tallerwebi.dominio.Comercio.Comercio comercio = mock(
-            com.tallerwebi.dominio.Comercio.Comercio.class
+      com.tallerwebi.dominio.Comercio.Comercio.class
     );
     when(comercio.getLatitud()).thenReturn(-34.6037);
     when(comercio.getLongitud()).thenReturn(-58.3816);
     when(comercio.getNombre()).thenReturn("Almacen");
     com.tallerwebi.dominio.Reporte.Reporte reporte = mock(
-            com.tallerwebi.dominio.Reporte.Reporte.class
+      com.tallerwebi.dominio.Reporte.Reporte.class
     );
     when(reporte.getProducto()).thenReturn(producto);
     when(reporte.getComercio()).thenReturn(comercio);
@@ -242,11 +242,11 @@ public class ServicioProductoTest {
     when(this.repositorioReporteMock.buscarPorNombre("Pan")).thenReturn(Arrays.asList(reporte));
 
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
-            "Pan",
-            null,
-            List.of(OrdenProducto.PRECIO),
-            -34.6100,
-            -58.3800
+      "Pan",
+      null,
+      List.of(OrdenProducto.PRECIO),
+      -34.6100,
+      -58.3800
     );
 
     assertThat(resultado.size(), equalTo(1));
@@ -460,11 +460,11 @@ public class ServicioProductoTest {
     dadoQueLaBusquedaDevuelve("Leche", masVieja, masNueva);
 
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
-            "Leche",
-            null,
-            List.of(OrdenProducto.RECIENTE),
-            null,
-            null
+      "Leche",
+      null,
+      List.of(OrdenProducto.RECIENTE),
+      null,
+      null
     );
 
     assertThat(resultado.get(0).getPrecioMinimo(), equalTo(200.0));
@@ -489,12 +489,12 @@ public class ServicioProductoTest {
   private static final double LNG_USUARIO = -58.3816;
 
   private Reporte crearReporteConUbicacion(
-          Long productoId,
-          Long comercioId,
-          Double precio,
-          LocalDateTime fecha,
-          Double latitud,
-          Double longitud
+    Long productoId,
+    Long comercioId,
+    Double precio,
+    LocalDateTime fecha,
+    Double latitud,
+    Double longitud
   ) {
     Reporte reporte = crearReporteEnLocal(productoId, comercioId, precio, fecha, 0);
     when(reporte.getComercio().getLatitud()).thenReturn(latitud);
@@ -512,11 +512,11 @@ public class ServicioProductoTest {
 
   private List<ProductoConPrecio> buscarOrdenandoPor(List<OrdenProducto> ordenes) {
     return servicioProducto.buscarProductosConPrecio(
-            "Leche",
-            null,
-            ordenes,
-            LAT_USUARIO,
-            LNG_USUARIO
+      "Leche",
+      null,
+      ordenes,
+      LAT_USUARIO,
+      LNG_USUARIO
     );
   }
 
@@ -527,12 +527,12 @@ public class ServicioProductoTest {
     dadoQueLaBusquedaDevuelve("Leche", lejos, cerca);
 
     List<ProductoConPrecio> resultado = buscarOrdenandoPor(
-            List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
+      List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
     );
 
     assertThat(
-            resultado.get(0).getDistanciaKm() < resultado.get(1).getDistanciaKm(),
-            equalTo(true)
+      resultado.get(0).getDistanciaKm() < resultado.get(1).getDistanciaKm(),
+      equalTo(true)
     );
   }
 
@@ -543,7 +543,7 @@ public class ServicioProductoTest {
     dadoQueLaBusquedaDevuelve("Leche", carioYCerca, baratoYLejos);
 
     List<ProductoConPrecio> resultado = buscarOrdenandoPor(
-            List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
+      List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
     );
 
     assertThat(precios(resultado), equalTo(Arrays.asList(100.0, 300.0)));
@@ -558,7 +558,7 @@ public class ServicioProductoTest {
     dadoQueLaBusquedaDevuelve("Leche", aCaro, bCaro, bMedio, aBarato);
 
     List<ProductoConPrecio> resultado = buscarOrdenandoPor(
-            List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
+      List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA)
     );
 
     assertThat(precios(resultado), equalTo(Arrays.asList(10.0, 50.0, 20.0, 30.0)));
@@ -572,18 +572,18 @@ public class ServicioProductoTest {
     dadoQueLaBusquedaDevuelve("Leche", lejosPeroNueva, cercaPeroVieja, cercaYNueva);
 
     List<ProductoConPrecio> resultado = buscarOrdenandoPor(
-            List.of(OrdenProducto.CERCANIA, OrdenProducto.RECIENTE)
+      List.of(OrdenProducto.CERCANIA, OrdenProducto.RECIENTE)
     );
 
     assertThat(
-            resultado.stream().map(ProductoConPrecio::getFechaDeReporte).toList(),
-            equalTo(
-                    Arrays.asList(
-                            cercaYNueva.getFechaDeReporte(),
-                            cercaPeroVieja.getFechaDeReporte(),
-                            lejosPeroNueva.getFechaDeReporte()
-                    )
-            )
+      resultado.stream().map(ProductoConPrecio::getFechaDeReporte).toList(),
+      equalTo(
+        Arrays.asList(
+          cercaYNueva.getFechaDeReporte(),
+          cercaPeroVieja.getFechaDeReporte(),
+          lejosPeroNueva.getFechaDeReporte()
+        )
+      )
     );
   }
 
@@ -595,7 +595,7 @@ public class ServicioProductoTest {
     dadoQueLaBusquedaDevuelve("Leche", igualVieja, masBarataPeroVieja, igualNueva);
 
     List<ProductoConPrecio> resultado = buscarOrdenandoPor(
-            List.of(OrdenProducto.PRECIO, OrdenProducto.RECIENTE)
+      List.of(OrdenProducto.PRECIO, OrdenProducto.RECIENTE)
     );
 
     assertThat(precios(resultado), equalTo(Arrays.asList(80.0, 100.0, 100.0)));
@@ -610,10 +610,10 @@ public class ServicioProductoTest {
     dadoQueLaBusquedaDevuelve("Leche", lejos, cerca, baratoYLejos);
 
     List<Double> enOrden = precios(
-            buscarOrdenandoPor(List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA))
+      buscarOrdenandoPor(List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA))
     );
     List<Double> alReves = precios(
-            buscarOrdenandoPor(List.of(OrdenProducto.CERCANIA, OrdenProducto.PRECIO))
+      buscarOrdenandoPor(List.of(OrdenProducto.CERCANIA, OrdenProducto.PRECIO))
     );
 
     assertThat(alReves, equalTo(enOrden));
@@ -627,11 +627,11 @@ public class ServicioProductoTest {
     dadoQueLaBusquedaDevuelve("Leche", vieja, nueva);
 
     List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
-            "Leche",
-            null,
-            List.of(OrdenProducto.CERCANIA, OrdenProducto.RECIENTE),
-            null,
-            null
+      "Leche",
+      null,
+      List.of(OrdenProducto.CERCANIA, OrdenProducto.RECIENTE),
+      null,
+      null
     );
 
     assertThat(resultado.get(0).getFechaDeReporte(), equalTo(nueva.getFechaDeReporte()));
@@ -657,22 +657,22 @@ public class ServicioProductoTest {
 
   private List<ProductoConPrecio> buscarPorPrecio(String nombre) {
     return servicioProducto.buscarProductosConPrecio(
-            nombre,
-            null,
-            List.of(OrdenProducto.PRECIO),
-            null,
-            null
+      nombre,
+      null,
+      List.of(OrdenProducto.PRECIO),
+      null,
+      null
     );
   }
 
   private List<ProductoConPrecio> buscarEnRubro(String nombre, String categoria) {
     return servicioProducto.buscarProductosConPrecio(
-            nombre,
-            categoria,
-            null,
-            List.of(OrdenProducto.PRECIO),
-            null,
-            null
+      nombre,
+      categoria,
+      null,
+      List.of(OrdenProducto.PRECIO),
+      null,
+      null
     );
   }
 
@@ -685,11 +685,11 @@ public class ServicioProductoTest {
   }
 
   private Reporte crearReporteEnLocal(
-          Long productoId,
-          Long comercioId,
-          Double precio,
-          LocalDateTime fecha,
-          int puntuacion
+    Long productoId,
+    Long comercioId,
+    Double precio,
+    LocalDateTime fecha,
+    int puntuacion
   ) {
     Producto producto = new Producto();
     producto.setId(productoId);
@@ -708,14 +708,14 @@ public class ServicioProductoTest {
   }
 
   private com.tallerwebi.dominio.Reporte.Reporte crearReporteMock(
-          String nombreProducto,
-          Double precio,
-          java.time.LocalDateTime fecha
+    String nombreProducto,
+    Double precio,
+    java.time.LocalDateTime fecha
   ) {
     Producto producto = new Producto();
     producto.setNombre(nombreProducto);
     com.tallerwebi.dominio.Reporte.Reporte reporte = mock(
-            com.tallerwebi.dominio.Reporte.Reporte.class
+      com.tallerwebi.dominio.Reporte.Reporte.class
     );
     when(reporte.getProducto()).thenReturn(producto);
     when(reporte.getPrecio()).thenReturn(precio);
@@ -735,7 +735,7 @@ public class ServicioProductoTest {
     Reporte medio = crearReporteEnLocal(1L, 30L, 250.0, ahora(), 0);
     dadoQueElReporteEs(5L, caro);
     when(this.repositorioReporteMock.buscarPorProducto(1L))
-            .thenReturn(Arrays.asList(caro, barato, medio));
+      .thenReturn(Arrays.asList(caro, barato, medio));
 
     List<Reporte> resultado = servicioProducto.buscarPreciosDelProductoEnCadaLocal(5L);
 
@@ -748,7 +748,7 @@ public class ServicioProductoTest {
     Reporte nuevo = crearReporteEnLocal(1L, 10L, 300.0, ahora(), 0);
     dadoQueElReporteEs(5L, nuevo);
     when(this.repositorioReporteMock.buscarPorProducto(1L))
-            .thenReturn(Arrays.asList(viejoBarato, nuevo));
+      .thenReturn(Arrays.asList(viejoBarato, nuevo));
 
     List<Reporte> resultado = servicioProducto.buscarPreciosDelProductoEnCadaLocal(5L);
 
@@ -758,16 +758,16 @@ public class ServicioProductoTest {
   @Test
   public void preciosDelProductoDejaLosDudososAlFinalAunqueSeanMasBaratos() {
     Reporte dudosoBarato = crearReporteEnLocal(
-            1L,
-            10L,
-            10.0,
-            ahora(),
-            Reporte.PUNTUACION_DUDOSO + 1
+      1L,
+      10L,
+      10.0,
+      ahora(),
+      Reporte.PUNTUACION_DUDOSO + 1
     );
     Reporte confiable = crearReporteEnLocal(1L, 20L, 200.0, ahora(), 0);
     dadoQueElReporteEs(5L, confiable);
     when(this.repositorioReporteMock.buscarPorProducto(1L))
-            .thenReturn(Arrays.asList(dudosoBarato, confiable));
+      .thenReturn(Arrays.asList(dudosoBarato, confiable));
 
     List<Reporte> resultado = servicioProducto.buscarPreciosDelProductoEnCadaLocal(5L);
 
@@ -779,8 +779,8 @@ public class ServicioProductoTest {
     when(this.repositorioReporteMock.buscarReporte(99L)).thenReturn(null);
 
     assertThat(
-            servicioProducto.buscarPreciosDelProductoEnCadaLocal(99L),
-            equalTo(Collections.emptyList())
+      servicioProducto.buscarPreciosDelProductoEnCadaLocal(99L),
+      equalTo(Collections.emptyList())
     );
     verify(this.repositorioReporteMock, never()).buscarPorProducto(any());
   }
