@@ -10,7 +10,7 @@ public class VistaLogin extends VistaWeb {
   }
 
   public String obtenerMensajeDeError() {
-    return this.obtenerTextoDelElemento("p.alert.alert-danger");
+    return this.obtenerTextoDelElemento("div.alert.alert-danger");
   }
 
   public void escribirEMAIL(String email) {
@@ -26,6 +26,6 @@ public class VistaLogin extends VistaWeb {
   }
 
   public void darClickEnRegistrarse() {
-    this.darClickEnElElemento("#btn-register");
+    this.darClickEnElElemento(".register-prompt a");
   }
 }

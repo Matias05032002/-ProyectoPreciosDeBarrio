@@ -190,6 +190,7 @@ public class ServicioLoginImpl implements ServicioLogin {
     validarNombreOApellido(usuario.getNombre(), "El nombre");
     if (esComercio) return;
     validarNombreOApellido(usuario.getApellido(), "El apellido");
+    validarFechaDeNacimiento(usuario.getFechaNacimiento());
     if (!Localidades.esValida(usuario.getLocalidad())) {
       throw new DatosInvalidos("Elegí una localidad de la lista");
     }
@@ -207,7 +208,9 @@ public class ServicioLoginImpl implements ServicioLogin {
   }
 
   private void validarFechaDeNacimiento(LocalDate fecha) {
-    if (fecha == null) return;
+    if (fecha == null) {
+      throw new DatosInvalidos("La fecha de nacimiento es obligatoria");
+    }
     if (fecha.isAfter(LocalDate.now())) {
       throw new DatosInvalidos("La fecha de nacimiento no puede ser futura");
     }
@@ -229,27 +232,5 @@ public class ServicioLoginImpl implements ServicioLogin {
     if (!contrasena.matches(".*[A-Z].*")) {
       throw new ContrasenaInvalida("La contraseña debe contener al menos una mayúscula");
     }
-  }
-
-  @Override
-  public void actualizarDatosPersonales(
-    Long usuarioId,
-    String nombre,
-    String apellido,
-    LocalDate fechaNacimiento
-  ) {
-    Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
-    if (usuario == null) return;
-
-    // Primero se valida todo: si algo falla no se cambia nada
-    if (nombre != null) validarNombreOApellido(nombre, "El nombre");
-    if (apellido != null) validarNombreOApellido(apellido, "El apellido");
-    validarFechaDeNacimiento(fechaNacimiento);
-
-    if (nombre != null) usuario.setNombre(nombre.trim());
-    if (apellido != null) usuario.setApellido(apellido.trim());
-    usuario.setFechaNacimiento(fechaNacimiento);
-
-    repositorioUsuario.modificar(usuario);
   }
 }

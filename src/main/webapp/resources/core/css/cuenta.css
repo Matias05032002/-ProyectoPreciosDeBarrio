@@ -217,6 +217,25 @@
     font-size: .8125rem;
 }
 
+/* Datos personales que se cargan al registrarse y no se editan */
+.cu-datos-fijos {
+    margin: 0;
+}
+
+.cu-datos-fijos dd {
+    box-sizing: border-box;
+    margin: 0;
+    min-height: 48px;
+    padding: .7rem .85rem;
+    color: #0B1B2B;
+    font-size: 1rem;
+    line-height: 1.4;
+    background-color: #F0F3F5;
+    border: 1.5px solid #E1E8EC;
+    border-radius: 12px;
+    overflow-wrap: anywhere;
+}
+
 .cu-control {
     display: block;
     width: 100%;

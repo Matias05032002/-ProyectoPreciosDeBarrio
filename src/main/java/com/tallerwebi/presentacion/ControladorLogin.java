@@ -9,6 +9,8 @@ import com.tallerwebi.dominio.excepcion.DatosDeComercioInvalidos;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -83,6 +85,7 @@ public class ControladorLogin {
     @RequestParam("password") String password,
     @RequestParam("nombre") String nombre,
     @RequestParam("apellido") String apellido,
+    @RequestParam("fechaNacimiento") String fechaNacimiento,
     @RequestParam("localidad") String localidad,
     HttpServletRequest request,
     RedirectAttributes redirectAttrs
@@ -96,9 +99,13 @@ public class ControladorLogin {
     usuario.setRol("USER");
 
     try {
+      usuario.setFechaNacimiento(LocalDate.parse(fechaNacimiento));
       servicioLogin.registrar(usuario);
       redirectAttrs.addFlashAttribute(ATTR_REGISTRO_EXITOSO, MENSAJE_REGISTRO_EXITOSO);
       return new ModelAndView(REDIRECT_LOGIN);
+    } catch (DateTimeParseException e) {
+      redirectAttrs.addFlashAttribute("error", "La fecha de nacimiento no es válida");
+      return new ModelAndView("redirect:/nuevo-usuario");
     } catch (Exception e) {
       redirectAttrs.addFlashAttribute("error", e.getMessage());
       return new ModelAndView("redirect:/nuevo-usuario");

@@ -73,6 +73,31 @@ public class VistaLoginE2E {
   }
 
   @Test
+  void elVecinoRegistradoDeberiaVerSusDatosPersonalesFijosEnElPerfil() {
+    dadoQueElUsuarioNavegaALaVistaDeRegistro();
+    dadoQueElUsuarioSeRegistraCon("ana@unlam.edu.ar", "Ana12345");
+    dadoQueElUsuarioEstaEnLaVistaDeLogin();
+    dadoQueElUsuarioCargaSusDatosDeLoginCon("ana@unlam.edu.ar", "Ana12345");
+    cuandoElUsuarioTocaElBotonDeLogin();
+
+    Page page = context.pages().get(0);
+    page.navigate("http://localhost:8080/spring/perfil");
+
+    com.microsoft.playwright.assertions.PlaywrightAssertions
+            .assertThat(page.locator("#dato-nombre"))
+            .hasText("Juan");
+    com.microsoft.playwright.assertions.PlaywrightAssertions
+            .assertThat(page.locator("#dato-apellido"))
+            .hasText("Test");
+    com.microsoft.playwright.assertions.PlaywrightAssertions
+            .assertThat(page.locator("#dato-fecha-nacimiento"))
+            .hasText("12/04/1995");
+    com.microsoft.playwright.assertions.PlaywrightAssertions
+            .assertThat(page.locator("#datos-personales input"))
+            .hasCount(0);
+  }
+
+  @Test
   void deberiaRegistrarUnComercioYVerHomeDeComercio() throws MalformedURLException {
     dadoQueElUsuarioNavegaALaVistaDeRegistro();
     dadoQueElUsuarioSeRegistraComoComercio("comercio@unlam.edu.ar", "Contrasena1");
@@ -97,7 +122,7 @@ public class VistaLoginE2E {
 
   @Test
   void deberiaVolverAlFormComercioConErrorSiDireccionYLocalidadYaExisten()
-    throws MalformedURLException {
+          throws MalformedURLException {
     // Registrar primer comercio
     dadoQueElUsuarioNavegaALaVistaDeRegistro();
     dadoQueElUsuarioSeRegistraComoComercio("comercio1@unlam.edu.ar", "Contrasena1");
@@ -112,12 +137,12 @@ public class VistaLoginE2E {
   }
 
   private void dadoQueElUsuarioSeRegistraComoComercioCompleto(
-    String email,
-    String clave,
-    String nombre,
-    String tipo,
-    String direccion,
-    String localidad
+          String email,
+          String clave,
+          String nombre,
+          String tipo,
+          String direccion,
+          String localidad
   ) {
     VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
     vistaNuevoUsuario.seleccionarRol("Comercio");
@@ -163,6 +188,7 @@ public class VistaLoginE2E {
     VistaNuevoUsuario vistaNuevoUsuario = new VistaNuevoUsuario(context.pages().get(0));
     vistaNuevoUsuario.page.fill("#nombre", "Juan");
     vistaNuevoUsuario.page.fill("#apellido", "Test");
+    vistaNuevoUsuario.page.fill("#fechaNacimiento", "1995-04-12");
     vistaNuevoUsuario.page.selectOption("#localidad-u", "La Matanza");
     vistaNuevoUsuario.escribirEMAIL(email);
     vistaNuevoUsuario.escribirClave(clave);
@@ -183,6 +209,10 @@ public class VistaLoginE2E {
 
   private void entoncesDeberiaVerElHomeDeComercios() {
     Page page = context.pages().get(0);
-    assertThat(page.textContent("body"), org.hamcrest.Matchers.containsString("Mi comercio"));
+    page.waitForURL(java.util.regex.Pattern.compile(".*/spring/home.*"));
+    // El nombre del comercio lo completa inicio-comercio.js después de cargar la página
+    com.microsoft.playwright.assertions.PlaywrightAssertions
+            .assertThat(page.locator("#ic-nombre"))
+            .hasText("Comercio Test");
   }
 }

@@ -83,6 +83,7 @@ public class ControladorLoginTest {
       "Password1",
       "Dami",
       "Lopez",
+      "1995-04-12",
       "La Matanza",
       requestMock,
       redirectAttrs
@@ -99,6 +100,7 @@ public class ControladorLoginTest {
       "Password1",
       "Dami",
       "Lopez",
+      "1995-04-12",
       "La Matanza",
       requestMock,
       redirectAttrs
@@ -107,6 +109,50 @@ public class ControladorLoginTest {
     ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
     verify(servicioLoginMock).registrar(captor.capture());
     assertThat(captor.getValue().getLocalidad(), equalTo("La Matanza"));
+  }
+
+  @Test
+  public void registrarmeDeberiaGuardarLaFechaDeNacimientoDelUsuario()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    controladorLogin.registrarme(
+      "dami@unlam.com",
+      "Password1",
+      "Dami",
+      "Lopez",
+      "1995-04-12",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+    verify(servicioLoginMock).registrar(captor.capture());
+    assertThat(
+      captor.getValue().getFechaNacimiento(),
+      equalTo(java.time.LocalDate.of(1995, 4, 12))
+    );
+  }
+
+  @Test
+  public void registrarmeConFechaConFormatoRotoDeberiaVolverAlFormularioConErrorSinRegistrar()
+    throws UsuarioExistente, ContrasenaInvalida, EmailInvalido {
+    ModelAndView modelAndView = controladorLogin.registrarme(
+      "dami@unlam.com",
+      "Password1",
+      "Dami",
+      "Lopez",
+      "no-es-una-fecha",
+      "La Matanza",
+      requestMock,
+      redirectAttrs
+    );
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/nuevo-usuario"));
+    assertThat(
+      redirectAttrs.getFlashAttributes().get("error"),
+      equalTo("La fecha de nacimiento no es válida")
+    );
+    verify(servicioLoginMock, never()).registrar(any(Usuario.class));
   }
 
   @Test
@@ -119,6 +165,7 @@ public class ControladorLoginTest {
       "Password1",
       "Dami",
       "Lopez",
+      "1995-04-12",
       "La Matanza",
       requestMock,
       redirectAttrs
@@ -137,6 +184,7 @@ public class ControladorLoginTest {
       "Password1",
       "Dami",
       "Lopez",
+      "1995-04-12",
       "La Matanza",
       requestMock,
       redirectAttrs
@@ -301,6 +349,7 @@ public class ControladorLoginTest {
       "Password1",
       "Dami",
       "Lopez",
+      "1995-04-12",
       "La Matanza",
       requestMock,
       redirectAttrs
@@ -321,6 +370,7 @@ public class ControladorLoginTest {
       "Password1",
       "Dami",
       "Lopez",
+      "1995-04-12",
       "La Matanza",
       requestMock,
       redirectAttrs
