@@ -192,10 +192,17 @@ public class ServicioReporteImpl implements ServicioReporte {
   @Override
   public boolean puedeEditar(Long reporteId, Long usuarioId) {
     Reporte reporte = repositorioReporte.buscarReporte(reporteId);
-    if (reporte == null || reporte.getUsuario() == null) return false;
-    if (!reporte.getUsuario().getId().equals(usuarioId)) return false;
+    if (!AutoriaDeReporte.esAutor(reporte, usuarioId)) return false;
     if (reporte.getFechaDeReporte() == null) return false;
     return reporte.getFechaDeReporte().isAfter(LocalDateTime.now().minusDays(DIAS_PLAZO_EDICION));
+  }
+
+  @Override
+  public void eliminarReporte(Long id, Long usuarioId) {
+    if (!AutoriaDeReporte.esAutor(repositorioReporte.buscarReporte(id), usuarioId)) {
+      throw new AccesoDenegado("No podés eliminar este reporte");
+    }
+    repositorioReporte.eliminarReporte(id);
   }
 
   // El producto y el comercio son compartidos por todos los reportes: editar un reporte nunca los

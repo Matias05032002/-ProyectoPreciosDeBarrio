@@ -10,6 +10,7 @@ public interface RepositorioReporte {
   List<Reporte> buscarPorProducto(Long productoId);
   List<Reporte> buscarPorNombre(String nombreProducto);
   Reporte marcarDudoso(Long id, Usuario usuario);
+  void eliminarReporte(Long id);
   List<Reporte> listarTodos();
   Reporte buscarReporteDuplicado(Long usuarioId, Long productoId, Long comercioId, LocalDate fecha);
   List<Reporte> buscarPorComercio(Long comercioId);

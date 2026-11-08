@@ -32,6 +32,34 @@ public class VistaMisReportes extends VistaWeb {
     this.page.locator("a[href*='/editar']").first().click();
   }
 
+  public boolean hayBotonEliminar() {
+    return this.page.locator("[id^='btn-eliminar-reporte-']").count() > 0;
+  }
+
+  public void darClickEnPrimerBotonEliminar() {
+    this.page.locator("[id^='btn-eliminar-reporte-']").first().click();
+  }
+
+  public void confirmarEliminacion() {
+    this.page.locator("[id^='btn-confirmar-eliminar-reporte-']:visible").first().click();
+  }
+
+  public void cancelarEliminacion() {
+    this.page.locator("[id^='btn-cancelar-eliminar-reporte-']:visible").first().click();
+  }
+
+  public boolean hayMensajeEliminado() {
+    try {
+      this.page.waitForSelector(
+          "#alerta-reporte-eliminado",
+          new Page.WaitForSelectorOptions().setTimeout(3000)
+        );
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
   public boolean hayMensajeEditado() {
     try {
       this.page.waitForSelector(

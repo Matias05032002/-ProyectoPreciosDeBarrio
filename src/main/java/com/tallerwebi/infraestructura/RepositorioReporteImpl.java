@@ -76,6 +76,14 @@ public class RepositorioReporteImpl implements RepositorioReporte {
   }
 
   @Override
+  public void eliminarReporte(Long id) {
+    Reporte reporte = sessionFactory.getCurrentSession().get(Reporte.class, id);
+    if (reporte != null) {
+      sessionFactory.getCurrentSession().remove(reporte);
+    }
+  }
+
+  @Override
   public List<Reporte> listarTodos() {
     return sessionFactory
       .getCurrentSession()
