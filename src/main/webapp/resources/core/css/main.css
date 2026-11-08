@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* =========================================
    PRECIOS DE BARRIO (PDB)
@@ -450,7 +450,7 @@ h1,
 h2,
 h3,
 .titulo-display {
-    font-family: Syne, Inter, system-ui, sans-serif;
+    font-family: Inter, system-ui, sans-serif;
 }
 
 a:focus-visible,
@@ -491,7 +491,7 @@ textarea:focus-visible {
 
 .navbar .offcanvas-title {
     color: #FFFFFF;
-    font-family: Syne, Inter, sans-serif;
+    font-family: Inter, system-ui, sans-serif;
     font-weight: 700;
 }
 
