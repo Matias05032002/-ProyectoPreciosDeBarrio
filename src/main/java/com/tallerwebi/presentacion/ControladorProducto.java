@@ -34,15 +34,13 @@ public class ControladorProducto {
   private static final String VISTA_PRODUCTOS = "producto/lista-productos";
   private static final String HISTORIAL_BUSQUEDAS = "HISTORIAL_BUSQUEDAS";
   private static final int MAX_HISTORIAL_BUSQUEDAS = 5;
-  private static final String ORDEN_RECIENTE = "reciente";
-  private static final String ORDEN_CERCANIA = "cercania";
 
   @Autowired
   public ControladorProducto(
-    ServicioProducto servicioProducto,
-    ServicioLogin servicioLogin,
-    ServicioLista servicioLista,
-    ServicioPaginador servicioPaginador
+          ServicioProducto servicioProducto,
+          ServicioLogin servicioLogin,
+          ServicioLista servicioLista,
+          ServicioPaginador servicioPaginador
   ) {
     this.servicioProducto = servicioProducto;
     this.servicioLogin = servicioLogin;
@@ -73,18 +71,20 @@ public class ControladorProducto {
 
   @RequestMapping(path = "/buscar", method = RequestMethod.GET)
   public ModelAndView buscarProducto(
-    @RequestParam(value = "nombre", required = false, defaultValue = "") String nombre,
-    @RequestParam(value = "orden", required = false, defaultValue = "precio") String orden,
-    @RequestParam(value = "dudosoMarcado", required = false) Boolean dudosoMarcado,
-    @RequestParam(value = "lat", required = false) Double lat,
-    @RequestParam(value = "lng", required = false) Double lng,
-    @RequestParam(value = "pagina", required = false, defaultValue = "0") int pagina,
-    HttpServletRequest request
+          @RequestParam(value = "nombre", required = false, defaultValue = "") String nombre,
+          @RequestParam(value = "orden", required = false, defaultValue = "precio") String orden,
+          @RequestParam(value = "dudosoMarcado", required = false) Boolean dudosoMarcado,
+          @RequestParam(value = "lat", required = false) Double lat,
+          @RequestParam(value = "lng", required = false) Double lng,
+          @RequestParam(value = "pagina", required = false, defaultValue = "0") int pagina,
+          HttpServletRequest request
   ) {
     String email = (String) request.getSession().getAttribute("EMAIL");
     Usuario usuario = email != null ? servicioLogin.buscarPorEmail(email) : null;
 
-    OrdenProducto ordenEnum = ordenDesde(orden);
+    // Se puede ordenar por varios criterios a la vez (?orden=precio,cercania)
+    List<OrdenProducto> ordenes = OrdenProducto.desde(orden);
+    List<String> clavesDeOrden = ordenes.stream().map(OrdenProducto::clave).toList();
     HttpSession session = request.getSession();
     String busquedaLimpia = nombre == null ? "" : nombre.trim();
     List<String> historial = actualizarHistorial(session, busquedaLimpia);
@@ -92,12 +92,12 @@ public class ControladorProducto {
     // Rubro opcional (?categoria=Lacteos): llega por la URL de los atajos de la pantalla
     String categoria = rubroDe(request);
     List<ProductoConPrecio> todos = buscarSegunRubro(
-      busquedaLimpia,
-      categoria,
-      usuario,
-      ordenEnum,
-      lat,
-      lng
+            busquedaLimpia,
+            categoria,
+            usuario,
+            ordenes,
+            lat,
+            lng
     );
 
     // Paginación
@@ -108,7 +108,8 @@ public class ControladorProducto {
     ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
     mav.addObject("productos", productos);
     mav.addObject("dudosoMarcado", dudosoMarcado != null && dudosoMarcado);
-    mav.addObject("orden", orden);
+    mav.addObject("orden", String.join(",", clavesDeOrden));
+    mav.addObject("ordenes", clavesDeOrden);
     mav.addObject("busqueda", busquedaLimpia);
     mav.addObject("categoria", categoria);
     mav.addObject("lat", lat);
@@ -122,12 +123,6 @@ public class ControladorProducto {
       agregarNotificacionDeValoracion(mav, productos);
     }
     return mav;
-  }
-
-  private OrdenProducto ordenDesde(String orden) {
-    if (ORDEN_RECIENTE.equals(orden)) return OrdenProducto.RECIENTE;
-    if (ORDEN_CERCANIA.equals(orden)) return OrdenProducto.CERCANIA;
-    return OrdenProducto.PRECIO;
   }
 
   // Guarda la búsqueda al principio del historial de la sesión (sin repetidas y con tope)
@@ -150,22 +145,29 @@ public class ControladorProducto {
   }
 
   private List<ProductoConPrecio> buscarSegunRubro(
-    String busqueda,
-    String categoria,
-    Usuario usuario,
-    OrdenProducto orden,
-    Double lat,
-    Double lng
+          String busqueda,
+          String categoria,
+          Usuario usuario,
+          List<OrdenProducto> ordenes,
+          Double lat,
+          Double lng
   ) {
     if (categoria == null) {
-      return servicioProducto.buscarProductosConPrecio(busqueda, usuario, orden, lat, lng);
+      return servicioProducto.buscarProductosConPrecio(busqueda, usuario, ordenes, lat, lng);
     }
-    return servicioProducto.buscarProductosConPrecio(busqueda, categoria, usuario, orden, lat, lng);
+    return servicioProducto.buscarProductosConPrecio(
+            busqueda,
+            categoria,
+            usuario,
+            ordenes,
+            lat,
+            lng
+    );
   }
 
   private void agregarNotificacionDeValoracion(
-    ModelAndView mav,
-    List<ProductoConPrecio> productos
+          ModelAndView mav,
+          List<ProductoConPrecio> productos
   ) {
     for (ProductoConPrecio producto : productos) {
       if (producto.getReporteId() != null && !producto.isYaMarcoDudoso()) {
@@ -184,15 +186,15 @@ public class ControladorProducto {
       Comercio comercio = reporte.getComercio();
       Producto producto = reporte.getProducto();
       ProductoConPrecio resumen = new ProductoConPrecio(
-        producto.getNombre(),
-        producto.getMarca(),
-        producto.getUnidad(),
-        producto.getCategoria(),
-        reporte.getPrecio(),
-        comercio.getNombre(),
-        reporte.getId(),
-        reporte.getFechaDeReporte(),
-        reporte.getPuntuacion()
+              producto.getNombre(),
+              producto.getMarca(),
+              producto.getUnidad(),
+              producto.getCategoria(),
+              reporte.getPrecio(),
+              comercio.getNombre(),
+              reporte.getId(),
+              reporte.getFechaDeReporte(),
+              reporte.getPuntuacion()
       );
       Map<String, Object> precio = new LinkedHashMap<>();
       precio.put("reporteId", reporte.getId());

@@ -33,8 +33,8 @@ public class ServicioProductoImpl implements ServicioProducto {
 
   @Autowired
   public ServicioProductoImpl(
-    RepositorioProducto repositorioProducto,
-    RepositorioReporte repositorioReporte
+          RepositorioProducto repositorioProducto,
+          RepositorioReporte repositorioReporte
   ) {
     this.repositorioProducto = repositorioProducto;
     this.repositorioReporte = repositorioReporte;
@@ -67,35 +67,35 @@ public class ServicioProductoImpl implements ServicioProducto {
 
   @Override
   public List<ProductoConPrecio> buscarProductosConPrecio(
-    String nombre,
-    Usuario usuario,
-    OrdenProducto orden,
-    Double latUsuario,
-    Double lngUsuario
+          String nombre,
+          Usuario usuario,
+          List<OrdenProducto> ordenes,
+          Double latUsuario,
+          Double lngUsuario
   ) {
-    return buscarProductosConPrecio(nombre, null, usuario, orden, latUsuario, lngUsuario);
+    return buscarProductosConPrecio(nombre, null, usuario, ordenes, latUsuario, lngUsuario);
   }
 
   @Override
   public List<ProductoConPrecio> buscarProductosConPrecio(
-    String nombre,
-    String categoria,
-    Usuario usuario,
-    OrdenProducto orden,
-    Double latUsuario,
-    Double lngUsuario
+          String nombre,
+          String categoria,
+          Usuario usuario,
+          List<OrdenProducto> ordenes,
+          Double latUsuario,
+          Double lngUsuario
   ) {
     List<Reporte> reportes = repositorioReporte.buscarPorNombre(nombre);
     if (reportes == null) reportes = Collections.emptyList();
     if (categoria != null && !categoria.isBlank()) {
       String buscada = sinTildes(categoria);
       reportes =
-        reportes
-          .stream()
-          .filter(r ->
-            r.getProducto() != null && buscada.equals(sinTildes(r.getProducto().getCategoria()))
-          )
-          .toList();
+              reportes
+                      .stream()
+                      .filter(r ->
+                              r.getProducto() != null && buscada.equals(sinTildes(r.getProducto().getCategoria()))
+                      )
+                      .toList();
     }
 
     Map<Object, List<ProductoConPrecio>> gruposPorProducto = new LinkedHashMap<>();
@@ -106,21 +106,21 @@ public class ServicioProductoImpl implements ServicioProducto {
       ProductoConPrecio dto = crearProductoConPrecio(reporte, producto, usuario);
       asignarDistancia(dto, reporte, latUsuario, lngUsuario);
       gruposPorProducto
-        .computeIfAbsent(claveDelProducto(producto), clave -> new ArrayList<>())
-        .add(dto);
+              .computeIfAbsent(claveDelProducto(producto), clave -> new ArrayList<>())
+              .add(dto);
     }
 
     gruposPorProducto.values().forEach(this::marcarElMasBaratoDelGrupo);
-    return ordenar(gruposPorProducto, orden);
+    return ordenar(gruposPorProducto, ordenes);
   }
 
   // Las categorías se guardaron sin tildes ("Lacteos"): se comparan sin tildes ni mayúsculas
   private String sinTildes(String texto) {
     if (texto == null) return "";
     return Normalizer
-      .normalize(texto.trim(), Normalizer.Form.NFD)
-      .replaceAll("\\p{M}", "")
-      .toLowerCase(Locale.ROOT);
+            .normalize(texto.trim(), Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "")
+            .toLowerCase(Locale.ROOT);
   }
 
   // Todos los locales donde está el producto de un reporte, con el precio vigente de cada uno:
@@ -137,7 +137,7 @@ public class ServicioProductoImpl implements ServicioProducto {
     List<Reporte> preciosPorLocal = new ArrayList<>(quedarseConElUltimoDeCadaLocal(reportes));
     preciosPorLocal.removeIf(r -> r.getComercio() == null || r.getPrecio() == null);
     preciosPorLocal.sort(
-      Comparator.comparing((Reporte r) -> esDudoso(r) ? 1 : 0).thenComparing(Reporte::getPrecio)
+            Comparator.comparing((Reporte r) -> esDudoso(r) ? 1 : 0).thenComparing(Reporte::getPrecio)
     );
     return preciosPorLocal;
   }
@@ -147,23 +147,23 @@ public class ServicioProductoImpl implements ServicioProducto {
   }
 
   private ProductoConPrecio crearProductoConPrecio(
-    Reporte reporte,
-    Producto producto,
-    Usuario usuario
+          Reporte reporte,
+          Producto producto,
+          Usuario usuario
   ) {
     String nombreComercio = reporte.getComercio() != null
-      ? reporte.getComercio().getNombre()
-      : null;
+            ? reporte.getComercio().getNombre()
+            : null;
     ProductoConPrecio dto = new ProductoConPrecio(
-      producto.getNombre(),
-      producto.getMarca(),
-      producto.getUnidad(),
-      producto.getCategoria(),
-      reporte.getPrecio(),
-      nombreComercio,
-      reporte.getId(),
-      reporte.getFechaDeReporte(),
-      reporte.getPuntuacion()
+            producto.getNombre(),
+            producto.getMarca(),
+            producto.getUnidad(),
+            producto.getCategoria(),
+            reporte.getPrecio(),
+            nombreComercio,
+            reporte.getId(),
+            reporte.getFechaDeReporte(),
+            reporte.getPuntuacion()
     );
     if (usuario != null) {
       dto.setYaMarcoDudoso(reporte.getUsuariosQueMarcaron().contains(usuario));
@@ -217,15 +217,15 @@ public class ServicioProductoImpl implements ServicioProducto {
 
     // Un reporte dudoso no puede ser "el más barato": podría ser un precio mal cargado
     OptionalDouble minimo = grupo
-      .stream()
-      .filter(dto -> !dto.isEsDudoso())
-      .mapToDouble(ProductoConPrecio::getPrecioMinimo)
-      .min();
+            .stream()
+            .filter(dto -> !dto.isEsDudoso())
+            .mapToDouble(ProductoConPrecio::getPrecioMinimo)
+            .min();
     OptionalDouble maximo = grupo
-      .stream()
-      .filter(dto -> !dto.isEsDudoso())
-      .mapToDouble(ProductoConPrecio::getPrecioMinimo)
-      .max();
+            .stream()
+            .filter(dto -> !dto.isEsDudoso())
+            .mapToDouble(ProductoConPrecio::getPrecioMinimo)
+            .max();
 
     for (ProductoConPrecio dto : grupo) {
       dto.setLocalesComparados(grupo.size());
@@ -245,42 +245,60 @@ public class ServicioProductoImpl implements ServicioProducto {
   }
 
   private List<ProductoConPrecio> ordenar(
-    Map<Object, List<ProductoConPrecio>> gruposPorProducto,
-    OrdenProducto orden
+          Map<Object, List<ProductoConPrecio>> gruposPorProducto,
+          List<OrdenProducto> pedidos
   ) {
-    if (OrdenProducto.CERCANIA.equals(orden)) {
-      List<ProductoConPrecio> resultado = aplanar(gruposPorProducto);
-      resultado.sort(
-        Comparator.comparing(
-          ProductoConPrecio::getDistanciaKm,
-          Comparator.nullsLast(Comparator.naturalOrder())
-        )
-      );
-      return resultado;
+    List<OrdenProducto> criterios = criteriosPorPrioridad(pedidos);
+    Comparator<ProductoConPrecio> comparador = criterios
+            .stream()
+            .map(this::comparadorDe)
+            .reduce(Comparator::thenComparing)
+            .orElseThrow();
+    if (criterios.contains(OrdenProducto.PRECIO)) {
+      return ordenarAgrupandoPorProducto(gruposPorProducto, comparador);
     }
-    if (OrdenProducto.RECIENTE.equals(orden)) {
-      List<ProductoConPrecio> resultado = aplanar(gruposPorProducto);
-      resultado.sort(
-        Comparator.comparing(
-          ProductoConPrecio::getFechaDeReporte,
-          Comparator.nullsLast(Comparator.reverseOrder())
-        )
-      );
-      return resultado;
-    }
-    return ordenarPorPrecioAgrupandoPorProducto(gruposPorProducto);
+    List<ProductoConPrecio> resultado = aplanar(gruposPorProducto);
+    resultado.sort(comparador);
+    return resultado;
   }
 
-  // Cada producto queda junto, con sus locales de más barato a más caro,
-  // y los productos se ordenan por su precio más bajo.
-  private List<ProductoConPrecio> ordenarPorPrecioAgrupandoPorProducto(
-    Map<Object, List<ProductoConPrecio>> gruposPorProducto
+  // Sin importar en qué orden se pidieron, se aplican por la prioridad del enum;
+  // sin ningún criterio se ordena por precio
+  private List<OrdenProducto> criteriosPorPrioridad(List<OrdenProducto> pedidos) {
+    List<OrdenProducto> criterios = new ArrayList<>();
+    for (OrdenProducto criterio : OrdenProducto.values()) {
+      if (pedidos != null && pedidos.contains(criterio)) criterios.add(criterio);
+    }
+    return criterios.isEmpty() ? List.of(OrdenProducto.PRECIO) : criterios;
+  }
+
+  private Comparator<ProductoConPrecio> comparadorDe(OrdenProducto criterio) {
+    if (OrdenProducto.CERCANIA.equals(criterio)) {
+      return Comparator.comparing(
+              ProductoConPrecio::getDistanciaKm,
+              Comparator.nullsLast(Comparator.naturalOrder())
+      );
+    }
+    if (OrdenProducto.RECIENTE.equals(criterio)) {
+      return Comparator.comparing(
+              ProductoConPrecio::getFechaDeReporte,
+              Comparator.nullsLast(Comparator.reverseOrder())
+      );
+    }
+    return Comparator.comparingDouble(ProductoConPrecio::getPrecioMinimo);
+  }
+
+  // Cada producto queda junto, con sus locales ordenados por los criterios pedidos,
+  // y los productos se ordenan por su mejor local.
+  private List<ProductoConPrecio> ordenarAgrupandoPorProducto(
+          Map<Object, List<ProductoConPrecio>> gruposPorProducto,
+          Comparator<ProductoConPrecio> comparador
   ) {
     List<List<ProductoConPrecio>> grupos = new ArrayList<>(gruposPorProducto.values());
     for (List<ProductoConPrecio> grupo : grupos) {
-      grupo.sort(Comparator.comparingDouble(ProductoConPrecio::getPrecioMinimo));
+      grupo.sort(comparador);
     }
-    grupos.sort(Comparator.comparingDouble(grupo -> grupo.get(0).getPrecioMinimo()));
+    grupos.sort(Comparator.comparing(grupo -> grupo.get(0), comparador));
 
     List<ProductoConPrecio> resultado = new ArrayList<>();
     grupos.forEach(resultado::addAll);
@@ -294,10 +312,10 @@ public class ServicioProductoImpl implements ServicioProducto {
   }
 
   private void asignarDistancia(
-    ProductoConPrecio dto,
-    Reporte reporte,
-    Double latUsuario,
-    Double lngUsuario
+          ProductoConPrecio dto,
+          Reporte reporte,
+          Double latUsuario,
+          Double lngUsuario
   ) {
     if (latUsuario == null || lngUsuario == null || reporte.getComercio() == null) {
       return;

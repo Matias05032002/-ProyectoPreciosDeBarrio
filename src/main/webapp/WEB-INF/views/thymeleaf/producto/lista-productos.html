@@ -80,24 +80,25 @@
         </a>
     </p>
 
-    <!-- Orden a la vista: al elegir una opción se vuelve a buscar -->
-    <fieldset class="lp-orden-barra" id="orden-productos">
+    <!-- Orden a la vista: se pueden combinar varios y, al tildar o destildar uno, se vuelve a buscar -->
+    <fieldset class="lp-orden-barra" id="orden-productos" aria-describedby="ayuda-orden">
         <legend class="lp-orden-titulo">Ordenar por</legend>
         <label class="lp-orden-opcion">
-            <input type="radio" name="orden" value="precio" form="form-buscar"
-                   th:checked="${orden == null or orden == 'precio'}">
+            <input type="checkbox" name="orden" value="precio" form="form-buscar"
+                   th:checked="${ordenes == null or #lists.contains(ordenes, 'precio')}">
             <span><i class="bi bi-tag" aria-hidden="true"></i> <span class="lp-opcion-corta">Precio</span><span class="lp-opcion-larga">Menor precio</span></span>
         </label>
         <label class="lp-orden-opcion">
-            <input type="radio" name="orden" value="reciente" form="form-buscar"
-                   th:checked="${orden == 'reciente'}">
-            <span><i class="bi bi-clock-history" aria-hidden="true"></i> <span class="lp-opcion-corta">Reciente</span><span class="lp-opcion-larga">Más reciente</span></span>
-        </label>
-        <label class="lp-orden-opcion">
-            <input type="radio" name="orden" value="cercania" form="form-buscar"
-                   th:checked="${orden == 'cercania'}">
+            <input type="checkbox" name="orden" value="cercania" form="form-buscar"
+                   th:checked="${ordenes != null and #lists.contains(ordenes, 'cercania')}">
             <span><i class="bi bi-geo-alt" aria-hidden="true"></i> <span class="lp-opcion-corta">Cercano</span><span class="lp-opcion-larga">Más cercano</span></span>
         </label>
+        <label class="lp-orden-opcion">
+            <input type="checkbox" name="orden" value="reciente" form="form-buscar"
+                   th:checked="${ordenes != null and #lists.contains(ordenes, 'reciente')}">
+            <span><i class="bi bi-clock-history" aria-hidden="true"></i> <span class="lp-opcion-corta">Reciente</span><span class="lp-opcion-larga">Más reciente</span></span>
+        </label>
+        <p class="lp-orden-ayuda" id="ayuda-orden">Podés combinarlos: primero se ordena por precio, después por cercanía y después por lo más reciente.</p>
     </fieldset>
 
     <div th:if="${historialBusquedas != null and !#lists.isEmpty(historialBusquedas)}" class="lp-recientes">
@@ -410,14 +411,13 @@
             .catch(function () { /* sin resumen la página funciona igual */ });
     })();
 
-    // Si se ordena por cercanía hace falta la ubicación: se pide al buscar y, si no se puede, se avisa en la página
+    // Si se ordena (también) por cercanía hace falta la ubicación: se pide al buscar y, si no se puede, se avisa en la página
     document.getElementById('form-buscar').addEventListener('submit', function(e) {
-        var elegido = document.querySelector('input[name="orden"]:checked');
-        var orden = elegido ? elegido.value : 'precio';
+        var porCercania = document.querySelector('input[name="orden"][value="cercania"]:checked');
         var aviso = document.getElementById('aviso-ubicacion');
         aviso.hidden = true;
 
-        if (orden === 'cercania') {
+        if (porCercania) {
             var latInput = document.getElementById('lat-usuario');
             var lngInput = document.getElementById('lng-usuario');
 

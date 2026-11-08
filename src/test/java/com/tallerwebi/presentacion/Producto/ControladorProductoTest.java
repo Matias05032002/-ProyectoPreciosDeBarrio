@@ -43,12 +43,12 @@ public class ControladorProductoTest {
     this.servicioListaMock = mock(ServicioLista.class);
     this.servicioPaginadorMock = mock(ServicioPaginador.class);
     this.controladorProducto =
-      new ControladorProducto(
-        servicioProductoMock,
-        servicioLoginMock,
-        servicioListaMock,
-        servicioPaginadorMock
-      );
+            new ControladorProducto(
+                    servicioProductoMock,
+                    servicioLoginMock,
+                    servicioListaMock,
+                    servicioPaginadorMock
+            );
     this.requestMock = mock(HttpServletRequest.class);
     this.sessionMock = mock(HttpSession.class);
     when(requestMock.getSession()).thenReturn(sessionMock);
@@ -73,37 +73,37 @@ public class ControladorProductoTest {
   @Test
   public void buscarUnProductoPorNombre() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen",
-      1L,
-      null,
-      0
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen",
+            1L,
+            null,
+            0
     );
     when(
-      this.servicioProductoMock.buscarProductosConPrecio(
-          "Leche",
-          null,
-          OrdenProducto.PRECIO,
-          null,
-          null
-        )
+            this.servicioProductoMock.buscarProductosConPrecio(
+                    "Leche",
+                    null,
+                    List.of(OrdenProducto.PRECIO),
+                    null,
+                    null
+            )
     )
-      .thenReturn(Arrays.asList(dto));
+            .thenReturn(Arrays.asList(dto));
     when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(1);
     when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
-      .thenReturn(Arrays.asList(dto));
+            .thenReturn(Arrays.asList(dto));
     ModelAndView modelAndView = controladorProducto.buscarProducto(
-      "Leche",
-      "precio",
-      null,
-      null, // lat
-      null, // lng
-      0,
-      requestMock
+            "Leche",
+            "precio",
+            null,
+            null, // lat
+            null, // lng
+            0,
+            requestMock
     );
 
     assertThat(modelAndView.getViewName(), equalTo("producto/lista-productos"));
@@ -113,33 +113,39 @@ public class ControladorProductoTest {
   @Test
   public void buscarProductoConSesionDeberiaInvitarAValorarUnaPublicacion() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      null,
-      0
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            null,
+            0
     );
     when(sessionMock.getAttribute("ID")).thenReturn(10L);
     when(
-      servicioProductoMock.buscarProductosConPrecio("Leche", null, OrdenProducto.PRECIO, null, null)
+            servicioProductoMock.buscarProductosConPrecio(
+                    "Leche",
+                    null,
+                    List.of(OrdenProducto.PRECIO),
+                    null,
+                    null
+            )
     )
-      .thenReturn(Collections.singletonList(dto));
+            .thenReturn(Collections.singletonList(dto));
     when(servicioPaginadorMock.calcularTotalPaginas(1, 9)).thenReturn(1);
     when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
-      .thenReturn(Collections.singletonList(dto));
+            .thenReturn(Collections.singletonList(dto));
 
     ModelAndView modelAndView = controladorProducto.buscarProducto(
-      "Leche",
-      "precio",
-      null,
-      null,
-      null,
-      0,
-      requestMock
+            "Leche",
+            "precio",
+            null,
+            null,
+            null,
+            0,
+            requestMock
     );
 
     assertThat(modelAndView.getModel().get("productoAValorar"), is(dto));
@@ -148,28 +154,28 @@ public class ControladorProductoTest {
   @Test
   public void buscarUnProductoQueNoExisteDevuelveListaVacia() {
     when(
-      this.servicioProductoMock.buscarProductosConPrecio(
-          "Producto Inexistente",
-          null,
-          OrdenProducto.PRECIO,
-          null,
-          null
-        )
+            this.servicioProductoMock.buscarProductosConPrecio(
+                    "Producto Inexistente",
+                    null,
+                    List.of(OrdenProducto.PRECIO),
+                    null,
+                    null
+            )
     )
-      .thenReturn(Collections.emptyList());
+            .thenReturn(Collections.emptyList());
     when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(0);
     when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
-      .thenReturn(Collections.emptyList());
+            .thenReturn(Collections.emptyList());
     ModelAndView modelAndView =
-      this.controladorProducto.buscarProducto(
-          "Producto Inexistente",
-          "PRECIO",
-          null,
-          null,
-          null,
-          0,
-          requestMock
-        );
+            this.controladorProducto.buscarProducto(
+                    "Producto Inexistente",
+                    "PRECIO",
+                    null,
+                    null,
+                    null,
+                    0,
+                    requestMock
+            );
 
     assertThat((List<?>) modelAndView.getModel().get("productos"), is(empty()));
   }
@@ -177,62 +183,62 @@ public class ControladorProductoTest {
   @Test
   public void buscarConRubroFiltraPorEseRubroYLoDejaEnLaVista() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen",
-      1L,
-      null,
-      0
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen",
+            1L,
+            null,
+            0
     );
     when(requestMock.getParameter("categoria")).thenReturn("Lacteos");
     when(
-      servicioProductoMock.buscarProductosConPrecio(
-        "",
-        "Lacteos",
-        null,
-        OrdenProducto.PRECIO,
-        null,
-        null
-      )
+            servicioProductoMock.buscarProductosConPrecio(
+                    "",
+                    "Lacteos",
+                    null,
+                    List.of(OrdenProducto.PRECIO),
+                    null,
+                    null
+            )
     )
-      .thenReturn(Arrays.asList(dto));
+            .thenReturn(Arrays.asList(dto));
     when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(1);
     when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
-      .thenReturn(Arrays.asList(dto));
+            .thenReturn(Arrays.asList(dto));
 
     ModelAndView modelAndView = controladorProducto.buscarProducto(
-      "",
-      "precio",
-      null,
-      null,
-      null,
-      0,
-      requestMock
+            "",
+            "precio",
+            null,
+            null,
+            null,
+            0,
+            requestMock
     );
 
     assertThat(modelAndView.getModel().get("categoria"), equalTo("Lacteos"));
     assertThat(((List<?>) modelAndView.getModel().get("productos")).size(), equalTo(1));
     verify(servicioProductoMock, never())
-      .buscarProductosConPrecio(anyString(), any(), any(), any(), any());
+            .buscarProductosConPrecio(anyString(), any(), any(), any(), any());
   }
 
   @Test
   public void buscarSinRubroNoPasaCategoriaALaVista() {
     when(servicioPaginadorMock.calcularTotalPaginas(anyInt(), anyInt())).thenReturn(0);
     when(servicioPaginadorMock.paginar(anyList(), anyInt(), anyInt()))
-      .thenReturn(Collections.emptyList());
+            .thenReturn(Collections.emptyList());
 
     ModelAndView modelAndView = controladorProducto.buscarProducto(
-      "Leche",
-      "precio",
-      null,
-      null,
-      null,
-      0,
-      requestMock
+            "Leche",
+            "precio",
+            null,
+            null,
+            null,
+            0,
+            requestMock
     );
 
     assertThat(modelAndView.getModel().get("categoria"), is(nullValue()));
@@ -241,15 +247,15 @@ public class ControladorProductoTest {
   @Test
   public void productoConPrecioTieneGettersCorrectos() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      null,
-      1
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            null,
+            1
     );
 
     assertThat(dto.getNombre(), equalTo("Leche"));
@@ -267,15 +273,15 @@ public class ControladorProductoTest {
   @Test
   public void calcularAntiguedadNullDeUnProducto() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      null,
-      6
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            null,
+            6
     );
     assertThat(dto.getAntiguedad(), equalTo("Desconocido"));
   }
@@ -283,15 +289,15 @@ public class ControladorProductoTest {
   @Test
   public void productoConFechaDeHacePocoEsFresco() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      LocalDateTime.now().minusDays(3),
-      0
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            LocalDateTime.now().minusDays(3),
+            0
     );
     assertThat(dto.getAntiguedad(), equalTo("Fresco"));
   }
@@ -299,15 +305,15 @@ public class ControladorProductoTest {
   @Test
   public void productoConFechaDeHace15DiasEsDesactualizado() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      LocalDateTime.now().minusDays(15),
-      0
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            LocalDateTime.now().minusDays(15),
+            0
     );
     assertThat(dto.getAntiguedad(), equalTo("Desactualizado"));
   }
@@ -315,15 +321,15 @@ public class ControladorProductoTest {
   @Test
   public void productoConFechaDeHace30DiasEsVencido() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      LocalDateTime.now().minusDays(50),
-      0
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            LocalDateTime.now().minusDays(50),
+            0
     );
     assertThat(dto.getAntiguedad(), equalTo("Vencido"));
   }
@@ -331,15 +337,15 @@ public class ControladorProductoTest {
   @Test
   public void productoConNingunaValoracionEsConfiable() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      LocalDateTime.now().minusDays(50),
-      0
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            LocalDateTime.now().minusDays(50),
+            0
     );
     assertThat(dto.isEsDudoso(), equalTo(false));
   }
@@ -347,15 +353,15 @@ public class ControladorProductoTest {
   @Test
   public void productoConSeisValoracionesEsDudoso() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      LocalDateTime.now().minusDays(50),
-      7
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            LocalDateTime.now().minusDays(50),
+            7
     );
     assertThat(dto.isEsDudoso(), equalTo(true));
   }
@@ -363,15 +369,15 @@ public class ControladorProductoTest {
   @Test
   public void productoConMasDeDiezReportesEsDudoso() {
     ProductoConPrecio dto = new ProductoConPrecio(
-      "Leche",
-      "La Serenisima",
-      "litro",
-      "Lacteos",
-      150.0,
-      "Almacen Central",
-      1L,
-      LocalDateTime.now().minusDays(50),
-      11
+            "Leche",
+            "La Serenisima",
+            "litro",
+            "Lacteos",
+            150.0,
+            "Almacen Central",
+            1L,
+            LocalDateTime.now().minusDays(50),
+            11
     );
     assertThat(dto.isEsDudoso(), equalTo(true));
   }
@@ -408,7 +414,7 @@ public class ControladorProductoTest {
     producto.setMarca("La Serenísima");
     producto.setUnidad("1l");
     com.tallerwebi.dominio.Comercio.Comercio comercio =
-      new com.tallerwebi.dominio.Comercio.Comercio();
+            new com.tallerwebi.dominio.Comercio.Comercio();
     comercio.setId(10L);
     comercio.setNombre("Coto");
     comercio.setDireccion("Av. Rivadavia 9840");
@@ -421,7 +427,7 @@ public class ControladorProductoTest {
     reporte.setFechaDeReporte(LocalDateTime.now().minusDays(1));
     reporte.setPuntuacion(0);
     when(servicioProductoMock.buscarPreciosDelProductoEnCadaLocal(7L))
-      .thenReturn(Collections.singletonList(reporte));
+            .thenReturn(Collections.singletonList(reporte));
 
     List<java.util.Map<String, Object>> precios = controladorProducto.preciosEnCadaLocal(7L);
 
@@ -438,8 +444,64 @@ public class ControladorProductoTest {
   @Test
   public void preciosEnCadaLocalSinResultadosDeberiaDevolverListaVacia() {
     when(servicioProductoMock.buscarPreciosDelProductoEnCadaLocal(99L))
-      .thenReturn(Collections.emptyList());
+            .thenReturn(Collections.emptyList());
 
     assertThat(controladorProducto.preciosEnCadaLocal(99L), is(empty()));
+  }
+
+  private ModelAndView buscarOrdenandoPor(String orden) {
+    return controladorProducto.buscarProducto("Leche", orden, null, -34.6, -58.4, 0, requestMock);
+  }
+
+  @Test
+  public void buscarConVariosCriteriosSeLosPasaAlServicioEnOrdenDePrioridad() {
+    ModelAndView modelAndView = buscarOrdenandoPor("cercania,precio");
+
+    verify(servicioProductoMock)
+            .buscarProductosConPrecio(
+                    "Leche",
+                    null,
+                    List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA),
+                    -34.6,
+                    -58.4
+            );
+    assertThat(modelAndView.getModel().get("orden"), equalTo("precio,cercania"));
+    assertThat(
+            modelAndView.getModel().get("ordenes"),
+            equalTo(List.of("precio", "cercania"))
+    );
+  }
+
+  @Test
+  public void buscarConLosTresCriteriosLosAplicaTodos() {
+    buscarOrdenandoPor("reciente,cercania,precio");
+
+    verify(servicioProductoMock)
+            .buscarProductosConPrecio(
+                    "Leche",
+                    null,
+                    List.of(OrdenProducto.PRECIO, OrdenProducto.CERCANIA, OrdenProducto.RECIENTE),
+                    -34.6,
+                    -58.4
+            );
+  }
+
+  @Test
+  public void buscarIgnoraLosCriteriosQueNoExistenYNoRepiteLosDuplicados() {
+    ModelAndView modelAndView = buscarOrdenandoPor("reciente,inventado,reciente");
+
+    verify(servicioProductoMock)
+            .buscarProductosConPrecio("Leche", null, List.of(OrdenProducto.RECIENTE), -34.6, -58.4);
+    assertThat(modelAndView.getModel().get("orden"), equalTo("reciente"));
+  }
+
+  @Test
+  public void buscarSinCriteriosValidosOrdenaPorPrecio() {
+    ModelAndView modelAndView = buscarOrdenandoPor("inventado");
+
+    verify(servicioProductoMock)
+            .buscarProductosConPrecio("Leche", null, List.of(OrdenProducto.PRECIO), -34.6, -58.4);
+    assertThat(modelAndView.getModel().get("orden"), equalTo("precio"));
+    assertThat(buscarOrdenandoPor("").getModel().get("orden"), equalTo("precio"));
   }
 }
