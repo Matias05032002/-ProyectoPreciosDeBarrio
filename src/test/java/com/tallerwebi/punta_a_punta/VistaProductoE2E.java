@@ -101,6 +101,22 @@ public class VistaProductoE2E {
   }
 
   @Test
+  public void deberiaPoderQuitarLaMarcaDeDudosoQueYaPuso() {
+    dadoQueExisteUnReporteCargadoPorOtroVecino();
+    vistaProducto.escribirNombreDelProductoABuscar("Leche");
+    vistaProducto.darClickEnBuscar();
+    vistaProducto.darClickEnMarcarDudoso();
+    vistaProducto.cerrarModalDudoso();
+    assertThat(vistaProducto.hayBotonQuitarMarcaDeDudoso(), is(true));
+    assertThat(vistaProducto.hayBotonMarcarDudoso(), is(false));
+
+    vistaProducto.darClickEnQuitarMarcaDeDudoso();
+
+    assertThat(vistaProducto.hayAvisoDeMarcaQuitada(), is(true));
+    assertThat(vistaProducto.hayBotonMarcarDudoso(), is(true));
+  }
+
+  @Test
   void deberiaMostrarPlaceholderCuandoElReporteNoTieneFoto() {
     dadoQueExisteUnReporteCargado();
     vistaProducto.escribirNombreDelProductoABuscar("Leche");

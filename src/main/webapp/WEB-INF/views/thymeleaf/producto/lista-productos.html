@@ -34,6 +34,10 @@
     <div th:if="${errorDudoso}" id="alerta-dudoso" class="alert alert-warning" role="alert"
          th:text="${errorDudoso}"></div>
 
+    <div th:if="${dudosoDesmarcado}" id="alerta-dudoso-quitado" class="alert alert-success" role="status">
+        Quitaste tu marca de dudoso. Si volvés a dudar de ese precio, podés marcarlo de nuevo.
+    </div>
+
     <form th:action="@{/producto/buscar}" method="get" id="form-buscar" class="lp-buscador aparece" style="--d:.16s" role="search">
         <div class="lp-campo">
             <label for="buscador-producto" class="visually-hidden">Producto a buscar</label>
@@ -169,14 +173,24 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end lp-menu-lista">
                             <li>
-                                <form th:action="@{/reporte/{id}/dudoso(id=${producto.reporteId})}" method="post">
+                                <form th:unless="${producto.yaMarcoDudoso}"
+                                      th:action="@{/reporte/{id}/dudoso(id=${producto.reporteId})}" method="post">
                                     <input type="hidden" name="nombreProducto" th:value="${producto.nombre}">
                                     <button type="submit"
                                             th:id="'btn-marcar-dudoso-' + ${producto.reporteId}"
-                                            class="dropdown-item lp-item-dudoso"
-                                            th:disabled="${producto.yaMarcoDudoso}">
+                                            class="dropdown-item lp-item-dudoso">
                                         <i class="bi bi-flag" aria-hidden="true"></i>
-                                        <span th:text="${producto.yaMarcoDudoso} ? 'Ya marcaste dudoso' : 'Marcar dudoso'"></span>
+                                        <span>Marcar dudoso</span>
+                                    </button>
+                                </form>
+                                <form th:if="${producto.yaMarcoDudoso}"
+                                      th:action="@{/reporte/{id}/desmarcar-dudoso(id=${producto.reporteId})}" method="post">
+                                    <input type="hidden" name="nombreProducto" th:value="${producto.nombre}">
+                                    <button type="submit"
+                                            th:id="'btn-desmarcar-dudoso-' + ${producto.reporteId}"
+                                            class="dropdown-item lp-item-quitar">
+                                        <i class="bi bi-flag-fill" aria-hidden="true"></i>
+                                        <span>Quitar marca de dudoso</span>
                                     </button>
                                 </form>
                             </li>

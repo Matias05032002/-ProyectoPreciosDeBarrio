@@ -27,6 +27,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +55,7 @@ public class ControladorReporte {
   private static final String PARAM_NOMBRE = "nombre";
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String SESSION_ROL = "ROL";
+  private static final String SESSION_EMAIL = "EMAIL";
   private static final String NOMBRE_ERROR = "error";
   private static final String PREFIJO_ITEMS = "items[";
   private static final String ROL_COMERCIO = "COMERCIO";
@@ -93,7 +96,7 @@ public class ControladorReporte {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     try {
-      String email = (String) request.getSession().getAttribute("EMAIL");
+      String email = (String) request.getSession().getAttribute(SESSION_EMAIL);
       Usuario usuario = servicioLogin.buscarPorEmail(email);
       String errorDeFoto = guardarFoto(reporte, fotoBase64);
       if (errorDeFoto != null) {
@@ -143,7 +146,7 @@ public class ControladorReporte {
     mav.addObject(NOMBRE_REPORTES, reportes);
     mav.addObject(NOMBRE_PRODUCTOS, servicioProducto.listarTodos());
     mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
-    mav.addObject("guardado", guardado != null && guardado);
+    mav.addObject("guardado", Boolean.TRUE.equals(guardado));
 
     // Para rol COMERCIO: pasar su propio comercio para pre-seleccionar en el form
     String rol = (String) request.getSession().getAttribute(SESSION_ROL);
@@ -162,11 +165,8 @@ public class ControladorReporte {
     HttpServletRequest request,
     RedirectAttributes redirectAttributes
   ) {
-    String email = (String) request.getSession().getAttribute("EMAIL");
-    if (email == null) {
-      return new ModelAndView(REDIRECT_LOGIN);
-    }
-    Usuario usuario = servicioLogin.buscarPorEmail(email);
+    String email = (String) request.getSession().getAttribute(SESSION_EMAIL);
+    Usuario usuario = Optional.ofNullable(email).map(servicioLogin::buscarPorEmail).orElse(null);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -177,6 +177,23 @@ public class ControladorReporte {
       return new ModelAndView(urlBusquedaDeProducto(nombreProducto, false));
     }
     return new ModelAndView(urlBusquedaDeProducto(nombreProducto, true));
+  }
+
+  @RequestMapping(path = "/{id}/desmarcar-dudoso", method = RequestMethod.POST)
+  public ModelAndView desmarcarDudoso(
+    @PathVariable("id") Long id,
+    @RequestParam("nombreProducto") String nombreProducto,
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
+  ) {
+    String email = (String) request.getSession().getAttribute(SESSION_EMAIL);
+    Usuario usuario = Optional.ofNullable(email).map(servicioLogin::buscarPorEmail).orElse(null);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    servicioReporte.desmarcarDudoso(id, usuario);
+    redirectAttributes.addFlashAttribute("dudosoDesmarcado", true);
+    return new ModelAndView(urlBusquedaDeProducto(nombreProducto, false));
   }
 
   // El nombre viaja en la URL: se codifica para que "&", "#" o "{" no rompan la redirección
@@ -256,12 +273,8 @@ public class ControladorReporte {
   }
 
   private boolean coordenadasValidas(double latitud, double longitud) {
-    return (
-      Double.isFinite(latitud) &&
-      Double.isFinite(longitud) &&
-      Math.abs(latitud) <= 90 &&
-      Math.abs(longitud) <= 180
-    );
+    // NaN e infinito nunca cumplen estas comparaciones, así que también quedan afuera
+    return Math.abs(latitud) <= 90 && Math.abs(longitud) <= 180;
   }
 
   private Map<String, Object> reporteParaElInicio(Reporte ultimo) {
@@ -492,7 +505,7 @@ public class ControladorReporte {
     if (request.getSession().getAttribute(SESSION_ROL) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    String email = (String) request.getSession().getAttribute("EMAIL");
+    String email = (String) request.getSession().getAttribute(SESSION_EMAIL);
     Usuario usuario = servicioLogin.buscarPorEmail(email);
 
     Comercio comercio = new Comercio();
@@ -537,7 +550,7 @@ public class ControladorReporte {
     String precioTexto = params.get(prefijo + "precio");
     double precio;
     try {
-      precio = Double.parseDouble(precioTexto == null ? "" : precioTexto);
+      precio = Double.parseDouble(Objects.toString(precioTexto, ""));
     } catch (NumberFormatException e) {
       return null;
     }

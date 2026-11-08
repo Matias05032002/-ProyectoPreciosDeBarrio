@@ -458,8 +458,20 @@
     background: #FDE7E4;
 }
 
-.lp-item-dudoso:disabled {
-    color: #5C6B77;
+.lp-item-quitar {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-height: 44px;
+    color: #0B1B2B;
+    font-weight: 700;
+    border-radius: 8px;
+}
+
+.lp-item-quitar:hover,
+.lp-item-quitar:focus {
+    color: #0B1B2B;
+    background: #EEF2F4;
 }
 
 .lp-card:has(.dropdown-menu.show) {
@@ -470,6 +482,7 @@
 .lp-btn-lista:focus-visible,
 .lp-btn-menu:focus-visible,
 .lp-item-dudoso:focus-visible,
+.lp-item-quitar:focus-visible,
 .lp-chip:focus-visible,
 .lp-pagina:focus-visible,
 .lp-volver:focus-visible,

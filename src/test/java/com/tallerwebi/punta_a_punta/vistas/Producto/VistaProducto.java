@@ -32,6 +32,10 @@ public class VistaProducto extends VistaWeb {
     return page.locator("[id^='btn-marcar-dudoso']").count() > 0;
   }
 
+  public boolean hayBotonQuitarMarcaDeDudoso() {
+    return page.locator("[id^='btn-desmarcar-dudoso']").count() > 0;
+  }
+
   public boolean hayModalDudoso() {
     return page.locator("#modalDudoso").count() > 0;
   }
@@ -40,10 +44,30 @@ public class VistaProducto extends VistaWeb {
     return page.locator("#alerta-dudoso").count() > 0;
   }
 
+  public boolean hayAvisoDeMarcaQuitada() {
+    return page.locator("#alerta-dudoso-quitado").count() > 0;
+  }
+
   // "Marcar dudoso" está dentro del menú de tres puntos de la tarjeta: primero se abre el menú
   public void darClickEnMarcarDudoso() {
     page.locator("[id^='btn-menu-producto-']").first().click();
     page.locator("[id^='btn-marcar-dudoso']").first().click();
+    page.waitForLoadState();
+  }
+
+  // El agradecimiento se abre solo al volver de marcar: hay que cerrarlo para seguir usando la página
+  public void cerrarModalDudoso() {
+    page.locator("#modalDudoso .btn-verde").click();
+    page
+      .locator("#modalDudoso")
+      .waitFor(
+        new com.microsoft.playwright.Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN)
+      );
+  }
+
+  public void darClickEnQuitarMarcaDeDudoso() {
+    page.locator("[id^='btn-menu-producto-']").first().click();
+    page.locator("[id^='btn-desmarcar-dudoso']").first().click();
     page.waitForLoadState();
   }
 
