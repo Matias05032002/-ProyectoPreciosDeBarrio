@@ -154,7 +154,7 @@
 .atajo-inicio strong {
     display: block;
     color: var(--mp-dark);
-    font-family: Syne, Inter, sans-serif;
+    font-family: Inter, system-ui, sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
 }
@@ -344,7 +344,7 @@
 .accion-inicio strong {
     display: block;
     color: var(--mp-dark);
-    font-family: Syne, Inter, sans-serif;
+    font-family: Inter, system-ui, sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
 }

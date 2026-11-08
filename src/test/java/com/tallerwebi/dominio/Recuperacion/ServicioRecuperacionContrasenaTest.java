@@ -105,6 +105,7 @@ public class ServicioRecuperacionContrasenaTest {
     assertThat(guardado.getUsuarioId(), equalTo(USUARIO_ID));
     assertThat(guardado.getFechaVencimiento(), equalTo(AHORA.plusMinutes(30)));
     assertThat(guardado.getUsado(), equalTo(false));
+    //Testear que el token se haya generado
   }
 
   @Test
@@ -117,7 +118,7 @@ public class ServicioRecuperacionContrasenaTest {
     assertThat(token.length() >= 43, equalTo(true));
     assertThat(guardado.getTokenHash(), not(equalTo(token)));
     assertThat(guardado.getTokenHash(), matchesPattern("[0-9a-f]{64}"));
-    assertThat(guardado.getTokenHash(), equalTo(ServicioRecuperacionContrasenaImpl.hashear(token)));
+    assertThat(guardado.getTokenHash(), equalTo(ServicioRecuperacionContrasenaImpl.hashear(token))); // Validacion erronea ya que siempre da verde aunque cambiemos la logica
   }
 
   @Test
