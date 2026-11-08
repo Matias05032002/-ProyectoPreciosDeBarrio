@@ -21,7 +21,7 @@ import org.thymeleaf.templatemode.TemplateMode;
 @EnableWebMvc
 @Configuration
 @ComponentScan(
-        { "com.tallerwebi.presentacion", "com.tallerwebi.dominio", "com.tallerwebi.infraestructura" }
+  { "com.tallerwebi.presentacion", "com.tallerwebi.dominio", "com.tallerwebi.infraestructura" }
 )
 public class SpringWebConfig implements WebMvcConfigurer {
 
@@ -39,32 +39,32 @@ public class SpringWebConfig implements WebMvcConfigurer {
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
     registry
-            .addInterceptor(new AuthInterceptor())
-            .addPathPatterns("/**")
-            .excludePathPatterns(
-                    "/login",
-                    "/validar-login",
-                    "/login-error",
-                    "/nuevo-usuario",
-                    "/registrarme",
-                    "/registrarme-comercio",
-                    "/olvide-contrasena",
-                    "/restablecer-contrasena",
-                    "/css/**",
-                    "/js/**",
-                    "/webjars/**"
-            );
+      .addInterceptor(new AuthInterceptor())
+      .addPathPatterns("/**")
+      .excludePathPatterns(
+        "/login",
+        "/validar-login",
+        "/login-error",
+        "/nuevo-usuario",
+        "/registrarme",
+        "/registrarme-comercio",
+        "/olvide-contrasena",
+        "/restablecer-contrasena",
+        "/css/**",
+        "/js/**",
+        "/webjars/**"
+      );
 
     registry
-            .addInterceptor(new RolInterceptor())
-            .addPathPatterns(
-                    "/admin/**",
-                    "/inicio-comercio/**",
-                    "/comercio/**",
-                    "/promociones/**",
-                    "/producto/**",
-                    "/mis-listas/**"
-            );
+      .addInterceptor(new RolInterceptor())
+      .addPathPatterns(
+        "/admin/**",
+        "/inicio-comercio/**",
+        "/comercio/**",
+        "/promociones/**",
+        "/producto/**",
+        "/mis-listas/**"
+      );
   }
 
   // https://www.thymeleaf.org/doc/tutorials/3.0/thymeleafspring.html

@@ -37,13 +37,12 @@ public class ReiniciarDB {
         "ALTER TABLE Comercio AUTO_INCREMENT = 1; " +
         "ALTER TABLE Usuario AUTO_INCREMENT = 1; " +
         "SET FOREIGN_KEY_CHECKS=1; " +
-        "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test@unlam.edu.ar', '" +
+        "INSERT INTO Usuario(id, email, password, rol, activo, verificado, nombre) VALUES(null, 'test@unlam.edu.ar', '" +
         hashTest +
-        "', 'ADMIN', b'1'); " +
-        "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test-comercio@unlam.edu.ar', '" +
+        "', 'ADMIN', b'1', b'1', 'Admin Test'); " +
+        "INSERT INTO Usuario(id, email, password, rol, activo, verificado, nombre) VALUES(null, 'test-comercio@unlam.edu.ar', '" +
         hashComercio +
-        "', 'COMERCIO', b'1');";
-
+        "', 'COMERCIO', b'1', b'1', 'Comercio Test');";
       String dockerCmd = String.format(
         "docker exec tallerwebi-mysql mysql -h %s -P %s -u %s -p%s %s -e \"%s\"",
         dbHost,
@@ -68,6 +67,9 @@ public class ReiniciarDB {
         System.out.println("Base de datos limpiada exitosamente");
       } else {
         System.err.println("Error al limpiar la base de datos. Exit code: " + exitCode);
+        new java.util.Scanner(process.getErrorStream())
+          .useDelimiter("\\A")
+          .forEachRemaining(System.err::println);
       }
     } catch (IOException | InterruptedException e) {
       System.err.println("Error ejecutando script de limpieza: " + e.getMessage());

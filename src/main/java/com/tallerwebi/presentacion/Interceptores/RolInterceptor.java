@@ -19,7 +19,6 @@ public class RolInterceptor implements HandlerInterceptor {
   private static final String ATRIBUTO_ROL = "ROL";
   private static final String DESTINO_NO_AUTORIZADO = "/home";
 
-
   private record Regla(String patron, String rolPermitido, String rolProhibido, boolean esJson) {
     static Regla soloPara(String patron, String rol, boolean esJson) {
       return new Regla(patron, rol, null, esJson);
@@ -36,28 +35,28 @@ public class RolInterceptor implements HandlerInterceptor {
 
   // Gana la primera regla que coincide: las rutas JSON van antes que su carpeta general
   private static final List<Regla> REGLAS = List.of(
-          Regla.soloPara("/admin/**", ROL_ADMIN, false),
-          Regla.soloPara("/inicio-comercio/**", ROL_COMERCIO, true),
-          Regla.soloPara("/comercio/perfil/**", ROL_COMERCIO, false),
-          Regla.soloPara("/comercio/perfil", ROL_COMERCIO, false),
-          Regla.soloPara("/comercio/dashboard", ROL_COMERCIO, false),
-          Regla.soloPara("/comercio/ubicaciones/sugerencias", ROL_COMERCIO, true),
-          Regla.soloPara("/promociones/mis-promociones", ROL_COMERCIO, false),
-          Regla.soloPara("/promociones/nueva/**", ROL_COMERCIO, false),
-          Regla.soloPara("/promociones/crear/**", ROL_COMERCIO, false),
-          Regla.soloPara("/promociones/*/desactivar", ROL_COMERCIO, false),
-          Regla.prohibidoPara("/producto/precios/**", ROL_COMERCIO, true),
-          Regla.prohibidoPara("/producto/**", ROL_COMERCIO, false),
-          Regla.prohibidoPara("/mis-listas/**", ROL_COMERCIO, false)
+    Regla.soloPara("/admin/**", ROL_ADMIN, false),
+    Regla.soloPara("/inicio-comercio/**", ROL_COMERCIO, true),
+    Regla.soloPara("/comercio/perfil/**", ROL_COMERCIO, false),
+    Regla.soloPara("/comercio/perfil", ROL_COMERCIO, false),
+    Regla.soloPara("/comercio/dashboard", ROL_COMERCIO, false),
+    Regla.soloPara("/comercio/ubicaciones/sugerencias", ROL_COMERCIO, true),
+    Regla.soloPara("/promociones/mis-promociones", ROL_COMERCIO, false),
+    Regla.soloPara("/promociones/nueva/**", ROL_COMERCIO, false),
+    Regla.soloPara("/promociones/crear/**", ROL_COMERCIO, false),
+    Regla.soloPara("/promociones/*/desactivar", ROL_COMERCIO, false),
+    Regla.prohibidoPara("/producto/precios/**", ROL_COMERCIO, true),
+    Regla.prohibidoPara("/producto/**", ROL_COMERCIO, false),
+    Regla.prohibidoPara("/mis-listas/**", ROL_COMERCIO, false)
   );
 
   private final AntPathMatcher comparador = new AntPathMatcher();
 
   @Override
   public boolean preHandle(
-          HttpServletRequest request,
-          HttpServletResponse response,
-          Object handler
+    HttpServletRequest request,
+    HttpServletResponse response,
+    Object handler
   ) throws Exception {
     String ruta = rutaSinContexto(request);
     Regla regla = buscarRegla(ruta);
@@ -102,9 +101,9 @@ public class RolInterceptor implements HandlerInterceptor {
       ruta = ruta.substring(0, parametros);
     }
     return java.net.URI
-            .create("http://x" + (ruta.startsWith("/") ? ruta : "/" + ruta))
-            .normalize()
-            .getPath()
-            .replaceAll("/{2,}", "/");
+      .create("http://x" + (ruta.startsWith("/") ? ruta : "/" + ruta))
+      .normalize()
+      .getPath()
+      .replaceAll("/{2,}", "/");
   }
 }
