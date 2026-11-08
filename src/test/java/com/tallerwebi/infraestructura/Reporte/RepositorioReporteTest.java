@@ -7,6 +7,7 @@ import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
+import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.infraestructura.RepositorioReporteImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import jakarta.transaction.Transactional;
@@ -503,6 +504,89 @@ public class RepositorioReporteTest {
       sessionFactory.getCurrentSession().get(com.tallerwebi.dominio.Usuario.class, vecino.getId()),
       is(notNullValue())
     );
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void desmarcarDudosoDeberiaRestarUnoYQuitarAlUsuarioDeLaLista() {
+    Reporte reporte = dadoQueTengoUnReporte("Leche", "Almacen", 100.0);
+    reporte.setPuntuacion(3);
+    dadoQueExisteElReporte(reporte);
+    Usuario vecino = dadoQueExisteUnVecino();
+    repositorioReporte.marcarDudoso(reporte.getId(), vecino);
+
+    Reporte resultado = repositorioReporte.desmarcarDudoso(reporte.getId(), vecino);
+
+    assertThat(resultado.getPuntuacion(), is(3));
+    assertThat(resultado.getUsuariosQueMarcaron(), not(hasItem(vecino)));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void despuesDeDesmarcarDudosoElVecinoPuedeVolverAMarcarlo() {
+    Reporte reporte = dadoQueTengoUnReporte("Leche", "Almacen", 100.0);
+    reporte.setPuntuacion(3);
+    dadoQueExisteElReporte(reporte);
+    Usuario vecino = dadoQueExisteUnVecino();
+    repositorioReporte.marcarDudoso(reporte.getId(), vecino);
+    repositorioReporte.desmarcarDudoso(reporte.getId(), vecino);
+
+    Reporte resultado = repositorioReporte.marcarDudoso(reporte.getId(), vecino);
+
+    assertThat(resultado.getPuntuacion(), is(4));
+    assertThat(resultado.getUsuariosQueMarcaron(), hasItem(vecino));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void desmarcarDudosoDeQuienNoLoMarcoNoDeberiaCambiarLaPuntuacion() {
+    Reporte reporte = dadoQueTengoUnReporte("Leche", "Almacen", 100.0);
+    reporte.setPuntuacion(3);
+    dadoQueExisteElReporte(reporte);
+    Usuario vecino = dadoQueExisteUnVecino();
+
+    Reporte resultado = repositorioReporte.desmarcarDudoso(reporte.getId(), vecino);
+
+    assertThat(resultado.getPuntuacion(), is(3));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void desmarcarDudosoNuncaDejaLaPuntuacionPorDebajoDeCero() {
+    Reporte reporte = dadoQueTengoUnReporte("Leche", "Almacen", 100.0);
+    Usuario vecino = dadoQueExisteUnVecino();
+    reporte.getUsuariosQueMarcaron().add(vecino);
+    reporte.setPuntuacion(0);
+    dadoQueExisteElReporte(reporte);
+
+    Reporte resultado = repositorioReporte.desmarcarDudoso(reporte.getId(), vecino);
+
+    assertThat(resultado.getPuntuacion(), is(0));
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void desmarcarDudosoDeUnReporteInexistenteDeberiaDevolverNull() {
+    assertThat(
+      repositorioReporte.desmarcarDudoso(99999L, dadoQueExisteUnVecino()),
+      is(nullValue())
+    );
+  }
+
+  private Usuario dadoQueExisteUnVecino() {
+    Usuario vecino = new Usuario();
+    vecino.setEmail("vecino-" + System.nanoTime() + "@test.com");
+    vecino.setNombre("Vecino");
+    vecino.setRol("USER");
+    vecino.setActivo(true);
+    vecino.setPassword("1234");
+    sessionFactory.getCurrentSession().persist(vecino);
+    return vecino;
   }
 
   private Reporte dadoQueTengoUnReporte(

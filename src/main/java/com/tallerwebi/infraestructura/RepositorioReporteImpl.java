@@ -76,6 +76,21 @@ public class RepositorioReporteImpl implements RepositorioReporte {
   }
 
   @Override
+  public Reporte desmarcarDudoso(Long id, Usuario usuario) {
+    Reporte reporte = sessionFactory.getCurrentSession().get(Reporte.class, id);
+    if (reporte == null || usuario == null) {
+      return reporte;
+    }
+    boolean laHabiaMarcado = reporte.getUsuariosQueMarcaron().remove(usuario);
+    if (laHabiaMarcado) {
+      int puntuacionActual = reporte.getPuntuacion() != null ? reporte.getPuntuacion() : 0;
+      reporte.setPuntuacion(Math.max(0, puntuacionActual - 1));
+      sessionFactory.getCurrentSession().merge(reporte);
+    }
+    return reporte;
+  }
+
+  @Override
   public void eliminarReporte(Long id) {
     Reporte reporte = sessionFactory.getCurrentSession().get(Reporte.class, id);
     if (reporte != null) {

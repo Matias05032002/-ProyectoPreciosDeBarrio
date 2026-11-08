@@ -1,5 +1,7 @@
 package com.tallerwebi.dominio.Reporte;
 
+import java.time.LocalDateTime;
+
 final class AutoriaDeReporte {
 
   private AutoriaDeReporte() {}
@@ -10,6 +12,13 @@ final class AutoriaDeReporte {
       reporte.getUsuario() != null &&
       reporte.getUsuario().getId() != null &&
       reporte.getUsuario().getId().equals(usuarioId)
+    );
+  }
+
+  static boolean estaEnPlazo(Reporte reporte, int diasDePlazo) {
+    return (
+      reporte.getFechaDeReporte() != null &&
+      reporte.getFechaDeReporte().isAfter(LocalDateTime.now().minusDays(diasDePlazo))
     );
   }
 }

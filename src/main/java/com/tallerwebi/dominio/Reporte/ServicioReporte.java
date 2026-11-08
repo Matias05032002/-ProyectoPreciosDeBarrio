@@ -11,6 +11,7 @@ public interface ServicioReporte {
   Reporte buscarReporte(Long id);
   List<Reporte> buscarPorProducto(Long productoId);
   Reporte marcarDudoso(Long id, Usuario usuario);
+  Reporte desmarcarDudoso(Long id, Usuario usuario);
   List<Reporte> listarTodos();
   Reporte buscarReporteDuplicado(Long usuarioId, Long productoId, Long comercioId, LocalDate fecha);
   List<Reporte> buscarPorNombre(String nombreProducto);

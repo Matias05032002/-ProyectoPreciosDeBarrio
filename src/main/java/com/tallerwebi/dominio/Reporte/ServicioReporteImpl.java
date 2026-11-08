@@ -98,6 +98,15 @@ public class ServicioReporteImpl implements ServicioReporte {
   }
 
   @Override
+  public Reporte desmarcarDudoso(Long id, Usuario usuario) {
+    Reporte reporte = repositorioReporte.buscarReporte(id);
+    if (reporte == null || !MarcasDeDudoso.yaLoMarco(reporte, usuario)) {
+      return reporte;
+    }
+    return repositorioReporte.desmarcarDudoso(id, usuario);
+  }
+
+  @Override
   public List<Reporte> listarTodos() {
     return repositorioReporte.listarTodos();
   }
@@ -192,9 +201,10 @@ public class ServicioReporteImpl implements ServicioReporte {
   @Override
   public boolean puedeEditar(Long reporteId, Long usuarioId) {
     Reporte reporte = repositorioReporte.buscarReporte(reporteId);
-    if (!AutoriaDeReporte.esAutor(reporte, usuarioId)) return false;
-    if (reporte.getFechaDeReporte() == null) return false;
-    return reporte.getFechaDeReporte().isAfter(LocalDateTime.now().minusDays(DIAS_PLAZO_EDICION));
+    return (
+      AutoriaDeReporte.esAutor(reporte, usuarioId) &&
+      AutoriaDeReporte.estaEnPlazo(reporte, DIAS_PLAZO_EDICION)
+    );
   }
 
   @Override
@@ -297,10 +307,7 @@ public class ServicioReporteImpl implements ServicioReporte {
     if (!reporte.getUsuario().getId().equals(usuarioId)) {
       throw new FueraDePlazoDeEdicion("No tenés permiso para editar este reporte");
     }
-    if (
-      reporte.getFechaDeReporte() == null ||
-      reporte.getFechaDeReporte().isBefore(LocalDateTime.now().minusDays(DIAS_PLAZO_EDICION))
-    ) {
+    if (!AutoriaDeReporte.estaEnPlazo(reporte, DIAS_PLAZO_EDICION)) {
       throw new FueraDePlazoDeEdicion(
         "El reporte ya no puede editarse porque superó el plazo de " + DIAS_PLAZO_EDICION + " días"
       );

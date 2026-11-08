@@ -240,6 +240,50 @@ public class ServicioReporteTest {
   }
 
   @Test
+  public void desmarcarDudosoDeQuienLoHabiaMarcadoDeberiaQuitarLaMarca() {
+    Usuario vecino = new Usuario();
+    vecino.setId(8L);
+    Reporte reporte = new Reporte();
+    reporte.getUsuariosQueMarcaron().add(vecino);
+    Reporte sinMarca = new Reporte();
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+    when(repositorioReporteMock.desmarcarDudoso(1L, vecino)).thenReturn(sinMarca);
+
+    assertThat(servicioReporte.desmarcarDudoso(1L, vecino), equalTo(sinMarca));
+    verify(repositorioReporteMock, times(1)).desmarcarDudoso(1L, vecino);
+  }
+
+  @Test
+  public void desmarcarDudosoSinHaberloMarcadoNoDeberiaTocarElContador() {
+    Usuario vecino = new Usuario();
+    vecino.setId(8L);
+    Reporte reporte = new Reporte();
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+
+    assertThat(servicioReporte.desmarcarDudoso(1L, vecino), equalTo(reporte));
+    verify(repositorioReporteMock, never()).desmarcarDudoso(anyLong(), any());
+  }
+
+  @Test
+  public void desmarcarDudosoDeUnReporteInexistenteDeberiaDevolverNull() {
+    Usuario vecino = new Usuario();
+    vecino.setId(8L);
+    when(repositorioReporteMock.buscarReporte(99L)).thenReturn(null);
+
+    assertThat(servicioReporte.desmarcarDudoso(99L, vecino), equalTo(null));
+    verify(repositorioReporteMock, never()).desmarcarDudoso(anyLong(), any());
+  }
+
+  @Test
+  public void desmarcarDudosoSinUsuarioNoDeberiaTocarElContador() {
+    Reporte reporte = new Reporte();
+    when(repositorioReporteMock.buscarReporte(1L)).thenReturn(reporte);
+
+    assertThat(servicioReporte.desmarcarDudoso(1L, null), equalTo(reporte));
+    verify(repositorioReporteMock, never()).desmarcarDudoso(anyLong(), any());
+  }
+
+  @Test
   public void guardarReporteConPrecioMuyAltoDeberiaLanzarPrecioIncorrecto() {
     Reporte reporte = reporteConProductoYComercio(
       productoValido("Leche", "1000ml"),

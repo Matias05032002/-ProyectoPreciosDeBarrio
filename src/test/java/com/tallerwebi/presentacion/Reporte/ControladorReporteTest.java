@@ -585,6 +585,55 @@ public class ControladorReporteTest {
     assertThat(mav.getModel().get("reporte"), is(reporte));
   }
 
+  // --- desmarcarDudoso ---
+
+  @Test
+  public void desmarcarDudosoRedirigeAlLoginSiNoHayEmail() {
+    when(sessionMock.getAttribute("EMAIL")).thenReturn(null);
+
+    ModelAndView mav = controladorReporte.desmarcarDudoso(
+      1L,
+      "Leche",
+      requestMock,
+      new RedirectAttributesModelMap()
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+    verify(servicioReporteMock, never()).desmarcarDudoso(any(), any());
+  }
+
+  @Test
+  public void desmarcarDudosoRedirigeAlLoginSiElUsuarioYaNoExiste() {
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(null);
+
+    ModelAndView mav = controladorReporte.desmarcarDudoso(
+      1L,
+      "Leche",
+      requestMock,
+      new RedirectAttributesModelMap()
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/login"));
+    verify(servicioReporteMock, never()).desmarcarDudoso(any(), any());
+  }
+
+  @Test
+  public void desmarcarDudosoQuitaLaMarcaDelUsuarioDeLaSesionYVuelveALaBusqueda() {
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+
+    ModelAndView mav = controladorReporte.desmarcarDudoso(
+      1L,
+      "Leche",
+      requestMock,
+      redirectAttributes
+    );
+
+    verify(servicioReporteMock, times(1)).desmarcarDudoso(1L, usuarioMock);
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/producto/buscar?nombre=Leche"));
+    assertThat(redirectAttributes.getFlashAttributes().get("dudosoDesmarcado"), is(true));
+  }
+
   // --- eliminarReporte ---
 
   @Test
