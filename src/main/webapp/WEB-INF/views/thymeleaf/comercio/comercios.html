@@ -121,6 +121,7 @@
                             <div class="co-producto-precio">
                                 <strong th:text="${'$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')}"></strong>
                                 <a th:href="@{/producto/buscar(nombre=${reporte.producto.nombre}, orden='precio')}"
+                                   th:if="${session['ROL'] != 'COMERCIO'}"
                                    class="co-comparar"
                                    th:attr="aria-label='Comparar el precio de ' + ${reporte.producto.nombre} + ' en otros comercios'">
                                     Comparar <i class="bi bi-arrow-right" aria-hidden="true"></i>

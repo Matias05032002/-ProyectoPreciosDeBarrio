@@ -95,4 +95,50 @@ class RolInterceptorTest {
     assertFalse(entrar("/comercio/../admin/estadisticas", "USER"));
     assertFalse(entrar("/admin/estadisticas;jsessionid=abc", "USER"));
   }
+
+  @Test
+  void unComercioNoPuedeEntrarALasPantallasDelVecino() throws Exception {
+    assertFalse(entrar("/producto", "COMERCIO"));
+    assertEquals("/spring/home", response.getRedirectedUrl());
+    assertFalse(entrar("/producto/buscar", "COMERCIO"));
+    assertFalse(entrar("/producto/buscar/4", "COMERCIO"));
+    assertFalse(entrar("/mis-listas", "COMERCIO"));
+    assertEquals("/spring/home", response.getRedirectedUrl());
+    assertFalse(entrar("/mis-listas/7", "COMERCIO"));
+  }
+
+  @Test
+  void unComercioNoPuedeModificarListasDeCompras() throws Exception {
+    assertFalse(entrar("/mis-listas/crear", "COMERCIO"));
+    assertFalse(entrar("/mis-listas/agregar-producto", "COMERCIO"));
+    assertFalse(entrar("/mis-listas/eliminar", "COMERCIO"));
+  }
+
+  @Test
+  void laConsultaDePreciosEnJsonResponde403AlComercio() throws Exception {
+    assertFalse(entrar("/producto/precios/3", "COMERCIO"));
+    assertEquals(403, response.getStatus());
+  }
+
+  @Test
+  void elVecinoSigueEntrandoAProductosYListas() throws Exception {
+    assertTrue(entrar("/producto", "USER"));
+    assertTrue(entrar("/producto/buscar", "USER"));
+    assertTrue(entrar("/producto/precios/3", "USER"));
+    assertTrue(entrar("/mis-listas/7", "USER"));
+    assertTrue(entrar("/mis-listas/crear", "USER"));
+  }
+
+  @Test
+  void elAdminNoQuedaBloqueadoEnProductosNiListas() throws Exception {
+    assertTrue(entrar("/producto/buscar", "ADMIN"));
+    assertTrue(entrar("/mis-listas", "ADMIN"));
+  }
+
+  @Test
+  void noSePuedeEsquivarLaRestriccionDelComercioConRutasDisfrazadas() throws Exception {
+    assertFalse(entrar("/comercio/../producto/buscar", "COMERCIO"));
+    assertFalse(entrar("/producto//buscar", "COMERCIO"));
+    assertFalse(entrar("/mis-listas;jsessionid=abc", "COMERCIO"));
+  }
 }
