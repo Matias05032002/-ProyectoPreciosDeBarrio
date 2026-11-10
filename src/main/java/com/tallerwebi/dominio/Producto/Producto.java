@@ -29,10 +29,22 @@ public class Producto {
   private String descripcion;
 
   private String marca;
+
+  @Column(length = 500)
+  private String imagenUrl;
+
   private LocalDateTime fechaDeSubida;
   private Boolean disponible;
 
   public Producto() {}
+
+  public String getImagenUrl() {
+    return imagenUrl;
+  }
+
+  public void setImagenUrl(String imagenUrl) {
+    this.imagenUrl = imagenUrl;
+  }
 
   public Long getId() {
     return id;

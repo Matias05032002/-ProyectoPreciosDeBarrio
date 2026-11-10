@@ -27,22 +27,85 @@ import org.springframework.stereotype.Service;
 public class ServicioProductoImpl implements ServicioProducto {
 
   private static final int MINIMO_DE_LOCALES_PARA_COMPARAR = 2;
+  // Lo fresco o a granel no tiene una foto genérica fiable en un catálogo de productos envasados.
+  private static final Set<String> CATEGORIAS_SIN_FOTO_GENERICA = Set.of(
+    "verduras y frutas",
+    "carnes y aves",
+    "pescados y mariscos"
+  );
+
+  private static final String SIN_MARCA = "sin marca";
 
   private RepositorioProducto repositorioProducto;
   private RepositorioReporte repositorioReporte;
+  private ServicioImagenProducto servicioImagenProducto;
+  private ServicioFotoGenerica servicioFotoGenerica;
 
   @Autowired
   public ServicioProductoImpl(
     RepositorioProducto repositorioProducto,
-    RepositorioReporte repositorioReporte
+    RepositorioReporte repositorioReporte,
+    ServicioImagenProducto servicioImagenProducto,
+    ServicioFotoGenerica servicioFotoGenerica
   ) {
     this.repositorioProducto = repositorioProducto;
     this.repositorioReporte = repositorioReporte;
+    this.servicioImagenProducto = servicioImagenProducto;
+    this.servicioFotoGenerica = servicioFotoGenerica;
   }
 
   @Override
   public Producto guardarProducto(Producto producto) {
+    if (producto.getImagenUrl() == null) {
+      actualizarImagen(producto);
+    }
     return repositorioProducto.guardarProducto(producto);
+  }
+
+  // La foto siempre sale de la búsqueda, así que se puede recalcular: la exacta de Mercado Libre
+  // (nombre, marca y unidad) y, si no hay, una foto real genérica del tipo de producto. Lo fresco o
+  // a granel va directo a la genérica. Si el producto ya está guardado, el cambio se persiste al
+  // cerrar la transacción del llamador.
+  @Override
+  public void actualizarImagen(Producto producto) {
+    String imagen = null;
+    if (admiteFotoExacta(producto)) {
+      imagen =
+        servicioImagenProducto.buscarImagen(
+          producto.getNombre(),
+          producto.getMarca(),
+          producto.getUnidad()
+        );
+    }
+    if (imagen == null) {
+      imagen = servicioFotoGenerica.buscarFoto(producto.getNombre(), producto.getCategoria());
+    }
+    producto.setImagenUrl(imagen);
+  }
+
+  @Override
+  public List<Long> listarIdsDeProductosSinImagen() {
+    return repositorioProducto.listarIdsSinImagen();
+  }
+
+  // Una transacción por producto: el cambio se persiste al cerrarla, sin sostener una conexión
+  // abierta mientras se esperan las respuestas de Mercado Libre, Groq y Wikipedia de los demás.
+  @Override
+  public void completarImagenDelProducto(Long id) {
+    Producto producto = repositorioProducto.buscarProductoPorId(id);
+    if (producto != null) {
+      actualizarImagen(producto);
+    }
+  }
+
+  // Un producto "Sin marca" no tiene una foto exacta: la de Mercado Libre mostraría el envase de
+  // alguna marca puntual, así que va directo a la genérica
+  private boolean admiteFotoExacta(Producto producto) {
+    return (
+      !sinTildes(producto.getNombre()).contains("granel") &&
+      !CATEGORIAS_SIN_FOTO_GENERICA.contains(sinTildes(producto.getCategoria())) &&
+      !SIN_MARCA.equals(sinTildes(producto.getMarca()))
+    );
   }
 
   @Override
@@ -165,6 +228,7 @@ public class ServicioProductoImpl implements ServicioProducto {
       reporte.getFechaDeReporte(),
       reporte.getPuntuacion()
     );
+    dto.setImagenUrl(producto.getImagenUrl());
     if (usuario != null) {
       dto.setYaMarcoDudoso(reporte.getUsuariosQueMarcaron().contains(usuario));
     }

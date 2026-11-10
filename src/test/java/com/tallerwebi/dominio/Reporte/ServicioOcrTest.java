@@ -1,6 +1,7 @@
 package com.tallerwebi.dominio.Reporte;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -245,6 +246,33 @@ public class ServicioOcrTest {
     assertThat(item.getUnidad(), equalTo("1u"));
   }
 
+  @Test
+  public void extraerProductos_elPromptPideSoloElNombreRealDelProducto() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[]\"}]}}]}");
+
+    servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
+
+    ArgumentCaptor<String> pedido = ArgumentCaptor.forClass(String.class);
+    verify(geminiClientMock).llamarGemini(pedido.capture());
+    assertThat(pedido.getValue(), containsString("SOLO el nombre del producto real"));
+    assertThat(pedido.getValue(), containsString("palabras completas"));
+    assertThat(pedido.getValue(), containsString("abreviad"));
+    assertThat(pedido.getValue(), containsString("MELBA RELLENA"));
+    assertThat(pedido.getValue(), containsString("LECHE SEMIDESCRE"));
+  }
+
+  @Test
+  public void extraerProductos_devuelveElNombreTalComoLoEntregaElModelo() throws Exception {
+    String respuestaFake =
+      "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[{\\\"nombre\\\":\\\"Papa negra\\\",\\\"precio\\\":1200}]\"}]}}]}";
+    when(geminiClientMock.llamarGemini(anyString())).thenReturn(respuestaFake);
+
+    List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
+
+    assertThat(items.get(0).getNombre(), equalTo("Papa negra"));
+  }
+
   // --- helpers ---
 
   private byte[] crearFotoJpeg(int ancho, int alto) throws Exception {
@@ -258,5 +286,32 @@ public class ServicioOcrTest {
     ByteArrayOutputStream salida = new ByteArrayOutputStream();
     ImageIO.write(imagen, "jpg", salida);
     return salida.toByteArray();
+  }
+
+  @Test
+  public void extraerProductos_siSoloSeLeeLaMarcaElPromptPideElTipoDeProducto() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[]\"}]}}]}");
+
+    servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
+
+    ArgumentCaptor<String> pedido = ArgumentCaptor.forClass(String.class);
+    verify(geminiClientMock).llamarGemini(pedido.capture());
+    assertThat(pedido.getValue(), containsString("Si en la línea solo aparece una marca"));
+    assertThat(pedido.getValue(), containsString("'HELLMANNS' -> 'Mayonesa'"));
+  }
+
+  @Test
+  public void extraerProductos_elPromptPideUnidadPorKiloParaLosProductosQueSePesan()
+    throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"[]\"}]}}]}");
+
+    servicioOcr.extraerProductosDeTicket(new byte[] { 1, 2, 3 });
+
+    ArgumentCaptor<String> pedido = ArgumentCaptor.forClass(String.class);
+    verify(geminiClientMock).llamarGemini(pedido.capture());
+    assertThat(pedido.getValue(), containsString("se vende por peso"));
+    assertThat(pedido.getValue(), containsString("la unidad es '1kg'"));
   }
 }

@@ -80,7 +80,13 @@ public class ServicioOcr {
       "Ignorá completamente: nombre del comercio, dirección, fecha, número de ticket, cajero, " +
       "subtotales, IVA, TOTAL, descuentos, leyendas, agradecimientos. " +
       "Para cada producto devolvé un objeto JSON con estos campos: " +
-      "nombre (string, solo el nombre sin marca ni gramaje), " +
+      "nombre (string, SOLO el nombre del producto real, de 1 a 3 palabras completas, sin marca, " +
+      "gramaje, variedad, calidad ni descriptores. Si una palabra viene abreviada o cortada " +
+      "(semidescre, noct, l/v) no la incluyas: dejá solo las palabras que se entienden. " +
+      "Ejemplos: 'MELBA RELLENA' -> 'Melba'; 'PAPA NEGRA COMERCIAL' -> 'Papa negra'; " +
+      "'LECHE SEMIDESCRE L/V' -> 'Leche'. Si en la línea solo aparece una marca, el nombre es el " +
+      "producto por el que se la conoce: 'HELLMANNS' -> 'Mayonesa'; 'LA SERENISIMA' -> 'Leche'. " +
+      "Escribilo con la primera letra en mayúscula), " +
       "precio (number, el PRECIO UNITARIO, sin signo $ ni separador de miles, ej: 2490.50; " +
       "si la línea muestra cantidad por precio unitario, por ejemplo '2,00 X 6890,00' con " +
       "importe 13780,00, el precio es 6890 y NO el importe total de la línea), " +
@@ -91,7 +97,9 @@ public class ServicioOcr {
       "Panaderia y reposteria, Pescados y mariscos, Productos de dietetica, " +
       "Snacks y golosinas, Tabaco, Verduras y frutas, Varios), " +
       "marca (string o null si no se ve), " +
-      "unidad (string con el gramaje o volumen como '1kg', '500g', '1L', '250ml', o null si no se ve). " +
+      "unidad (string con el gramaje o volumen como '1kg', '500g', '1L', '250ml', o null si no se ve. " +
+      "Si el producto se vende por peso (la línea muestra una cantidad con decimales y 'Kg', o dice " +
+      "'granel'), el precio es por kilo y la unidad es '1kg'). " +
       "Devolvé ÚNICAMENTE un array JSON válido, sin explicación, sin markdown, sin texto adicional."
     );
   }

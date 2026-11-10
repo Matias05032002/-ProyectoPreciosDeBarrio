@@ -412,7 +412,7 @@ public class ControladorReporteTest {
     );
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
-    verify(servicioReporteMock, times(1)).guardarReporte(any());
+    verify(servicioReporteMock, times(1)).guardarOReemplazarReporteDeHoy(any());
   }
 
   @Test
@@ -434,7 +434,7 @@ public class ControladorReporteTest {
     );
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
-    verify(servicioReporteMock, never()).guardarReporte(any());
+    verify(servicioReporteMock, never()).guardarOReemplazarReporteDeHoy(any());
   }
 
   @Test
@@ -442,7 +442,7 @@ public class ControladorReporteTest {
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
     when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
     when(
-      servicioReporteMock.guardarReporte(
+      servicioReporteMock.guardarOReemplazarReporteDeHoy(
         argThat(r -> r != null && "Ajo".equals(r.getProducto().getNombre()))
       )
     )
@@ -464,16 +464,15 @@ public class ControladorReporteTest {
       requestMock
     );
 
-    verify(servicioReporteMock, times(2)).guardarReporte(any());
+    verify(servicioReporteMock, times(2)).guardarOReemplazarReporteDeHoy(any());
     assertThat(mav.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
     assertThat((String) mav.getModel().get("error"), containsString("Ajo"));
   }
 
   @Test
-  public void guardarTicketConProductoYaReportadoHoyMuestraMensajeSinError500() throws Exception {
+  public void guardarTicketConProductoYaReportadoHoyLoReemplazaSinMostrarError() throws Exception {
     when(sessionMock.getAttribute("ROL")).thenReturn("USER");
     when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
-    when(servicioReporteMock.guardarReporte(any())).thenThrow(new ReporteExistente());
 
     java.util.Map<String, String> params = new java.util.HashMap<>();
     params.put("items[0].nombre", "Leche");
@@ -488,8 +487,9 @@ public class ControladorReporteTest {
       requestMock
     );
 
-    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/lista-reportes"));
-    assertThat((String) mav.getModel().get("error"), containsString("ya lo reportaste hoy"));
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
+    verify(servicioReporteMock, times(1)).guardarOReemplazarReporteDeHoy(any());
+    verify(servicioReporteMock, never()).guardarReporte(any());
   }
 
   @Test
@@ -506,7 +506,7 @@ public class ControladorReporteTest {
     controladorReporte.guardarTicket("Dia", "Alberdi 5925", "Buenos Aires", params, requestMock);
 
     ArgumentCaptor<Reporte> reporte = ArgumentCaptor.forClass(Reporte.class);
-    verify(servicioReporteMock).guardarReporte(reporte.capture());
+    verify(servicioReporteMock).guardarOReemplazarReporteDeHoy(reporte.capture());
     assertThat(reporte.getValue().getProducto().getUnidad(), equalTo("1u"));
   }
 
@@ -529,7 +529,7 @@ public class ControladorReporteTest {
     );
 
     assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/reporte?guardado=true"));
-    verify(servicioReporteMock, never()).guardarReporte(any());
+    verify(servicioReporteMock, never()).guardarOReemplazarReporteDeHoy(any());
   }
 
   @Test
@@ -854,6 +854,20 @@ public class ControladorReporteTest {
 
     assertThat(ultimos.get(0).get("tieneFoto"), is(true));
     assertThat(ultimos.get(1).get("tieneFoto"), is(false));
+  }
+
+  @Test
+  public void ultimosReportesDeberiaIncluirLaImagenGenericaDelProducto() {
+    java.time.LocalDateTime ahora = java.time.LocalDateTime.of(2026, 11, 3, 20, 0);
+    Reporte conImagen = reporteDe("Leche", 1150.0, ahora.minusHours(1), 0);
+    conImagen.getProducto().setImagenUrl("https://images.openfoodfacts.org/leche.jpg");
+    Reporte sinImagen = reporteDe("Aceite", 2320.0, ahora.minusHours(2), 0);
+    when(servicioReporteMock.ultimosReportesVisibles(6)).thenReturn(List.of(conImagen, sinImagen));
+
+    List<java.util.Map<String, Object>> ultimos = controladorReporte.ultimosReportes();
+
+    assertThat(ultimos.get(0).get("imagenUrl"), is("https://images.openfoodfacts.org/leche.jpg"));
+    assertThat(ultimos.get(1).get("imagenUrl"), is(nullValue()));
   }
 
   @Test

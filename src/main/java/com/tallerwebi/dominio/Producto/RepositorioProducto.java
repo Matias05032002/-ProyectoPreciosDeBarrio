@@ -8,4 +8,5 @@ public interface RepositorioProducto {
   Producto buscarProductoPorId(Long id);
   List<Producto> buscarPorNombre(String nombre);
   Producto buscarProductoPorNombreExacto(String nombre);
+  List<Long> listarIdsSinImagen();
 }

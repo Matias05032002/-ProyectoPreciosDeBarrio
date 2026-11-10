@@ -51,4 +51,15 @@ public class RepositorioProductoImpl implements RepositorioProducto {
       .setMaxResults(1)
       .uniqueResult();
   }
+
+  @Override
+  public List<Long> listarIdsSinImagen() {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "select p.id from Producto p where p.imagenUrl is null order by p.id",
+        Long.class
+      )
+      .list();
+  }
 }

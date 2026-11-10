@@ -26,6 +26,7 @@ public class ProductoConPrecio {
   private int localesComparados;
   private Double diferenciaConElMasBarato;
   private Double ahorroMaximo;
+  private String imagenUrl;
 
   public ProductoConPrecio(
     String nombre,
@@ -93,6 +94,14 @@ public class ProductoConPrecio {
 
   public void setFechaDeReporte(LocalDateTime fechaDeReporte) {
     this.fechaDeReporte = fechaDeReporte;
+  }
+
+  public String getImagenUrl() {
+    return imagenUrl;
+  }
+
+  public void setImagenUrl(String imagenUrl) {
+    this.imagenUrl = imagenUrl;
   }
 
   public boolean isYaMarcoDudoso() {

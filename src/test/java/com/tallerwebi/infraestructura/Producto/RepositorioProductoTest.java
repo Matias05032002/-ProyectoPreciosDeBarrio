@@ -58,6 +58,40 @@ public class RepositorioProductoTest {
 
   @Test
   @Transactional
+  @Rollback
+  public void deberiaGuardarLaImagenGenericaDelProducto() {
+    Producto producto = dadoQueTengoUnProducto("Yerba");
+    producto.setImagenUrl("https://images.openfoodfacts.org/images/products/yerba.jpg");
+    dadoQueExisteElProducto(producto);
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    Producto resultado = repositorioProducto.buscarProductoPorId(producto.getId());
+
+    assertThat(
+      resultado.getImagenUrl(),
+      is(equalTo("https://images.openfoodfacts.org/images/products/yerba.jpg"))
+    );
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void deberiaListarSoloLosIdsDeLosProductosSinImagen() {
+    Producto sinImagen = dadoQueTengoUnProducto("Papa");
+    Producto conImagen = dadoQueTengoUnProducto("Yerba");
+    conImagen.setImagenUrl("https://upload.wikimedia.org/yerba.jpg");
+    dadoQueExisteElProducto(sinImagen);
+    dadoQueExisteElProducto(conImagen);
+
+    List<Long> resultado = repositorioProducto.listarIdsSinImagen();
+
+    assertThat(resultado, hasItem(sinImagen.getId()));
+    assertThat(resultado, not(hasItem(conImagen.getId())));
+  }
+
+  @Test
+  @Transactional
   public void noDeberiaBuscarUnProductoInexistente() {
     List<Producto> resultado = cuandoBuscoPorNombre("ProductoInexistente");
     assertThat(resultado, is(empty()));

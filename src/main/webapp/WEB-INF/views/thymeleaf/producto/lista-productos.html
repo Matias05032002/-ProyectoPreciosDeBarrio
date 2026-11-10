@@ -120,7 +120,7 @@
                      th:classappend="${producto.esMasBarato} ? 'lp-card-barato'"
                      th:id="'card-producto-' + ${producto.reporteId}">
 
-                <!-- Foto asociada al reporte del producto; si falla o no hay, se muestra el ícono gris de siempre -->
+                <!-- Foto del reporte; si no tiene, la genérica del producto; si tampoco, el ícono gris de siempre -->
                 <div class="lp-media">
                     <img th:if="${producto.reporteId != null}"
                          th:src="@{/reporte/{id}/foto(id=${producto.reporteId})}"
@@ -130,9 +130,9 @@
                          loading="lazy"
                          data-bs-toggle="modal"
                          data-bs-target="#modalFoto"
-                         th:attr="data-src=@{/reporte/{id}/foto(id=${producto.reporteId})}"
+                         th:attr="data-src=@{/reporte/{id}/foto(id=${producto.reporteId})},data-generica=${producto.imagenUrl}"
                          onclick="abrirFoto(this)"
-                         onerror="this.parentElement.querySelector('.card-img-placeholder').style.display='flex'; this.style.display='none'">
+                         onerror="var g = this.dataset.generica; if (g &amp;&amp; this.src !== g) { this.src = g; this.dataset.src = g; } else { this.parentElement.querySelector('.card-img-placeholder').style.display='flex'; this.style.display='none'; }">
 
                     <div class="card-img-placeholder lp-placeholder"
                          th:id="'placeholder-foto-' + ${producto.reporteId}"
@@ -207,7 +207,7 @@
 
                     <p class="lp-precio" th:if="${producto.precioMinimo != null}">
                         <small>Desde</small>
-                        <strong th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'POINT', 2, 'COMMA')}"></strong>
+                        <strong th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'POINT', producto.precioMinimo % 1 == 0 ? 0 : 2, 'COMMA')}"></strong>
                     </p>
 
                     <p class="lp-barato" th:if="${producto.esMasBarato}">

@@ -25,13 +25,280 @@ public class ServicioProductoTest {
   private ServicioProducto servicioProducto;
   private RepositorioProducto repositorioProductoMock;
   private RepositorioReporte repositorioReporteMock;
+  private ServicioImagenProducto servicioImagenMock;
+  private ServicioFotoGenerica servicioFotoGenericaMock;
 
   @BeforeEach
   public void init() {
     this.repositorioProductoMock = mock(RepositorioProducto.class);
     this.repositorioReporteMock = mock(RepositorioReporte.class);
+    this.servicioImagenMock = mock(ServicioImagenProducto.class);
+    this.servicioFotoGenericaMock = mock(ServicioFotoGenerica.class);
     this.servicioProducto =
-      new ServicioProductoImpl(this.repositorioProductoMock, this.repositorioReporteMock);
+      new ServicioProductoImpl(
+        this.repositorioProductoMock,
+        this.repositorioReporteMock,
+        this.servicioImagenMock,
+        this.servicioFotoGenericaMock
+      );
+  }
+
+  @Test
+  public void guardarProductoNuevoLeBuscaUnaImagenGenerica() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setUnidad("1l");
+    when(servicioImagenMock.buscarImagen("Leche", "La Serenisima", "1l"))
+      .thenReturn("https://images.openfoodfacts.org/leche.jpg");
+
+    servicioProducto.guardarProducto(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo("https://images.openfoodfacts.org/leche.jpg"));
+    verify(repositorioProductoMock, times(1)).guardarProducto(producto);
+  }
+
+  @Test
+  public void guardarProductoSinImagenEncontradaLoGuardaIgual() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    when(servicioImagenMock.buscarImagen(any(), any(), any())).thenReturn(null);
+
+    servicioProducto.guardarProducto(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo(null));
+    verify(repositorioProductoMock, times(1)).guardarProducto(producto);
+  }
+
+  @Test
+  public void guardarProductoQueYaTieneImagenNoLaBuscaDeNuevo() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setImagenUrl("https://images.openfoodfacts.org/propia.jpg");
+
+    servicioProducto.guardarProducto(producto);
+
+    verify(servicioImagenMock, never()).buscarImagen(any(), any(), any());
+    assertThat(producto.getImagenUrl(), equalTo("https://images.openfoodfacts.org/propia.jpg"));
+  }
+
+  @Test
+  public void guardarProductoFrescoUsaUnaFotoGenericaSinBuscarLaExacta() {
+    for (String categoria : new String[] {
+      "Verduras y frutas",
+      "Carnes y aves",
+      "Pescados y mariscos",
+    }) {
+      Producto producto = new Producto();
+      producto.setNombre("Palta");
+      producto.setCategoria(categoria);
+      when(servicioFotoGenericaMock.buscarFoto("Palta", categoria))
+        .thenReturn("https://upload.wikimedia.org/wikipedia/commons/1/palta.jpeg");
+
+      servicioProducto.guardarProducto(producto);
+
+      assertThat(
+        producto.getImagenUrl(),
+        equalTo("https://upload.wikimedia.org/wikipedia/commons/1/palta.jpeg")
+      );
+      verify(repositorioProductoMock, times(1)).guardarProducto(producto);
+    }
+    verify(servicioImagenMock, never()).buscarImagen(any(), any(), any());
+  }
+
+  @Test
+  public void guardarProductoAGranelUsaUnaFotoGenericaSinBuscarLaExacta() {
+    Producto producto = new Producto();
+    producto.setNombre("ARROZ Granel");
+    producto.setCategoria("Almacen");
+    when(servicioFotoGenericaMock.buscarFoto("ARROZ Granel", "Almacen"))
+      .thenReturn("https://upload.wikimedia.org/wikipedia/commons/2/arroz.jpeg");
+
+    servicioProducto.guardarProducto(producto);
+
+    assertThat(
+      producto.getImagenUrl(),
+      equalTo("https://upload.wikimedia.org/wikipedia/commons/2/arroz.jpeg")
+    );
+    verify(servicioImagenMock, never()).buscarImagen(any(), any(), any());
+  }
+
+  @Test
+  public void guardarProductoSinFotoExactaUsaLaGenerica() {
+    Producto producto = new Producto();
+    producto.setNombre("ALGODON FAMILI CLASI");
+    producto.setCategoria("Farmacia y perfumeria");
+    when(servicioImagenMock.buscarImagen(any(), any(), any())).thenReturn(null);
+    when(servicioFotoGenericaMock.buscarFoto("ALGODON FAMILI CLASI", "Farmacia y perfumeria"))
+      .thenReturn("https://upload.wikimedia.org/wikipedia/commons/3/algodon.jpeg");
+
+    servicioProducto.guardarProducto(producto);
+
+    assertThat(
+      producto.getImagenUrl(),
+      equalTo("https://upload.wikimedia.org/wikipedia/commons/3/algodon.jpeg")
+    );
+  }
+
+  @Test
+  public void laFotoExactaTienePrioridadSobreLaGenerica() {
+    Producto producto = new Producto();
+    producto.setNombre("Cafe");
+    producto.setMarca("Dolca");
+    when(servicioImagenMock.buscarImagen("Cafe", "Dolca", null))
+      .thenReturn("https://http2.mlstatic.com/dolca-F.jpg");
+
+    servicioProducto.guardarProducto(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo("https://http2.mlstatic.com/dolca-F.jpg"));
+    verify(servicioFotoGenericaMock, never()).buscarFoto(any(), any());
+  }
+
+  @Test
+  public void sinFotoExactaNiGenericaElProductoSeGuardaIgualSinImagen() {
+    Producto producto = new Producto();
+    producto.setNombre("Cosa");
+
+    servicioProducto.guardarProducto(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo(null));
+    verify(repositorioProductoMock, times(1)).guardarProducto(producto);
+  }
+
+  @Test
+  public void guardarProductoEnvasadoDeOtraCategoriaSiBuscaImagenGenerica() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setCategoria("Lacteos");
+
+    servicioProducto.guardarProducto(producto);
+
+    verify(servicioImagenMock, times(1)).buscarImagen("Leche", null, null);
+  }
+
+  @Test
+  public void actualizarImagenLeBuscaLaFotoAlProductoQueNoLaTiene() {
+    Producto producto = productoDeLeche();
+    when(servicioImagenMock.buscarImagen("Leche", "La Serenisima", "1l"))
+      .thenReturn("https://http2.mlstatic.com/leche-F.jpg");
+
+    servicioProducto.actualizarImagen(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo("https://http2.mlstatic.com/leche-F.jpg"));
+  }
+
+  @Test
+  public void actualizarImagenReemplazaLaFotoVieja() {
+    Producto producto = productoDeLeche();
+    producto.setImagenUrl("https://http2.mlstatic.com/equivocada-F.jpg");
+    when(servicioImagenMock.buscarImagen("Leche", "La Serenisima", "1l"))
+      .thenReturn("https://http2.mlstatic.com/leche-F.jpg");
+
+    servicioProducto.actualizarImagen(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo("https://http2.mlstatic.com/leche-F.jpg"));
+  }
+
+  @Test
+  public void actualizarImagenQuitaLaFotoViejaSiYaNoHayUnaQueCoincida() {
+    Producto producto = productoDeLeche();
+    producto.setImagenUrl("https://http2.mlstatic.com/equivocada-F.jpg");
+    when(servicioImagenMock.buscarImagen(any(), any(), any())).thenReturn(null);
+
+    servicioProducto.actualizarImagen(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo(null));
+  }
+
+  @Test
+  public void actualizarImagenReemplazaLaFotoDeLosFrescosYAGranelPorUnaGenerica() {
+    Producto fresco = new Producto();
+    fresco.setNombre("Palta");
+    fresco.setCategoria("Verduras y frutas");
+    fresco.setImagenUrl("https://http2.mlstatic.com/frasco-F.jpg");
+    when(servicioFotoGenericaMock.buscarFoto("Palta", "Verduras y frutas"))
+      .thenReturn("https://upload.wikimedia.org/wikipedia/commons/1/palta.jpeg");
+
+    servicioProducto.actualizarImagen(fresco);
+
+    assertThat(
+      fresco.getImagenUrl(),
+      equalTo("https://upload.wikimedia.org/wikipedia/commons/1/palta.jpeg")
+    );
+    verify(servicioImagenMock, never()).buscarImagen(any(), any(), any());
+  }
+
+  @Test
+  public void guardarProductoSinMarcaUsaUnaFotoGenericaSinBuscarLaExacta() {
+    for (String marca : new String[] { "Sin marca", "sin marca", " SIN MARCA " }) {
+      Producto producto = new Producto();
+      producto.setNombre("Leche");
+      producto.setMarca(marca);
+      producto.setCategoria("Lacteos");
+      when(servicioFotoGenericaMock.buscarFoto("Leche", "Lacteos"))
+        .thenReturn("https://pixabay.com/get/leche.jpg");
+
+      servicioProducto.guardarProducto(producto);
+
+      assertThat(producto.getImagenUrl(), equalTo("https://pixabay.com/get/leche.jpg"));
+    }
+    verify(servicioImagenMock, never()).buscarImagen(any(), any(), any());
+  }
+
+  @Test
+  public void actualizarImagenDeUnProductoSinMarcaReemplazaLaFotoConMarcaPorUnaGenerica() {
+    Producto producto = new Producto();
+    producto.setNombre("Mostaza");
+    producto.setMarca("Sin marca");
+    producto.setCategoria("Condimentos y salsas");
+    producto.setImagenUrl("https://http2.mlstatic.com/arytza-F.jpg");
+    when(servicioFotoGenericaMock.buscarFoto("Mostaza", "Condimentos y salsas"))
+      .thenReturn("https://pixabay.com/get/mostaza.jpg");
+
+    servicioProducto.actualizarImagen(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo("https://pixabay.com/get/mostaza.jpg"));
+    verify(servicioImagenMock, never()).buscarImagen(any(), any(), any());
+  }
+
+  @Test
+  public void guardarProductoConMarcaRealSigueBuscandoLaFotoExacta() {
+    Producto producto = productoDeLeche();
+    when(servicioImagenMock.buscarImagen("Leche", "La Serenisima", "1l"))
+      .thenReturn("https://http2.mlstatic.com/leche-F.jpg");
+
+    servicioProducto.guardarProducto(producto);
+
+    assertThat(producto.getImagenUrl(), equalTo("https://http2.mlstatic.com/leche-F.jpg"));
+  }
+
+  private Producto productoDeLeche() {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenisima");
+    producto.setUnidad("1l");
+    producto.setCategoria("Lacteos");
+    return producto;
+  }
+
+  @Test
+  public void buscarProductosConPrecioIncluyeLaImagenGenericaDelProducto() {
+    com.tallerwebi.dominio.Reporte.Reporte reporte = crearReporteMock("Leche", 100.0, null);
+    reporte.getProducto().setImagenUrl("https://images.openfoodfacts.org/leche.jpg");
+    when(this.repositorioReporteMock.buscarPorNombre("Leche")).thenReturn(Arrays.asList(reporte));
+
+    List<ProductoConPrecio> resultado = servicioProducto.buscarProductosConPrecio(
+      "Leche",
+      null,
+      List.of(OrdenProducto.PRECIO),
+      null,
+      null
+    );
+
+    assertThat(
+      resultado.get(0).getImagenUrl(),
+      equalTo("https://images.openfoodfacts.org/leche.jpg")
+    );
   }
 
   @Test
@@ -783,6 +1050,36 @@ public class ServicioProductoTest {
       equalTo(Collections.emptyList())
     );
     verify(this.repositorioReporteMock, never()).buscarPorProducto(any());
+  }
+
+  @Test
+  public void listarIdsDeProductosSinImagenDelegaEnElRepositorio() {
+    when(repositorioProductoMock.listarIdsSinImagen()).thenReturn(Arrays.asList(3L, 7L));
+
+    assertThat(servicioProducto.listarIdsDeProductosSinImagen(), equalTo(Arrays.asList(3L, 7L)));
+  }
+
+  @Test
+  public void completarImagenDelProductoLeBuscaLaFotoYLaGuardaEnElProducto() {
+    Producto producto = new Producto();
+    producto.setNombre("Papa Negra");
+    producto.setCategoria("Verduras y Frutas");
+    when(repositorioProductoMock.buscarProductoPorId(4L)).thenReturn(producto);
+    when(servicioFotoGenericaMock.buscarFoto("Papa Negra", "Verduras y Frutas"))
+      .thenReturn("https://upload.wikimedia.org/papa.jpg");
+
+    servicioProducto.completarImagenDelProducto(4L);
+
+    assertThat(producto.getImagenUrl(), equalTo("https://upload.wikimedia.org/papa.jpg"));
+  }
+
+  @Test
+  public void completarImagenDeUnProductoInexistenteNoBuscaNada() {
+    when(repositorioProductoMock.buscarProductoPorId(99L)).thenReturn(null);
+
+    servicioProducto.completarImagenDelProducto(99L);
+
+    verifyNoInteractions(servicioImagenMock, servicioFotoGenericaMock);
   }
 
   private void dadoQueElReporteEs(Long reporteId, Reporte reporte) {

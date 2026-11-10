@@ -58,6 +58,7 @@ public class VistaComercio extends VistaWeb {
 
   public void darClickEnVerDetalle() {
     page.locator("[id^='btn-ver-detalle-']").first().click();
+    page.waitForURL("**/comercio/*");
   }
 
   public boolean hayProductosEnElDetalle() {

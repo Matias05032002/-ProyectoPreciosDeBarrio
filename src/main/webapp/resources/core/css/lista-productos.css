@@ -190,6 +190,8 @@
 
 .lp-foto {
     object-fit: contain;
+    /* Fondo blanco: las fotos con borde claro no dejan bandas grises a los costados */
+    background: #fff;
 }
 
 .lp-placeholder {

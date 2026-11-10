@@ -26,7 +26,6 @@ public class ServicioReporteImpl implements ServicioReporte {
   private ServicioComercio servicioComercio;
   private ServicioProducto servicioProducto;
   private static final int DIAS_PLAZO_EDICION = 2;
-  private static final double PRECIO_MAXIMO = 10_000_000.0;
   private static final int LARGO_MAXIMO_CORTO = 100;
   // Entre cuántos de los últimos reportes se busca los más cercanos, para que sigan siendo "últimos"
   private static final int CANDIDATOS_PARA_CERCANIA = 50;
@@ -48,7 +47,7 @@ public class ServicioReporteImpl implements ServicioReporte {
     validarCamposObligatorios(reporte);
     normalizarTextos(reporte);
     validarUnidad(reporte.getProducto().getUnidad());
-    validarPrecio(reporte.getPrecio());
+    PrecioDeReporte.validar(reporte.getPrecio());
     reporte.setProducto(resolverProducto(reporte.getProducto()));
     reporte.setComercio(resolverComercio(reporte.getComercio()));
 
@@ -68,6 +67,26 @@ public class ServicioReporteImpl implements ServicioReporte {
       }
     }
     return repositorioReporte.guardarReporte(reporte);
+  }
+
+  @Override
+  public Reporte guardarOReemplazarReporteDeHoy(Reporte reporte)
+    throws CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto {
+    try {
+      return guardarReporte(reporte);
+    } catch (ReporteExistente e) {
+      // guardarReporte ya dejó el producto y el comercio resueltos en el reporte
+      Reporte deHoy = repositorioReporte.buscarReporteDuplicado(
+        reporte.getUsuario().getId(),
+        reporte.getProducto().getId(),
+        reporte.getComercio().getId(),
+        reporte.getFechaDeReporte().toLocalDate()
+      );
+      deHoy.setPrecio(reporte.getPrecio());
+      repositorioReporte.guardarReporte(deHoy);
+      servicioProducto.actualizarImagen(reporte.getProducto());
+      return deHoy;
+    }
   }
 
   @Override
@@ -181,23 +200,6 @@ public class ServicioReporteImpl implements ServicioReporte {
     }
   }
 
-  private void validarPrecio(Double precio) throws PrecioIncorrecto {
-    if (!esPrecioPositivo(precio)) {
-      throw new PrecioIncorrecto("El precio debe ser mayor a cero");
-    }
-    if (precio > PRECIO_MAXIMO) {
-      throw new PrecioIncorrecto("El precio no puede superar $10.000.000");
-    }
-    if (Math.round(precio * 100) != (long) (precio * 100)) {
-      throw new PrecioIncorrecto("El precio no puede tener más de 2 decimales");
-    }
-  }
-
-  // NaN e infinito no son <= 0 pero tampoco son precios: se rechazan junto con el nulo
-  private boolean esPrecioPositivo(Double precio) {
-    return precio != null && !precio.isNaN() && !precio.isInfinite() && precio > 0;
-  }
-
   @Override
   public boolean puedeEditar(Long reporteId, Long usuarioId) {
     Reporte reporte = repositorioReporte.buscarReporte(reporteId);
@@ -226,7 +228,7 @@ public class ServicioReporteImpl implements ServicioReporte {
     validarCamposObligatorios(datos);
     normalizarTextos(datos);
     validarUnidad(datos.getProducto().getUnidad());
-    validarPrecio(datos.getPrecio());
+    PrecioDeReporte.validar(datos.getPrecio());
     reporte.setProducto(resolverProducto(datos.getProducto()));
     reporte.setComercio(resolverComercio(datos.getComercio()));
     reporte.setPrecio(datos.getPrecio());
