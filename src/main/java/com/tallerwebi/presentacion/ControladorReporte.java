@@ -288,6 +288,7 @@ public class ControladorReporte {
     reporte.put("direccion", ultimo.getComercio().getDireccion());
     reporte.put("localidad", ultimo.getComercio().getLocalidad());
     reporte.put("tieneFoto", ultimo.getFoto() != null && ultimo.getFoto().length > 0);
+    reporte.put("imagenUrl", ultimo.getProducto().getImagenUrl());
     reporte.put("fecha", ultimo.getFechaDeReporte().toString());
     return reporte;
   }
@@ -566,10 +567,8 @@ public class ControladorReporte {
     reporte.setComercio(comercio);
     reporte.setUsuario(usuario);
     try {
-      servicioReporte.guardarReporte(reporte);
+      servicioReporte.guardarOReemplazarReporteDeHoy(reporte);
       return null;
-    } catch (ReporteExistente e) {
-      return nombre + ": ya lo reportaste hoy en este comercio";
     } catch (CamposObligatoriosVacios | UnidadInvalida | PrecioIncorrecto e) {
       return nombre + ": " + e.getMessage();
     }

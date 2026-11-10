@@ -82,6 +82,93 @@ public class ServicioReporteTest {
     verify(repositorioReporteMock, times(0)).guardarReporte(reporte);
   }
 
+  // --- guardarOReemplazarReporteDeHoy (recargar un ticket) ---
+
+  @Test
+  public void guardarOReemplazarReporteDeHoySiNoHayUnoLoGuarda() throws Exception {
+    Producto producto = productoValido("Leche", "1000ml");
+    Comercio comercio = comercioValido();
+    Reporte reporte = reporteConProductoYComercio(producto, comercio, 100.0);
+    when(servicioProductoMock.buscarPorNombre("Leche")).thenReturn(List.of(producto));
+    when(servicioComercioMock.buscarComercioPorNombre("Almacen"))
+      .thenReturn(Arrays.asList(comercio));
+    when(repositorioReporteMock.guardarReporte(reporte)).thenReturn(reporte);
+
+    Reporte resultado = servicioReporte.guardarOReemplazarReporteDeHoy(reporte);
+
+    assertThat(resultado, equalTo(reporte));
+    verify(repositorioReporteMock, times(1)).guardarReporte(reporte);
+    verify(servicioProductoMock, never()).actualizarImagen(any());
+  }
+
+  @Test
+  public void guardarOReemplazarReporteDeHoyActualizaElPrecioDelReporteDeHoy() throws Exception {
+    Producto producto = productoValido("Leche", "1000ml");
+    producto.setId(1L);
+    Comercio comercio = comercioValido();
+    comercio.setId(1L);
+    Usuario usuario = new Usuario();
+    usuario.setId(1L);
+    Reporte deHoy = reporteConProductoYComercio(producto, comercio, 90.0);
+    deHoy.setUsuario(usuario);
+    Reporte nuevo = reporteConProductoYComercio(producto, comercio, 120.0);
+    nuevo.setUsuario(usuario);
+    when(servicioProductoMock.buscarPorNombre("Leche")).thenReturn(List.of(producto));
+    when(servicioComercioMock.buscarComercioPorNombre("Almacen"))
+      .thenReturn(Arrays.asList(comercio));
+    when(
+      repositorioReporteMock.buscarReporteDuplicado(eq(1L), eq(1L), eq(1L), any(LocalDate.class))
+    )
+      .thenReturn(deHoy);
+
+    Reporte resultado = servicioReporte.guardarOReemplazarReporteDeHoy(nuevo);
+
+    assertThat(resultado, equalTo(deHoy));
+    assertThat(deHoy.getPrecio(), equalTo(120.0));
+    verify(repositorioReporteMock, times(1)).guardarReporte(deHoy);
+    verify(repositorioReporteMock, never()).guardarReporte(nuevo);
+  }
+
+  @Test
+  public void guardarOReemplazarReporteDeHoyRecalculaLaFotoDelProductoQueYaExistia()
+    throws Exception {
+    Producto producto = productoValido("Leche", "1000ml");
+    producto.setId(1L);
+    Comercio comercio = comercioValido();
+    comercio.setId(1L);
+    Usuario usuario = new Usuario();
+    usuario.setId(1L);
+    Reporte deHoy = reporteConProductoYComercio(producto, comercio, 90.0);
+    Reporte nuevo = reporteConProductoYComercio(producto, comercio, 120.0);
+    nuevo.setUsuario(usuario);
+    when(servicioProductoMock.buscarPorNombre("Leche")).thenReturn(List.of(producto));
+    when(servicioComercioMock.buscarComercioPorNombre("Almacen"))
+      .thenReturn(Arrays.asList(comercio));
+    when(
+      repositorioReporteMock.buscarReporteDuplicado(eq(1L), eq(1L), eq(1L), any(LocalDate.class))
+    )
+      .thenReturn(deHoy);
+
+    servicioReporte.guardarOReemplazarReporteDeHoy(nuevo);
+
+    verify(servicioProductoMock, times(1)).actualizarImagen(producto);
+  }
+
+  @Test
+  public void guardarOReemplazarReporteDeHoyConPrecioInvalidoSigueLanzandoExcepcion() {
+    Reporte reporte = reporteConProductoYComercio(
+      productoValido("Leche", "1000ml"),
+      comercioValido(),
+      0.0
+    );
+
+    assertThrows(
+      PrecioIncorrecto.class,
+      () -> servicioReporte.guardarOReemplazarReporteDeHoy(reporte)
+    );
+    verify(repositorioReporteMock, never()).guardarReporte(any());
+  }
+
   @Test
   public void guardarReporteConPrecioNuloDeberiaLanzarPrecioIncorrecto() {
     Reporte reporte = reporteConProductoYComercio(

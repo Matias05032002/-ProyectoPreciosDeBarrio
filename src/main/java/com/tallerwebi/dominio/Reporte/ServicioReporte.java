@@ -8,6 +8,8 @@ import java.util.List;
 public interface ServicioReporte {
   Reporte guardarReporte(Reporte reporte)
     throws ReporteExistente, CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto;
+  Reporte guardarOReemplazarReporteDeHoy(Reporte reporte)
+    throws CamposObligatoriosVacios, UnidadInvalida, PrecioIncorrecto;
   Reporte buscarReporte(Long id);
   List<Reporte> buscarPorProducto(Long productoId);
   Reporte marcarDudoso(Long id, Usuario usuario);

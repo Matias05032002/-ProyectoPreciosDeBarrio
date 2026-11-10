@@ -19,7 +19,7 @@ public class VistaTicket extends VistaWeb {
   }
 
   public String obtenerTitulo() {
-    return this.obtenerTextoDelElemento("h2");
+    return this.obtenerTextoDelElemento("#titulo-pagina");
   }
 
   public boolean formularioEstaVisible() {

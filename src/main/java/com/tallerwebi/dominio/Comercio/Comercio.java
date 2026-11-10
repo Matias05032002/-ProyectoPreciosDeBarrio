@@ -38,10 +38,14 @@ public class Comercio {
 
   private Boolean activo;
 
-  @Column(name = "verificado", nullable = false)
+  @Column(name = "verificado", nullable = false, columnDefinition = "boolean default false")
   private Boolean verificado = false;
 
-  @Column(name = "solicitud_verificacion", nullable = false)
+  @Column(
+    name = "solicitud_verificacion",
+    nullable = false,
+    columnDefinition = "boolean default false"
+  )
   private Boolean solicitudVerificacion = false;
 
   private LocalDateTime fechaRegistro;

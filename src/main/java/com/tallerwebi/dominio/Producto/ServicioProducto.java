@@ -7,6 +7,9 @@ import java.util.List;
 
 public interface ServicioProducto {
   Producto guardarProducto(Producto producto);
+  void actualizarImagen(Producto producto);
+  List<Long> listarIdsDeProductosSinImagen();
+  void completarImagenDelProducto(Long id);
   List<Producto> listarTodos();
   Producto buscarProductoPorId(Long id);
   List<Producto> buscarPorNombre(String nombre);

@@ -547,12 +547,19 @@
         contenedor.classList.add('sin-foto');
         contenedor.innerHTML = ICONO_SIN_FOTO;
       }
-      if (r.tieneFoto) {
+      if (r.tieneFoto || r.imagenUrl) {
         var foto = document.createElement('img');
-        foto.src = URL_REPORTE + r.id + '/foto';
+        // La foto del reporte manda; si no tiene (o falla), se usa la genérica del producto
+        foto.src = r.tieneFoto ? URL_REPORTE + r.id + '/foto' : r.imagenUrl;
         foto.alt = 'Foto de ' + r.producto;
         foto.loading = 'lazy';
-        foto.addEventListener('error', sinFoto);
+        foto.addEventListener('error', function () {
+          if (r.tieneFoto && r.imagenUrl && foto.src !== r.imagenUrl) {
+            foto.src = r.imagenUrl;
+          } else {
+            sinFoto();
+          }
+        });
         contenedor.appendChild(foto);
       } else {
         sinFoto();

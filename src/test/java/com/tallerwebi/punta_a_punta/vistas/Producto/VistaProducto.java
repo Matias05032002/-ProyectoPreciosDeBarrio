@@ -106,6 +106,14 @@ public class VistaProducto extends VistaWeb {
   }
 
   public boolean hayPlaceholderVisible() {
-    return page.locator("[id^='placeholder-foto-']").first().isVisible();
+    try {
+      page.waitForSelector(
+        "[id^='placeholder-foto-'][style*='flex']",
+        new Page.WaitForSelectorOptions().setTimeout(5000)
+      );
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

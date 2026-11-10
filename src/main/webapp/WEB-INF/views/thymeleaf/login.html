@@ -98,6 +98,7 @@
             </div>
 
             <div th:if="${contrasenaRestablecida != null}"
+                 id="contrasena-restablecida"
                  class="alert alert-success"
                  th:text="${contrasenaRestablecida}"
                  role="status">
@@ -110,6 +111,7 @@
             </div>
 
             <div th:if="${error != null}"
+                 id="error-login"
                  class="alert alert-danger"
                  th:text="${error}"
                  role="alert">
