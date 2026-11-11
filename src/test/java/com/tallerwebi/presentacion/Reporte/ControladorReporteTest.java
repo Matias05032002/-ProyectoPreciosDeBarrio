@@ -953,4 +953,61 @@ public class ControladorReporteTest {
     assertThat(mav.getModel().get("error"), is("Foto mala"));
     verify(servicioReporteMock, never()).guardarReporte(any());
   }
+
+  @Test
+  public void guardarTicketUsaElTipoDeComercioQueDedujoElOcrSiElNombreNoDaPistas()
+    throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Asado");
+    params.put("items[0].precio", "9000.0");
+    params.put("incluir[0]", "on");
+    params.put("comercioTipo", "Carniceria");
+
+    controladorReporte.guardarTicket("Los Hermanos", "Calle 1", "La Matanza", params, requestMock);
+
+    ArgumentCaptor<Reporte> reporte = ArgumentCaptor.forClass(Reporte.class);
+    verify(servicioReporteMock).guardarOReemplazarReporteDeHoy(reporte.capture());
+    assertThat(reporte.getValue().getComercio().getTipo(), equalTo("Carniceria"));
+  }
+
+  @Test
+  public void guardarTicketPrefiereLaPistaDelNombreSobreElTipoDelOcr() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Papa");
+    params.put("items[0].precio", "900.0");
+    params.put("incluir[0]", "on");
+    params.put("comercioTipo", "Kiosco");
+
+    controladorReporte.guardarTicket(
+      "Verdulería Don Pepe",
+      "Calle 1",
+      "La Matanza",
+      params,
+      requestMock
+    );
+
+    ArgumentCaptor<Reporte> reporte = ArgumentCaptor.forClass(Reporte.class);
+    verify(servicioReporteMock).guardarOReemplazarReporteDeHoy(reporte.capture());
+    assertThat(reporte.getValue().getComercio().getTipo(), equalTo("Verduleria"));
+  }
+
+  @Test
+  public void guardarTicketSinTipoDelOcrNiPistaEnElNombreDejaElComercioComoOtro() throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioLoginMock.buscarPorEmail("test@test.com")).thenReturn(usuarioMock);
+    java.util.Map<String, String> params = new java.util.HashMap<>();
+    params.put("items[0].nombre", "Papa");
+    params.put("items[0].precio", "900.0");
+    params.put("incluir[0]", "on");
+
+    controladorReporte.guardarTicket("Los Hermanos", "Calle 1", "La Matanza", params, requestMock);
+
+    ArgumentCaptor<Reporte> reporte = ArgumentCaptor.forClass(Reporte.class);
+    verify(servicioReporteMock).guardarOReemplazarReporteDeHoy(reporte.capture());
+    assertThat(reporte.getValue().getComercio().getTipo(), equalTo("Otro"));
+  }
 }

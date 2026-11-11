@@ -74,14 +74,14 @@
                      th:attr="data-nombre=${comercio.nombre},data-tipo=${comercio.tipo},data-lat=${comercio.latitud},data-lng=${comercio.longitud},data-abierto=${estadosAbierto[comercio.id]}">
 
                 <div class="co-media">
-                    <img th:if="${comercio.tieneFoto()}"
-                         th:src="@{/comercio/{id}/foto(id=${comercio.id})}"
+                    <img th:if="${comercio.tieneFoto() or comercio.imagenPorDefecto() != null}"
+                         th:src="${comercio.tieneFoto()} ? @{/comercio/{id}/foto(id=${comercio.id})} : @{${comercio.imagenPorDefecto()}}"
                          class="co-foto"
                          th:alt="${'Foto de ' + comercio.nombre}"
                          loading="lazy"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
                     <div class="co-inicial" aria-hidden="true"
-                         th:styleappend="${comercio.tieneFoto()} ? 'display:none;' : 'display:flex;'">
+                         th:styleappend="${comercio.tieneFoto() or comercio.imagenPorDefecto() != null} ? 'display:none;' : 'display:flex;'">
                         <span th:text="${#strings.toUpperCase(#strings.substring(comercio.nombre,0,1))}"></span>
                     </div>
 

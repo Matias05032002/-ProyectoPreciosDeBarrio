@@ -197,11 +197,61 @@ public class ServicioRegistroComercioTest {
       "comercio@unlam.com",
       "Password1",
       "a".repeat(150),
-      "b".repeat(50),
+      "Almacen",
       "c".repeat(200),
       "La Matanza"
     );
 
     verify(servicioComercioMock).guardarComercio(any());
+  }
+
+  @Test
+  public void conUnTipoQueNoEstaEnLaListaLanzaDatosInvalidos() throws Exception {
+    assertThrows(
+      DatosDeComercioInvalidos.class,
+      () ->
+        servicio.registrar(
+          "c@unlam.com",
+          "Password1",
+          "Ferretería",
+          "Ferreteria",
+          "Calle 1",
+          "La Matanza"
+        )
+    );
+
+    verify(servicioLoginMock, never()).registrar(any());
+  }
+
+  @Test
+  public void guardaElTipoConLaGrafiaDeLaLista() throws Exception {
+    conUsuarioCreadoConId(7L);
+
+    servicio.registrar(
+      "comercio@unlam.com",
+      "Password1",
+      "Don José",
+      "verdulería",
+      "Calle 1",
+      "La Matanza"
+    );
+
+    ArgumentCaptor<Comercio> comercio = ArgumentCaptor.forClass(Comercio.class);
+    verify(servicioComercioMock).guardarComercio(comercio.capture());
+    assertThat(comercio.getValue().getTipo(), equalTo("Verduleria"));
+  }
+
+  @Test
+  public void alQuedarseConUnComercioCargadoPorUnVecinoLeActualizaElTipo() throws Exception {
+    conUsuarioCreadoConId(7L);
+    Comercio cargadoPorUnVecino = new Comercio();
+    cargadoPorUnVecino.setTipo("Otro");
+    when(servicioComercioMock.buscarPorDireccionYLocalidad("Rivadavia 1234", "La Matanza"))
+      .thenReturn(cargadoPorUnVecino);
+
+    registrarValido();
+
+    assertThat(cargadoPorUnVecino.getTipo(), equalTo("Almacen"));
+    verify(servicioComercioMock).actualizarComercio(cargadoPorUnVecino);
   }
 }

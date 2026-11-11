@@ -2,6 +2,7 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Comercio.TipoDeComercio;
 import com.tallerwebi.dominio.Comercio.UbicacionSugerida;
 import com.tallerwebi.dominio.Paginador.ServicioPaginador;
 import com.tallerwebi.dominio.Producto.Producto;
@@ -12,6 +13,7 @@ import com.tallerwebi.dominio.Reporte.ReporteConDistancia;
 import com.tallerwebi.dominio.Reporte.ResumenDeActividad;
 import com.tallerwebi.dominio.Reporte.ServicioOcr;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
+import com.tallerwebi.dominio.Reporte.TicketLeido;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.AccesoDenegado;
@@ -468,9 +470,10 @@ public class ControladorReporte {
     try {
       int inicio = ticketBase64.indexOf(',');
       byte[] bytes = java.util.Base64.getDecoder().decode(ticketBase64.substring(inicio + 1));
-      List<ItemTicket> items = servicioOcr.extraerProductosDeTicket(bytes);
+      TicketLeido ticket = servicioOcr.leerTicket(bytes);
       ModelAndView mav = new ModelAndView("reporte/confirmar-ticket");
-      mav.addObject("items", items);
+      mav.addObject("items", ticket.items());
+      mav.addObject("comercioTipo", ticket.tipoComercio());
       mav.addObject("comercioNombre", comercioNombre);
       mav.addObject("comercioDireccion", comercioDireccion);
       mav.addObject("comercioLocalidad", comercioLocalidad);
@@ -513,6 +516,8 @@ public class ControladorReporte {
     comercio.setNombre(comercioNombre);
     comercio.setDireccion(comercioDireccion);
     comercio.setLocalidad(comercioLocalidad);
+    // La pista del nombre manda; si no hay, el tipo que dedujo el OCR; si no, "Otro"
+    comercio.setTipo(TipoDeComercio.elegir(comercioNombre, params.get("comercioTipo")));
 
     // Cada producto se guarda por separado: si uno falla, los demás igual se guardan
     List<String> errores = new ArrayList<>();
