@@ -592,4 +592,72 @@ public class ServicioComercioTest {
     assertThat(comercio.getDireccion(), equalTo("Arieta 3000"));
     assertThat(comercio.getLatitud(), equalTo(-34.67));
   }
+
+  @Test
+  public void guardarUnComercioSinTipoLoDeduceDelNombre() {
+    Comercio comercio = comercioEn("Calle 1", "La Matanza");
+    comercio.setNombre("Verdulería Don Pepe");
+    comercio.setTipo(null);
+
+    servicioComercio.guardarComercio(comercio);
+
+    assertThat(comercio.getTipo(), equalTo("Verduleria"));
+  }
+
+  @Test
+  public void guardarUnComercioSinTipoNiPistasEnElNombreLoDejaComoOtro() {
+    Comercio comercio = comercioEn("Calle 2", "La Matanza");
+    comercio.setNombre("Don Pepe");
+    comercio.setTipo(null);
+
+    servicioComercio.guardarComercio(comercio);
+
+    assertThat(comercio.getTipo(), equalTo("Otro"));
+  }
+
+  @Test
+  public void guardarUnComercioConTipoValidoLoRespeta() {
+    Comercio comercio = comercioEn("Calle 3", "La Matanza");
+    comercio.setNombre("Verdulería Don Pepe");
+    comercio.setTipo("Kiosco");
+
+    servicioComercio.guardarComercio(comercio);
+
+    assertThat(comercio.getTipo(), equalTo("Kiosco"));
+  }
+
+  @Test
+  public void editarLosDatosConUnTipoInvalidoDeduceElTipoDelNombre() {
+    Comercio existente = comercioEn("Arieta 3000", "La Matanza");
+    Comercio datos = comercioEn("Arieta 3000", "La Matanza");
+    datos.setNombre("Carnicería El Gaucho");
+    datos.setTipo("");
+
+    servicioComercio.actualizarDatosDelComercio(existente, datos, -34.6880, -58.5490);
+
+    assertThat(existente.getTipo(), equalTo("Carniceria"));
+  }
+
+  @Test
+  public void completarTiposFaltantesLesPoneTipoSoloALosQueNoLoTienen() {
+    Comercio sinTipo = comercioEn("Calle 4", "La Matanza");
+    sinTipo.setNombre("Kiosco Sol");
+    sinTipo.setTipo(null);
+    Comercio conTipo = comercioEn("Calle 5", "La Matanza");
+    conTipo.setTipo("Almacen");
+    Comercio inventado = comercioEn("Calle 6", "La Matanza");
+    inventado.setNombre("Don Pepe");
+    inventado.setTipo("xyz");
+    when(repositorioComercioMock.listarTodos()).thenReturn(List.of(sinTipo, conTipo, inventado));
+
+    int completados = servicioComercio.completarTiposFaltantes();
+
+    assertThat(completados, equalTo(2));
+    assertThat(sinTipo.getTipo(), equalTo("Kiosco"));
+    assertThat(conTipo.getTipo(), equalTo("Almacen"));
+    assertThat(inventado.getTipo(), equalTo("Otro"));
+    verify(repositorioComercioMock).actualizarComercio(sinTipo);
+    verify(repositorioComercioMock).actualizarComercio(inventado);
+    verify(repositorioComercioMock, never()).actualizarComercio(conTipo);
+  }
 }

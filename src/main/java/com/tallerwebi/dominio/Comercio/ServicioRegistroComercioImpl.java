@@ -47,7 +47,7 @@ public class ServicioRegistroComercioImpl implements ServicioRegistroComercio {
     // Todo se valida antes de crear el usuario: si no, quedaría una cuenta sin comercio
     validarDatos(nombre, tipo, direccion, localidad);
     String nombreLimpio = nombre.trim();
-    String tipoLimpio = tipo.trim();
+    String tipoLimpio = TipoDeComercio.normalizar(tipo);
     String direccionLimpia = direccion.trim();
     String localidadLimpia = localidad.trim();
 
@@ -72,6 +72,7 @@ public class ServicioRegistroComercioImpl implements ServicioRegistroComercio {
     }
     if (existente != null) {
       existente.setUsuarioId(usuarioCreado.getId());
+      existente.setTipo(tipoLimpio);
       servicioComercio.actualizarComercio(existente);
     } else {
       servicioComercio.guardarComercio(
@@ -102,6 +103,9 @@ public class ServicioRegistroComercioImpl implements ServicioRegistroComercio {
     throws DatosDeComercioInvalidos {
     validarQueEstenCompletos(nombre, tipo, direccion);
     validarLargos(nombre, tipo, direccion);
+    if (TipoDeComercio.normalizar(tipo) == null) {
+      throw new DatosDeComercioInvalidos("Elegí un tipo de comercio de la lista");
+    }
     if (!Localidades.esValida(localidad)) {
       throw new DatosDeComercioInvalidos("Elegí una localidad de la lista");
     }

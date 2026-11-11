@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import com.tallerwebi.dominio.Comercio.TipoDeComercio;
 import com.tallerwebi.dominio.Gemini.ServicioGemini;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -28,6 +29,7 @@ public class ServicioOcr {
   private static final String CAMPO_UNIDAD = "unidad";
   private static final String CAMPO_PRECIO = "precio";
   private static final String CAMPO_TEXTO = "text";
+  private static final String CAMPO_TIPO_COMERCIO = "tipoComercio";
   private static final String DEFAULT_MARCA = "Sin marca";
   private static final String DEFAULT_CATEGORIA = "Varios";
   private static final String DEFAULT_UNIDAD = "1u";
@@ -42,8 +44,13 @@ public class ServicioOcr {
   }
 
   public List<ItemTicket> extraerProductosDeTicket(byte[] imagenBytes) throws Exception {
+    return leerTicket(imagenBytes).items();
+  }
+
+  // Una sola llamada a la IA devuelve los productos y el tipo de comercio que deduce del ticket.
+  public TicketLeido leerTicket(byte[] imagenBytes) throws Exception {
     String response = geminiClient.llamarGemini(buildRequestBody(imagenBytes, buildPrompt()));
-    return parseResponse(response);
+    return new TicketLeido(parseResponse(response), leerTipoDeComercio(response));
   }
 
   public ItemTicket reconocerProducto(byte[] imagenBytes) throws Exception {
@@ -100,7 +107,12 @@ public class ServicioOcr {
       "unidad (string con el gramaje o volumen como '1kg', '500g', '1L', '250ml', o null si no se ve. " +
       "Si el producto se vende por peso (la línea muestra una cantidad con decimales y 'Kg', o dice " +
       "'granel'), el precio es por kilo y la unidad es '1kg'). " +
-      "Devolvé ÚNICAMENTE un array JSON válido, sin explicación, sin markdown, sin texto adicional."
+      "Devolvé ÚNICAMENTE un objeto JSON válido con dos campos: " +
+      "tipoComercio (string: uno EXACTAMENTE de estos valores: Almacen, Verduleria, Carniceria, " +
+      "Kiosco, Supermercado, Otro. Deducilo del encabezado del ticket y de los productos " +
+      "comprados; si no estás seguro, 'Otro') y " +
+      "productos (el array con los productos comprados). " +
+      "Sin explicación, sin markdown, sin texto adicional."
     );
   }
 
@@ -190,6 +202,19 @@ public class ServicioOcr {
       }
     }
     return items;
+  }
+
+  // Solo se acepta un tipo de la lista: cualquier otra cosa que invente el modelo se descarta
+  private String leerTipoDeComercio(String jsonResponse) {
+    JsonElement raiz = JsonParser.parseString(limpiarMarkdown(extraerTexto(jsonResponse)));
+    if (!raiz.isJsonObject()) {
+      return null;
+    }
+    JsonObject objeto = raiz.getAsJsonObject();
+    if (!objeto.has(CAMPO_TIPO_COMERCIO) || !objeto.get(CAMPO_TIPO_COMERCIO).isJsonPrimitive()) {
+      return null;
+    }
+    return TipoDeComercio.normalizar(objeto.get(CAMPO_TIPO_COMERCIO).getAsString());
   }
 
   private JsonArray obtenerArray(JsonElement raiz) {

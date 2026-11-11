@@ -172,6 +172,11 @@ public class Comercio {
     return foto != null && foto.length > 0;
   }
 
+  // Imagen del tipo de comercio, para mostrar cuando todavía no subió su logo.
+  public String imagenPorDefecto() {
+    return ImagenDeComercio.rutaPara(tipo);
+  }
+
   public void setFoto(byte[] fotoNueva) {
     if (fotoNueva == null) {
       this.foto = new byte[0];

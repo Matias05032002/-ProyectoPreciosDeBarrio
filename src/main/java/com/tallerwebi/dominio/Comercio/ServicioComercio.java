@@ -29,6 +29,11 @@ public interface ServicioComercio {
   List<HorarioComercio> obtenerHorarios(Long comercioId);
   Boolean estaAbierto(Long comercioId);
   void guardarFoto(Long comercioId, byte[] foto) throws FotoInvalida;
+  /**
+   * Les pone categoría a los comercios que no la tienen (los cargados antes de que se dedujera sola).
+   * Devuelve cuántos completó.
+   */
+  int completarTiposFaltantes();
   void solicitarVerificacion(Long comercioId);
   List<Comercio> listarSolicitudesVerificacion();
   void aprobarVerificacion(Long comercioId);

@@ -59,6 +59,7 @@ public class ServicioComercioImpl implements ServicioComercio {
     if (mismaDireccion != null) {
       return completarExistente(mismaDireccion, comercio);
     }
+    comercio.setTipo(TipoDeComercio.paraGuardar(comercio.getTipo(), comercio.getNombre()));
     return repositorioComercio.guardarComercio(comercio);
   }
 
@@ -71,6 +72,10 @@ public class ServicioComercioImpl implements ServicioComercio {
     if (existente.getLatitud() == null && nuevo.getLatitud() != null) {
       existente.setLatitud(nuevo.getLatitud());
       existente.setLongitud(nuevo.getLongitud());
+      cambio = true;
+    }
+    if (TipoDeComercio.normalizar(existente.getTipo()) == null) {
+      existente.setTipo(TipoDeComercio.paraGuardar(nuevo.getTipo(), existente.getNombre()));
       cambio = true;
     }
     if (cambio) {
@@ -132,6 +137,19 @@ public class ServicioComercioImpl implements ServicioComercio {
   }
 
   @Override
+  public int completarTiposFaltantes() {
+    int completados = 0;
+    for (Comercio comercio : repositorioComercio.listarTodos()) {
+      if (TipoDeComercio.normalizar(comercio.getTipo()) == null) {
+        comercio.setTipo(TipoDeComercio.inferirDe(comercio.getNombre()));
+        repositorioComercio.actualizarComercio(comercio);
+        completados++;
+      }
+    }
+    return completados;
+  }
+
+  @Override
   public void solicitarVerificacion(Long comercioId) {
     Comercio comercio = repositorioComercio.buscarComercio(comercioId);
 
@@ -163,7 +181,7 @@ public class ServicioComercioImpl implements ServicioComercio {
       !mismoTexto(existente.getLocalidad(), datos.getLocalidad());
 
     existente.setNombre(datos.getNombre());
-    existente.setTipo(datos.getTipo());
+    existente.setTipo(TipoDeComercio.paraGuardar(datos.getTipo(), datos.getNombre()));
     existente.setDireccion(datos.getDireccion());
     existente.setLocalidad(datos.getLocalidad());
     existente.setDescripcion(datos.getDescripcion());

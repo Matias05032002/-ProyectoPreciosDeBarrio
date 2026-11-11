@@ -22,7 +22,7 @@ public class VistaPromocionE2E {
   private static final String TITULO_METODO_PAGO = "20% con débito";
   private static final String PRODUCTO = "Leche entera 1l";
   private static final DateTimeFormatter FORMATO = DateTimeFormatter.ofPattern(
-          "yyyy-MM-dd'T'HH:mm"
+    "yyyy-MM-dd'T'HH:mm"
   );
 
   static Playwright playwright;
@@ -92,12 +92,12 @@ public class VistaPromocionE2E {
 
     LocalDateTime ahora = LocalDateTime.now();
     vistaPromociones.completarFormularioDeMetodoPago(
-            TITULO_METODO_PAGO,
-            "DEBITO",
-            "20",
-            "Todos los martes",
-            ahora.minusDays(1).format(FORMATO),
-            ahora.plusDays(7).format(FORMATO)
+      TITULO_METODO_PAGO,
+      "DEBITO",
+      "20",
+      "Todos los martes",
+      ahora.minusDays(1).format(FORMATO),
+      ahora.plusDays(7).format(FORMATO)
     );
     vistaPromociones.darClickEnCrearPromocion();
 
@@ -113,17 +113,17 @@ public class VistaPromocionE2E {
 
     LocalDateTime ahora = LocalDateTime.now();
     vistaPromociones.completarFormularioDeMetodoPago(
-            TITULO_METODO_PAGO,
-            "EFECTIVO",
-            "95",
-            "Descuento demasiado alto",
-            ahora.minusDays(1).format(FORMATO),
-            ahora.plusDays(7).format(FORMATO)
+      TITULO_METODO_PAGO,
+      "EFECTIVO",
+      "95",
+      "Descuento demasiado alto",
+      ahora.minusDays(1).format(FORMATO),
+      ahora.plusDays(7).format(FORMATO)
     );
     // El campo tiene max="90": el navegador frenaría el envío antes de llegar al servidor, que es
     // el que se quiere probar. Se apaga solo la validación del navegador.
     vistaPromociones.page.evaluate(
-            "document.querySelector('form[action*=\"/promociones/crear\"]').noValidate = true"
+      "document.querySelector('form[action*=\"/promociones/crear\"]').noValidate = true"
     );
     vistaPromociones.darClickEnCrearPromocion();
 
@@ -179,12 +179,12 @@ public class VistaPromocionE2E {
 
     LocalDateTime ahora = LocalDateTime.now();
     vistaPromociones.completarFormularioDeProducto(
-            TITULO,
-            PRODUCTO,
-            "1500",
-            "Llevás dos y pagás uno",
-            ahora.minusDays(5).format(FORMATO),
-            ahora.minusDays(1).format(FORMATO)
+      TITULO,
+      PRODUCTO,
+      "1500",
+      "Llevás dos y pagás uno",
+      ahora.minusDays(5).format(FORMATO),
+      ahora.minusDays(1).format(FORMATO)
     );
     vistaPromociones.darClickEnCrearPromocion();
 
@@ -209,12 +209,12 @@ public class VistaPromocionE2E {
 
     LocalDateTime ahora = LocalDateTime.now();
     vistaPromociones.completarFormularioDeProducto(
-            TITULO,
-            PRODUCTO,
-            "1500",
-            "Llevás dos y pagás uno",
-            ahora.minusDays(1).format(FORMATO),
-            ahora.plusDays(7).format(FORMATO)
+      TITULO,
+      PRODUCTO,
+      "1500",
+      "Llevás dos y pagás uno",
+      ahora.minusDays(1).format(FORMATO),
+      ahora.plusDays(7).format(FORMATO)
     );
     vistaPromociones.darClickEnCrearPromocion();
   }

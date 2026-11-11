@@ -314,4 +314,75 @@ public class ServicioOcrTest {
     assertThat(pedido.getValue(), containsString("se vende por peso"));
     assertThat(pedido.getValue(), containsString("la unidad es '1kg'"));
   }
+
+  private static String respuestaConTexto(String texto) {
+    return (
+      "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":" +
+      com.google.gson.JsonParser.parseString("\"" + texto.replace("\"", "\\\"") + "\"") +
+      "}]}}]}"
+    );
+  }
+
+  @Test
+  public void leerTicket_devuelveLosProductosYElTipoDeComercio() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn(
+        respuestaConTexto(
+          "{\"tipoComercio\":\"Carniceria\",\"productos\":[{\"nombre\":\"Asado\",\"precio\":9000,\"unidad\":\"1kg\"}]}"
+        )
+      );
+
+    TicketLeido ticket = servicioOcr.leerTicket(new byte[] { 1, 2, 3 });
+
+    assertThat(ticket.items().size(), equalTo(1));
+    assertThat(ticket.items().get(0).getNombre(), equalTo("Asado"));
+    assertThat(ticket.tipoComercio(), equalTo("Carniceria"));
+  }
+
+  @Test
+  public void leerTicket_normalizaElTipoQueDevuelveElModelo() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn(respuestaConTexto("{\"tipoComercio\":\"verdulería\",\"productos\":[]}"));
+
+    assertThat(
+      servicioOcr.leerTicket(new byte[] { 1, 2, 3 }).tipoComercio(),
+      equalTo("Verduleria")
+    );
+  }
+
+  @Test
+  public void leerTicket_conUnTipoInventadoONuloNoDevuelveTipo() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn(respuestaConTexto("{\"tipoComercio\":\"Ferreteria\",\"productos\":[]}"));
+    assertThat(servicioOcr.leerTicket(new byte[] { 1, 2, 3 }).tipoComercio(), equalTo(null));
+
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn(respuestaConTexto("{\"tipoComercio\":null,\"productos\":[]}"));
+    assertThat(servicioOcr.leerTicket(new byte[] { 1, 2, 3 }).tipoComercio(), equalTo(null));
+  }
+
+  @Test
+  public void leerTicket_siElModeloDevuelveSoloLaListaNoHayTipo() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn(respuestaConTexto("[{\"nombre\":\"Leche\",\"precio\":500}]"));
+
+    TicketLeido ticket = servicioOcr.leerTicket(new byte[] { 1, 2, 3 });
+
+    assertThat(ticket.items().size(), equalTo(1));
+    assertThat(ticket.tipoComercio(), equalTo(null));
+  }
+
+  @Test
+  public void leerTicket_elPromptPideElTipoDeComercioConLosValoresDeLaLista() throws Exception {
+    when(geminiClientMock.llamarGemini(anyString()))
+      .thenReturn(respuestaConTexto("{\"productos\":[]}"));
+
+    servicioOcr.leerTicket(new byte[] { 1, 2, 3 });
+
+    ArgumentCaptor<String> pedido = ArgumentCaptor.forClass(String.class);
+    verify(geminiClientMock).llamarGemini(pedido.capture());
+    assertThat(pedido.getValue(), containsString("tipoComercio"));
+    assertThat(pedido.getValue(), containsString("Almacen, Verduleria, Carniceria, Kiosco"));
+    assertThat(pedido.getValue(), containsString("productos"));
+  }
 }
