@@ -1,10 +1,13 @@
 package com.tallerwebi.dominio.Lista;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.excepcion.AccesoDenegado;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,15 +59,59 @@ public class ServicioListaImpl implements ServicioLista {
   @Override
   public void agregarProductoALista(Long listaId, Long reporteId, int cantidad, Long usuarioId) {
     validarCantidad(cantidad);
+
     Lista lista = repositorioLista.buscarPorId(listaId);
-    if (lista == null) throw new IllegalArgumentException("Lista no encontrada");
+    if (lista == null) {
+      throw new IllegalArgumentException("Lista no encontrada");
+    }
     validarDuenio(lista, usuarioId);
 
     Reporte reporte = repositorioReporte.buscarReporte(reporteId);
-    if (reporte == null) throw new IllegalArgumentException("Reporte no encontrado");
+    if (reporte == null) {
+      throw new IllegalArgumentException("Reporte no encontrado");
+    }
 
-    ItemLista item = new ItemLista(lista, reporte, cantidad);
-    repositorioLista.agregarItem(item);
+    for (ItemLista item : lista.getItems()) {
+      if (esMismoProducto(item.getReporte(), reporte)) {
+        item.setCantidad(item.getCantidad() + cantidad);
+        return;
+      }
+    }
+
+    ItemLista nuevoItem = new ItemLista(lista, reporte, cantidad);
+    repositorioLista.agregarItem(nuevoItem);
+  }
+
+  private boolean esMismoProducto(Reporte existente, Reporte nuevo) {
+    if (existente == null || nuevo == null) {
+      return false;
+    }
+
+    Producto productoExistente = existente.getProducto();
+    Producto productoNuevo = nuevo.getProducto();
+
+    Comercio comercioExistente = existente.getComercio();
+    Comercio comercioNuevo = nuevo.getComercio();
+
+    if (
+      productoExistente == null ||
+      productoNuevo == null ||
+      comercioExistente == null ||
+      comercioNuevo == null
+    ) {
+      return false;
+    }
+
+    return (
+      mismoId(productoExistente.getId(), productoNuevo.getId()) &&
+      mismoId(comercioExistente.getId(), comercioNuevo.getId()) &&
+      Objects.equals(productoExistente.getMarca(), productoNuevo.getMarca()) &&
+      Objects.equals(existente.getPrecio(), nuevo.getPrecio())
+    );
+  }
+
+  private boolean mismoId(Long idExistente, Long idNuevo) {
+    return idExistente != null && idExistente.equals(idNuevo);
   }
 
   @Override
