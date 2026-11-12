@@ -3,6 +3,7 @@ package com.tallerwebi.presentacion;
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.HorarioComercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Comercio.TipoDeComercio;
 import com.tallerwebi.dominio.Comercio.UbicacionSugerida;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
@@ -64,6 +65,7 @@ public class ControladorComercio {
     ModelAndView mav = new ModelAndView("comercio/lista-comercios");
     mav.addObject("comercios", comercios);
     mav.addObject("estadosAbierto", estadosAbierto);
+    mav.addObject("tiposComercio", TipoDeComercio.TIPOS);
     return mav;
   }
 
