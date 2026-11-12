@@ -61,6 +61,11 @@
         <div>No se pudo cambiar la contraseña. Verificá la contraseña actual y los requisitos de la nueva.</div>
     </div>
 
+    <div th:if="${param.errorEliminarCuenta}" class="cu-alerta cu-alerta-error" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div>No se pudo eliminar la cuenta. Verificá que la contraseña sea la correcta.</div>
+    </div>
+
     <div class="cu-perfil">
 
         <!-- Reportes -->
@@ -213,9 +218,46 @@
                     </form>
                 </div>
             </details>
+
+            <!-- Eliminar la cuenta: el administrador no puede -->
+            <section class="cu-peligro" th:if="${usuario.rol != 'ADMIN'}" aria-labelledby="cu-t-peligro">
+                <h2 id="cu-t-peligro">Eliminar cuenta</h2>
+                <p>Se borran tus datos personales y ya no vas a poder entrar. Los precios que reportaste siguen
+                    ayudando al barrio, sin tu nombre.
+                    <span th:if="${usuario.rol == 'COMERCIO'}">Tu comercio y sus promociones dejan de mostrarse.</span></p>
+                <button type="button" class="cu-btn cu-btn-peligro cu-btn-bloque" id="btn-eliminar-cuenta"
+                        data-bs-toggle="modal" data-bs-target="#modalEliminarCuenta">
+                    <i class="bi bi-trash3" aria-hidden="true"></i> Eliminar mi cuenta
+                </button>
+            </section>
         </div>
     </div>
 </main>
+
+<div class="modal fade" id="modalEliminarCuenta" tabindex="-1"
+     aria-labelledby="titulo-eliminar-cuenta" aria-hidden="true"
+     th:attr="data-abrir=${param.errorEliminarCuenta != null}">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" th:action="@{/perfil/eliminar-cuenta}" method="post">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="titulo-eliminar-cuenta">¿Eliminar tu cuenta?</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Esta acción no se puede deshacer. Para confirmar, escribí tu contraseña.</p>
+                <label for="contrasenaEliminar" class="cu-etiqueta">Contraseña</label>
+                <input type="password" id="contrasenaEliminar" name="contrasena" class="cu-control"
+                       required autocomplete="current-password">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cu-btn cu-btn-claro cu-btn-chico" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="cu-btn cu-btn-peligro cu-btn-chico" id="confirmar-eliminar-cuenta">
+                    Eliminar definitivamente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -223,6 +265,12 @@
     var avatar = document.getElementById('cu-avatar');
     var texto = (avatar.getAttribute('data-inicial') || '').trim();
     if (texto) { avatar.textContent = texto.charAt(0).toUpperCase(); }
+
+    // Si la contraseña estaba mal, se vuelve a abrir el modal para reintentar
+    var modalEliminar = document.getElementById('modalEliminarCuenta');
+    if (modalEliminar.getAttribute('data-abrir') === 'true') {
+        new bootstrap.Modal(modalEliminar).show();
+    }
 
     // Mostrar / ocultar contraseña
     Array.prototype.forEach.call(document.querySelectorAll('.cu-ver-clave'), function (boton) {

@@ -783,3 +783,37 @@ select.cu-control {
         transform: none;
     }
 }
+
+/* Eliminar cuenta */
+
+.cu-peligro {
+    margin-top: 1rem;
+    padding: 1.1rem;
+    background: #FFFFFF;
+    border: 1px solid #F3C2C8;
+    border-radius: 18px;
+}
+
+.cu-peligro h2 {
+    margin: 0 0 .4rem;
+    color: #7A1620;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.cu-peligro p {
+    margin: 0 0 .9rem;
+    color: #2F3C47;
+    font-size: .9375rem;
+}
+
+.cu-btn-peligro {
+    color: #FFFFFF;
+    background: #B42318;
+    border-color: #B42318;
+}
+
+.cu-btn-peligro:hover {
+    color: #FFFFFF;
+    background: #8F1B12;
+}

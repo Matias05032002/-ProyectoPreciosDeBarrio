@@ -113,7 +113,12 @@ public class ServicioComercioImpl implements ServicioComercio {
 
   @Override
   public List<Comercio> listarTodos() {
-    return repositorioComercio.listarTodos();
+    // Los comercios de cuentas eliminadas se desactivan y dejan de verse en la app
+    return repositorioComercio
+            .listarTodos()
+            .stream()
+            .filter(comercio -> !Boolean.FALSE.equals(comercio.getActivo()))
+            .toList();
   }
 
   @Override

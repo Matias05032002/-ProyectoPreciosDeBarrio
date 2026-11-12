@@ -104,6 +104,13 @@
                  role="status">
             </div>
 
+            <div th:if="${param.cuentaEliminada}"
+                 id="cuenta-eliminada"
+                 class="alert alert-success"
+                 role="status">
+                Tu cuenta fue eliminada. Si querés volver, podés crear una nueva cuando quieras.
+            </div>
+
             <div th:if="${registroExitoso != null}"
                  class="alert alert-success"
                  th:text="${registroExitoso}"
