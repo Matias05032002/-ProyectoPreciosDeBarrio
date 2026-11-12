@@ -25,6 +25,7 @@ public class ServicioComercioImpl implements ServicioComercio {
   private RepositorioComercio repositorioComercio;
   private final RepositorioHorario repositorioHorario;
   private final ServicioGeolocalizacion servicioGeolocalizacion;
+  private final BuscadorDeComercioEnElMismoLugar buscadorEnElMismoLugar;
 
   @Autowired
   public ServicioComercioImpl(
@@ -35,11 +36,13 @@ public class ServicioComercioImpl implements ServicioComercio {
     this.repositorioComercio = repositorioComercio;
     this.repositorioHorario = repositorioHorario;
     this.servicioGeolocalizacion = servicioGeolocalizacion;
+    this.buscadorEnElMismoLugar =
+      new BuscadorDeComercioEnElMismoLugar(repositorioComercio, servicioGeolocalizacion);
   }
 
   @Override
   public Comercio guardarComercio(Comercio comercio) {
-    Comercio existente = repositorioComercio.buscarComercioPorDireccionYLocalidad(
+    Comercio existente = buscadorEnElMismoLugar.porTexto(
       comercio.getDireccion(),
       comercio.getLocalidad()
     );
@@ -50,17 +53,31 @@ public class ServicioComercioImpl implements ServicioComercio {
     if (!esCoordenadaValida(comercio.getLatitud(), comercio.getLongitud())) {
       ubicarSegunLaDireccion(comercio);
     }
-    // Con la dirección corregida ("crhue 1526" -> "Carhue 1526") puede aparecer un comercio
-    // que ya estaba cargado: se usa ese en lugar de crear uno repetido
-    Comercio mismaDireccion = repositorioComercio.buscarComercioPorDireccionYLocalidad(
+    // Con la dirección corregida ("crhue 1526" -> "Carhue 1526") o con otra grafía de la misma
+    // calle ("Av" / "Avenida") puede aparecer un comercio que ya estaba cargado en ese lugar:
+    // se usa ese en lugar de crear uno repetido
+    Comercio mismaDireccion = buscadorEnElMismoLugar.porTexto(
       comercio.getDireccion(),
       comercio.getLocalidad()
     );
+    if (mismaDireccion == null) {
+      mismaDireccion =
+        buscadorEnElMismoLugar.cercaDe(
+          comercio.getLatitud(),
+          comercio.getLongitud(),
+          comercio.getLocalidad()
+        );
+    }
     if (mismaDireccion != null) {
       return completarExistente(mismaDireccion, comercio);
     }
     comercio.setTipo(TipoDeComercio.paraGuardar(comercio.getTipo(), comercio.getNombre()));
     return repositorioComercio.guardarComercio(comercio);
+  }
+
+  @Override
+  public Comercio buscarEnElMismoLugar(String direccion, String localidad) {
+    return buscadorEnElMismoLugar.porDireccion(direccion, localidad);
   }
 
   private Comercio completarExistente(Comercio existente, Comercio nuevo) {
@@ -258,7 +275,7 @@ public class ServicioComercioImpl implements ServicioComercio {
 
   @Override
   public Comercio buscarPorDireccionYLocalidad(String direccion, String localidad) {
-    return repositorioComercio.buscarComercioPorDireccionYLocalidad(direccion, localidad);
+    return buscadorEnElMismoLugar.porTexto(direccion, localidad);
   }
 
   @Override

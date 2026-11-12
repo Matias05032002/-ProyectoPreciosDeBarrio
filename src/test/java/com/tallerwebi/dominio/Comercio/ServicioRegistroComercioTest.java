@@ -77,7 +77,7 @@ public class ServicioRegistroComercioTest {
     conUsuarioCreadoConId(7L);
     Comercio sinDueno = new Comercio();
     sinDueno.setUsuarioId(null);
-    when(servicioComercioMock.buscarPorDireccionYLocalidad("Rivadavia 1234", "La Matanza"))
+    when(servicioComercioMock.buscarEnElMismoLugar("Rivadavia 1234", "La Matanza"))
       .thenReturn(sinDueno);
 
     registrarValido();
@@ -91,7 +91,7 @@ public class ServicioRegistroComercioTest {
   public void siElComercioYaTieneDuenoLanzaComercioYaRegistradoSinCrearNada() throws Exception {
     Comercio conDueno = new Comercio();
     conDueno.setUsuarioId(3L);
-    when(servicioComercioMock.buscarPorDireccionYLocalidad("Rivadavia 1234", "La Matanza"))
+    when(servicioComercioMock.buscarEnElMismoLugar("Rivadavia 1234", "La Matanza"))
       .thenReturn(conDueno);
 
     assertThrows(ComercioYaRegistrado.class, this::registrarValido);
@@ -246,12 +246,24 @@ public class ServicioRegistroComercioTest {
     conUsuarioCreadoConId(7L);
     Comercio cargadoPorUnVecino = new Comercio();
     cargadoPorUnVecino.setTipo("Otro");
-    when(servicioComercioMock.buscarPorDireccionYLocalidad("Rivadavia 1234", "La Matanza"))
+    when(servicioComercioMock.buscarEnElMismoLugar("Rivadavia 1234", "La Matanza"))
       .thenReturn(cargadoPorUnVecino);
 
     registrarValido();
 
     assertThat(cargadoPorUnVecino.getTipo(), equalTo("Almacen"));
     verify(servicioComercioMock).actualizarComercio(cargadoPorUnVecino);
+  }
+
+  @Test
+  public void alQuedarseConUnComercioCargadoLoUbicaSiLeFaltabaLaUbicacion() throws Exception {
+    conUsuarioCreadoConId(7L);
+    Comercio sinUbicacion = new Comercio();
+    when(servicioComercioMock.buscarEnElMismoLugar("Rivadavia 1234", "La Matanza"))
+      .thenReturn(sinUbicacion);
+
+    registrarValido();
+
+    verify(servicioComercioMock).ubicarSiFalta(sinUbicacion);
   }
 }

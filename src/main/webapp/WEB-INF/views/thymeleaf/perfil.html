@@ -61,6 +61,16 @@
         <div>No se pudo cambiar la contraseña. Verificá la contraseña actual y los requisitos de la nueva.</div>
     </div>
 
+    <div th:if="${param.eliminado}" class="cu-alerta cu-alerta-ok" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div>Se eliminó el reporte.</div>
+    </div>
+
+    <div th:if="${param.errorEliminar}" class="cu-alerta cu-alerta-error" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div>No pudimos eliminar ese reporte porque no es tuyo o ya no existe.</div>
+    </div>
+
     <div th:if="${param.errorEliminarCuenta}" class="cu-alerta cu-alerta-error" role="alert">
         <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
         <div>No se pudo eliminar la cuenta. Verificá que la contraseña sea la correcta.</div>
@@ -100,6 +110,12 @@
                            class="cu-btn cu-btn-claro cu-btn-chico">
                             <i class="bi bi-pencil" aria-hidden="true"></i> Editar
                         </a>
+                        <button type="button" class="cu-btn cu-btn-peligro cu-btn-chico"
+                                th:id="'btn-eliminar-reporte-' + ${reporte.id}"
+                                data-bs-toggle="modal"
+                                th:attr="data-bs-target='#modal-eliminar-reporte-' + ${reporte.id}">
+                            <i class="bi bi-trash3" aria-hidden="true"></i> Eliminar
+                        </button>
                     </div>
                 </li>
             </ul>
@@ -234,9 +250,45 @@
     </div>
 </main>
 
+<!-- Confirmación para eliminar un reporte: un modal por reporte, fuera de la lista -->
+<div class="modal fade" tabindex="-1" aria-hidden="true"
+     th:each="reporte : ${reportes}"
+     th:id="'modal-eliminar-reporte-' + ${reporte.id}"
+     th:attr="aria-labelledby='titulo-eliminar-reporte-' + ${reporte.id}">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" th:id="'titulo-eliminar-reporte-' + ${reporte.id}">¿Eliminar este reporte?</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">
+                    <strong th:text="${reporte.producto.nombre}">Producto</strong>
+                    a <span th:text="${reporte.precio != null
+                        ? '$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')
+                        : 'sin precio'}">$0,00</span>
+                    en <span th:text="${reporte.comercio.nombre}">Comercio</span>.
+                </p>
+                <p class="mb-0">Los demás vecinos dejan de verlo y no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cu-btn cu-btn-claro cu-btn-chico" data-bs-dismiss="modal"
+                        th:id="'btn-cancelar-eliminar-reporte-' + ${reporte.id}">Cancelar</button>
+                <form th:action="@{/reporte/{id}/eliminar(id=${reporte.id})}" method="post" class="m-0">
+                    <input type="hidden" name="volverA" value="perfil">
+                    <button type="submit" class="cu-btn cu-btn-peligro cu-btn-chico"
+                            th:id="'btn-confirmar-eliminar-reporte-' + ${reporte.id}">
+                        <i class="bi bi-trash3" aria-hidden="true"></i> Sí, eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalEliminarCuenta" tabindex="-1"
-     aria-labelledby="titulo-eliminar-cuenta" aria-hidden="true"
-     th:attr="data-abrir=${param.errorEliminarCuenta != null}">
+     aria-labelledby="titulo-eliminar-cuenta" aria-hidden="true">
+    <span id="reabrir-eliminar-cuenta" th:if="${param.errorEliminarCuenta}" hidden></span>
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content" th:action="@{/perfil/eliminar-cuenta}" method="post">
             <div class="modal-header">
@@ -268,7 +320,7 @@
 
     // Si la contraseña estaba mal, se vuelve a abrir el modal para reintentar
     var modalEliminar = document.getElementById('modalEliminarCuenta');
-    if (modalEliminar.getAttribute('data-abrir') === 'true') {
+    if (modalEliminar.querySelector('#reabrir-eliminar-cuenta')) {
         new bootstrap.Modal(modalEliminar).show();
     }
 

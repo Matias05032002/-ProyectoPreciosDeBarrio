@@ -39,7 +39,16 @@
 
         <div th:if="${error}" id="error-ticket" class="rp-alerta rp-alerta-error alert-danger" role="alert">
             <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-            <div th:text="${error}"></div>
+            <div>
+                <div th:text="${error}"></div>
+                <p th:if="${lecturaFallida}" class="mb-2 mt-1">
+                    Es un problema momentáneo del servicio de lectura, no de tu foto. Podés volver a intentarlo
+                    (tus datos del comercio ya están cargados; elegí la foto de nuevo) o cargar los precios a mano.
+                </p>
+                <a th:if="${lecturaFallida}" id="btn-cargar-a-mano" th:href="@{/reporte}" class="rp-btn rp-btn-claro rp-btn-chico">
+                    <i class="bi bi-pencil-square" aria-hidden="true"></i> Cargar los precios a mano
+                </a>
+            </div>
         </div>
         <div id="aviso-ticket" class="rp-alerta rp-alerta-aviso" role="alert" hidden>
             <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
@@ -89,7 +98,8 @@
                 <div class="rp-campo">
                     <label class="rp-etiqueta" for="comercio-nombre">Nombre del comercio</label>
                     <input type="text" name="comercio.nombre" id="comercio-nombre" class="rp-control" data-nombre="el nombre del comercio"
-                           placeholder="Ej: Almacén Don Pepe" list="lista-comercios" autocomplete="off" required>
+                           placeholder="Ej: Almacén Don Pepe" list="lista-comercios" autocomplete="off" required
+                           th:value="${comercioNombre}">
                     <datalist id="lista-comercios">
                         <option th:each="c : ${comercios}" th:value="${c.nombre}"></option>
                     </datalist>
@@ -98,11 +108,13 @@
                     <div class="rp-campo">
                         <label class="rp-etiqueta" for="comercio-direccion">Dirección</label>
                         <input type="text" name="comercio.direccion" id="comercio-direccion" class="rp-control" data-nombre="la dirección"
-                               placeholder="Calle y altura" autocomplete="off" required>
+                               placeholder="Calle y altura" autocomplete="off" required
+                               th:value="${comercioDireccion}">
                     </div>
                     <div class="rp-campo">
                         <label class="rp-etiqueta" for="comercio-localidad">Partido / localidad</label>
-                        <select name="comercio.localidad" id="comercio-localidad" class="rp-control" data-nombre="la localidad">
+                        <select name="comercio.localidad" id="comercio-localidad" class="rp-control" data-nombre="la localidad"
+                                th:attr="data-valor=${comercioLocalidad}">
                             <option value="">Seleccionar partido/localidad</option>
                             <option value="Almirante Brown">Almirante Brown</option>
                             <option value="Avellaneda">Avellaneda</option>
@@ -177,6 +189,10 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     var inputFoto = document.getElementById('ticket-foto');
+
+    // Si la lectura falló, la localidad vuelve elegida
+    var selectLocalidad = document.getElementById('comercio-localidad');
+    if (selectLocalidad.dataset.valor) { selectLocalidad.value = selectLocalidad.dataset.valor; }
 
     // Vista previa del ticket elegido
     inputFoto.addEventListener('change', function () {
