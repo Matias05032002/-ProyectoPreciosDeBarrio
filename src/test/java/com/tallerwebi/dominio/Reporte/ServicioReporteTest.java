@@ -11,6 +11,8 @@ import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.*;
+import com.tallerwebi.dominio.notificacion.ServicioNotificacion;
+import com.tallerwebi.dominio.notificacion.TipoNotificacion;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,17 +28,20 @@ public class ServicioReporteTest {
   private ServicioComercio servicioComercioMock;
   private ServicioProducto servicioProductoMock;
   private RepositorioReporte repositorioReporteMock;
+  private ServicioNotificacion servicioNotificacionMock;
 
   @BeforeEach
   public void init() {
     this.repositorioReporteMock = mock(RepositorioReporte.class);
     this.servicioComercioMock = mock(ServicioComercio.class);
     this.servicioProductoMock = mock(ServicioProducto.class);
+    this.servicioNotificacionMock = mock(ServicioNotificacion.class);
     this.servicioReporte =
       new ServicioReporteImpl(
         this.servicioComercioMock,
         this.servicioProductoMock,
-        this.repositorioReporteMock
+        this.repositorioReporteMock,
+        this.servicioNotificacionMock
       );
   }
 
@@ -1191,5 +1196,67 @@ public class ServicioReporteTest {
   @Test
   public void validarFotoRechazaUnaFotoVacia() {
     assertThrows(FotoInvalida.class, () -> servicioReporte.validarFoto(new byte[0]));
+  }
+
+  private Reporte reporteDeUnComercioConDuenio(Long duenioId) {
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacen Don Jose");
+    comercio.setUsuarioId(duenioId);
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    Usuario autor = new Usuario();
+    autor.setId(7L);
+    Reporte reporte = new Reporte();
+    reporte.setId(15L);
+    reporte.setUsuario(autor);
+    reporte.setComercio(comercio);
+    reporte.setProducto(producto);
+    return reporte;
+  }
+
+  @Test
+  public void marcarDudosoAvisaAlDuenioDelComercio() {
+    Usuario quienMarca = new Usuario();
+    quienMarca.setId(8L);
+    Reporte reporte = reporteDeUnComercioConDuenio(30L);
+    when(repositorioReporteMock.buscarReporte(15L)).thenReturn(reporte);
+    when(repositorioReporteMock.marcarDudoso(15L, quienMarca)).thenReturn(reporte);
+
+    servicioReporte.marcarDudoso(15L, quienMarca);
+
+    verify(servicioNotificacionMock)
+      .notificar(
+        eq(30L),
+        eq(TipoNotificacion.DUDOSO_EN_TU_COMERCIO),
+        contains("Leche"),
+        eq("/comercio/dashboard"),
+        eq("dudoso:15")
+      );
+  }
+
+  @Test
+  public void marcarDudosoSiElComercioNoTieneDuenioNoNotifica() {
+    Usuario quienMarca = new Usuario();
+    quienMarca.setId(8L);
+    Reporte reporte = reporteDeUnComercioConDuenio(null);
+    when(repositorioReporteMock.buscarReporte(15L)).thenReturn(reporte);
+    when(repositorioReporteMock.marcarDudoso(15L, quienMarca)).thenReturn(reporte);
+
+    servicioReporte.marcarDudoso(15L, quienMarca);
+
+    verifyNoInteractions(servicioNotificacionMock);
+  }
+
+  @Test
+  public void marcarDudosoDosVecesElMismoReporteNoVuelveANotificar() {
+    Usuario quienMarca = new Usuario();
+    quienMarca.setId(8L);
+    Reporte reporte = reporteDeUnComercioConDuenio(30L);
+    reporte.setUsuariosQueMarcaron(new ArrayList<>(List.of(quienMarca)));
+    when(repositorioReporteMock.buscarReporte(15L)).thenReturn(reporte);
+
+    servicioReporte.marcarDudoso(15L, quienMarca);
+
+    verifyNoInteractions(servicioNotificacionMock);
   }
 }

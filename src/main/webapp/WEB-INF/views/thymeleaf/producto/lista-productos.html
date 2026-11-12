@@ -210,6 +210,14 @@
                         <strong th:text="${'$' + #numbers.formatDecimal(producto.precioMinimo, 1, 'POINT', producto.precioMinimo % 1 == 0 ? 0 : 2, 'COMMA')}"></strong>
                     </p>
 
+                    <p class="lp-tendencia"
+                       th:if="${producto.tendencia != null}"
+                       th:classappend="${producto.tendencia.baja()} ? 'lp-tendencia-baja' : 'lp-tendencia-sube'"
+                       th:id="'tendencia-' + ${producto.reporteId}">
+                        <i class="bi" th:classappend="${producto.tendencia.baja()} ? 'bi-arrow-down-right' : 'bi-arrow-up-right'" aria-hidden="true"></i>
+                        <span th:text="${(producto.tendencia.baja() ? 'Bajó ' : 'Subió ') + producto.tendencia.porcentajeAbsoluto() + '% desde el ' + #temporals.format(producto.tendencia.desde(), 'dd/MM')}"></span>
+                    </p>
+
                     <p class="lp-barato" th:if="${producto.esMasBarato}">
                         <span th:id="'badge-mas-barato-' + ${producto.reporteId}">
                             <i class="bi bi-patch-check-fill" aria-hidden="true"></i>

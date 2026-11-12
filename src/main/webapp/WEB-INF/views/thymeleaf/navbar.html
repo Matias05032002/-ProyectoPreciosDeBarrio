@@ -170,6 +170,19 @@
                             </ul>
                         </div>
 
+                        <!-- Campanita de avisos: el contador lo completa el script de abajo -->
+                        <a th:if="${session['ROL'] != null}"
+                           class="nav-link position-relative"
+                           th:href="@{/notificaciones}"
+                           id="campanita"
+                           aria-label="Notificaciones">
+                            <i class="bi bi-bell" aria-hidden="true"></i>
+                            <span class="d-lg-none ms-2">Notificaciones</span>
+                            <span id="campanita-contador"
+                                  class="badge rounded-pill bg-success ms-1"
+                                  hidden></span>
+                        </a>
+
                         <!-- Usuario conectado: la inicial en un círculo; en el panel del celular se ve también el correo -->
                         <span th:if="${session['ROL'] != null and session['EMAIL'] != null}"
                               class="nav-link cuenta-nav"
@@ -215,6 +228,25 @@
             <i class="bi bi-list"></i>Menú
         </button>
     </nav>
+
+    <script>
+        // Cuenta los avisos sin leer y los muestra en la campanita
+        (function () {
+            var campanita = document.getElementById('campanita');
+            if (!campanita) { return; }
+            var url = campanita.getAttribute('href') + '/contador';
+            fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                .then(function (respuesta) { return respuesta.ok ? respuesta.json() : null; })
+                .then(function (datos) {
+                    if (!datos || !datos.noLeidas) { return; }
+                    var contador = document.getElementById('campanita-contador');
+                    contador.textContent = datos.noLeidas > 99 ? '99+' : datos.noLeidas;
+                    contador.hidden = false;
+                    campanita.setAttribute('aria-label', 'Notificaciones: ' + datos.noLeidas + ' sin leer');
+                })
+                .catch(function () { /* sin aviso: la campanita queda sin número */ });
+        })();
+    </script>
 
     <script>
         // Marca en la barra inferior el destino donde estás parado

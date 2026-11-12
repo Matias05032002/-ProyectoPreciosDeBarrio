@@ -1,6 +1,8 @@
 package com.tallerwebi.presentacion.DTO;
 
+import com.tallerwebi.dominio.Producto.TendenciaDePrecio;
 import com.tallerwebi.dominio.Reporte.Reporte;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
@@ -27,6 +29,8 @@ public class ProductoConPrecio {
   private Double diferenciaConElMasBarato;
   private Double ahorroMaximo;
   private String imagenUrl;
+  // Cambio del precio de este comercio respecto de su reporte anterior (negativo si bajó)
+  private TendenciaDePrecio tendencia;
 
   public ProductoConPrecio(
     String nombre,
@@ -172,5 +176,13 @@ public class ProductoConPrecio {
 
   public void setAhorroMaximo(Double ahorroMaximo) {
     this.ahorroMaximo = ahorroMaximo;
+  }
+
+  public TendenciaDePrecio getTendencia() {
+    return tendencia;
+  }
+
+  public void setTendencia(TendenciaDePrecio tendencia) {
+    this.tendencia = tendencia;
   }
 }
