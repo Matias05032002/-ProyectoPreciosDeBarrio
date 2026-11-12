@@ -2,14 +2,26 @@ package com.tallerwebi.dominio.Comercio;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.excepcion.FotoInvalida;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class ServicioComercioTest {
@@ -659,5 +671,704 @@ public class ServicioComercioTest {
     verify(repositorioComercioMock).actualizarComercio(sinTipo);
     verify(repositorioComercioMock).actualizarComercio(inventado);
     verify(repositorioComercioMock, never()).actualizarComercio(conTipo);
+  }
+
+  // Casos de borde de ServicioComercioImpl: cada uno falla si se altera la regla que protege
+
+  private static final Long COMERCIO_ID = 1L;
+  private static final String DIRECCION = "Carhue 1526";
+  private static final String LOCALIDAD = "San Justo";
+  private static final String TIPO_VALIDO = TipoDeComercio.TIPOS.get(0);
+
+  private RepositorioComercio repositorioComercio;
+  private RepositorioHorario repositorioHorario;
+  private ServicioGeolocalizacion servicioGeolocalizacion;
+  private ServicioComercioImpl servicio;
+
+  @BeforeEach
+  public void prepararCasosDeBorde() {
+    repositorioComercio = mock(RepositorioComercio.class);
+    repositorioHorario = mock(RepositorioHorario.class);
+    servicioGeolocalizacion = mock(ServicioGeolocalizacion.class);
+    servicio =
+      new ServicioComercioImpl(repositorioComercio, repositorioHorario, servicioGeolocalizacion);
+  }
+
+  // ---------- coordenadas ----------
+
+  @Test
+  public void lasCoordenadasEnLosExtremosDelRectanguloSonValidas() {
+    assertThat(ServicioComercioImpl.esCoordenadaValida(-55.1, -73.6), equalTo(true));
+    assertThat(ServicioComercioImpl.esCoordenadaValida(-21.7, -53.5), equalTo(true));
+  }
+
+  @Test
+  public void lasCoordenadasJustoAfueraDelRectanguloSonInvalidas() {
+    assertThat(ServicioComercioImpl.esCoordenadaValida(-55.2, -60.0), equalTo(false));
+    assertThat(ServicioComercioImpl.esCoordenadaValida(-21.6, -60.0), equalTo(false));
+    assertThat(ServicioComercioImpl.esCoordenadaValida(-40.0, -73.7), equalTo(false));
+    assertThat(ServicioComercioImpl.esCoordenadaValida(-40.0, -53.4), equalTo(false));
+  }
+
+  @Test
+  public void unaCoordenadaIncompletaEsInvalida() {
+    assertThat(ServicioComercioImpl.esCoordenadaValida(null, -60.0), equalTo(false));
+    assertThat(ServicioComercioImpl.esCoordenadaValida(-40.0, null), equalTo(false));
+  }
+
+  // ---------- guardar sobre un comercio ya cargado ----------
+
+  @Test
+  public void guardarUnComercioQueYaTieneDuenoLoDevuelveSinTocarlo() {
+    Comercio existente = comercio(4L, -34.6, TIPO_VALIDO);
+    when(repositorioComercio.buscarComercioPorDireccionYLocalidad(DIRECCION, LOCALIDAD))
+      .thenReturn(existente);
+
+    Comercio resultado = servicio.guardarComercio(nuevo(9L, null));
+
+    assertThat(resultado, equalTo(existente));
+    verify(servicioGeolocalizacion, never()).buscar(anyString(), anyString());
+    verify(repositorioComercio, never()).actualizarComercio(any());
+    verify(repositorioComercio, never()).guardarComercio(any());
+  }
+
+  @Test
+  public void completarUnComercioSinCambiosNoLoActualiza() {
+    Comercio existente = comercio(4L, -34.6, TIPO_VALIDO);
+    existenteEnLaSegundaBusqueda(existente);
+
+    Comercio resultado = servicio.guardarComercio(nuevo(null, null));
+
+    assertThat(resultado, equalTo(existente));
+    verify(repositorioComercio, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void completarUnComercioSinDuenoLeAsignaElDuenoYLoActualiza() {
+    Comercio existente = comercio(null, -34.6, TIPO_VALIDO);
+    existenteEnLaSegundaBusqueda(existente);
+
+    servicio.guardarComercio(nuevo(9L, null));
+
+    assertThat(existente.getUsuarioId(), equalTo(9L));
+    verify(repositorioComercio, times(1)).actualizarComercio(existente);
+  }
+
+  @Test
+  public void completarUnComercioConDuenoNoLeCambiaElDueno() {
+    Comercio existente = comercio(4L, -34.6, TIPO_VALIDO);
+    existenteEnLaSegundaBusqueda(existente);
+
+    servicio.guardarComercio(nuevo(9L, null));
+
+    assertThat(existente.getUsuarioId(), equalTo(4L));
+    verify(repositorioComercio, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void completarUnComercioSinDuenoConUnaSolicitudSinDuenoNoLoActualiza() {
+    Comercio existente = comercio(null, -34.6, TIPO_VALIDO);
+    existenteEnLaSegundaBusqueda(existente);
+
+    servicio.guardarComercio(nuevo(null, null));
+
+    assertThat(existente.getUsuarioId(), nullValue());
+    verify(repositorioComercio, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void completarUnComercioSinUbicacionLeCopiaLaUbicacionNueva() {
+    Comercio existente = comercio(4L, null, TIPO_VALIDO);
+    existenteEnLaSegundaBusqueda(existente);
+
+    servicio.guardarComercio(nuevo(null, -34.7));
+
+    assertThat(existente.getLatitud(), equalTo(-34.7));
+    assertThat(existente.getLongitud(), equalTo(-58.5));
+    verify(repositorioComercio, times(1)).actualizarComercio(existente);
+  }
+
+  @Test
+  public void completarUnComercioConUbicacionNoLaPisa() {
+    Comercio existente = comercio(4L, -34.6, TIPO_VALIDO);
+    existenteEnLaSegundaBusqueda(existente);
+
+    servicio.guardarComercio(nuevo(null, -34.7));
+
+    assertThat(existente.getLatitud(), equalTo(-34.6));
+    verify(repositorioComercio, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void completarUnComercioSinTipoValidoLeCompletaElTipo() {
+    Comercio existente = comercio(4L, -34.6, null);
+    existenteEnLaSegundaBusqueda(existente);
+
+    servicio.guardarComercio(nuevo(null, null));
+
+    assertThat(TipoDeComercio.normalizar(existente.getTipo()) != null, equalTo(true));
+    verify(repositorioComercio, times(1)).actualizarComercio(existente);
+  }
+
+  // ---------- ubicar si falta ----------
+
+  @Test
+  public void ubicarSiFaltaSinDireccionNoBuscaNada() {
+    Comercio sinDireccion = new Comercio();
+    Comercio direccionEnBlanco = new Comercio();
+    direccionEnBlanco.setDireccion("   ");
+
+    servicio.ubicarSiFalta(sinDireccion);
+    servicio.ubicarSiFalta(direccionEnBlanco);
+
+    verify(servicioGeolocalizacion, never()).buscar(any(), any());
+    verify(repositorioComercio, never()).actualizarComercio(any());
+  }
+
+  // ---------- verificación ----------
+
+  @Test
+  public void solicitarVerificacionDeUnComercioInexistenteNoHaceNada() {
+    when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(null);
+
+    servicio.solicitarVerificacion(COMERCIO_ID);
+
+    verify(repositorioComercio, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void solicitarVerificacionMarcaLaSolicitudYGuarda() {
+    Comercio comercio = new Comercio();
+    comercio.setVerificado(false);
+    comercio.setSolicitudVerificacion(false);
+    when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(comercio);
+
+    servicio.solicitarVerificacion(COMERCIO_ID);
+
+    assertThat(comercio.getSolicitudVerificacion(), equalTo(true));
+    verify(repositorioComercio, times(1)).actualizarComercio(comercio);
+  }
+
+  @Test
+  public void aprobarVerificacionDeUnComercioInexistenteNoHaceNada() {
+    when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(null);
+
+    servicio.aprobarVerificacion(COMERCIO_ID);
+
+    verify(repositorioComercio, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void aprobarVerificacionSinSolicitudNoLaAprueba() {
+    Comercio comercio = new Comercio();
+    comercio.setVerificado(false);
+    comercio.setSolicitudVerificacion(false);
+    when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(comercio);
+
+    servicio.aprobarVerificacion(COMERCIO_ID);
+
+    assertThat(comercio.getVerificado(), equalTo(false));
+    verify(repositorioComercio, never()).actualizarComercio(any());
+  }
+
+  @Test
+  public void aprobarVerificacionVerificaElComercioYCierraLaSolicitud() {
+    Comercio comercio = new Comercio();
+    comercio.setVerificado(false);
+    comercio.setSolicitudVerificacion(true);
+    when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(comercio);
+
+    servicio.aprobarVerificacion(COMERCIO_ID);
+
+    assertThat(comercio.getVerificado(), equalTo(true));
+    assertThat(comercio.getSolicitudVerificacion(), equalTo(false));
+    verify(repositorioComercio, times(1)).actualizarComercio(comercio);
+  }
+
+  // ---------- horario: está abierto ahora ----------
+
+  @Test
+  public void estaAbiertoDentroDelHorarioDeHoy() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), true, ahora.minusHours(1), ahora.plusHours(1)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(true));
+  }
+
+  @Test
+  public void estaCerradoAntesDeLaApertura() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), true, ahora.plusHours(1), ahora.plusHours(2)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+  }
+
+  @Test
+  public void estaCerradoDespuesDelCierre() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), true, ahora.minusHours(2), ahora.minusHours(1)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+  }
+
+  @Test
+  public void estaCerradoSiElHorarioEsDeOtroDia() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    int otroDia = (hoy() % 7) + 1;
+    horarios(horario(otroDia, true, ahora.minusHours(1), ahora.plusHours(1)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+  }
+
+  @Test
+  public void estaCerradoSiHoyNoAbreAunqueLaHoraCoincida() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), false, ahora.minusHours(1), ahora.plusHours(1)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+  }
+
+  @Test
+  public void estaCerradoSiFaltaLaHoraDeApertura() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), true, null, ahora.plusHours(1)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+  }
+
+  @Test
+  public void estaCerradoSiFaltaLaHoraDeCierre() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), true, ahora.minusHours(1), null));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+  }
+
+  @Test
+  public void conHorarioNocturnoEstaAbiertoDespuesDeLaApertura() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), true, ahora.minusHours(1), ahora.minusHours(2)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(true));
+  }
+
+  @Test
+  public void conHorarioNocturnoEstaAbiertoAntesDelCierre() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), true, ahora.plusHours(2), ahora.plusHours(1)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(true));
+  }
+
+  @Test
+  public void conHorarioNocturnoEstaCerradoEntreElCierreYLaApertura() {
+    LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+    horarios(horario(hoy(), true, ahora.plusHours(1), ahora.minusHours(1)));
+
+    assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+  }
+
+  // ---------- armado de datos ----------
+
+  private void existenteEnLaSegundaBusqueda(Comercio existente) {
+    when(repositorioComercio.buscarComercioPorDireccionYLocalidad(DIRECCION, LOCALIDAD))
+      .thenReturn(null, existente);
+  }
+
+  private Comercio comercio(Long usuarioId, Double latitud, String tipo) {
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Almacén de Don Pepe");
+    comercio.setDireccion(DIRECCION);
+    comercio.setLocalidad(LOCALIDAD);
+    comercio.setUsuarioId(usuarioId);
+    comercio.setLatitud(latitud);
+    comercio.setLongitud(latitud == null ? null : -58.4);
+    comercio.setTipo(tipo);
+    return comercio;
+  }
+
+  private Comercio nuevo(Long usuarioId, Double latitud) {
+    Comercio comercio = comercio(usuarioId, latitud, TIPO_VALIDO);
+    if (latitud != null) {
+      comercio.setLongitud(-58.5);
+    }
+    return comercio;
+  }
+
+  private HorarioComercio horario(int dia, boolean abierto, LocalTime apertura, LocalTime cierre) {
+    HorarioComercio horario = new HorarioComercio();
+    horario.setDiaSemana(dia);
+    horario.setAbierto(abierto);
+    horario.setHoraApertura(apertura);
+    horario.setHoraCierre(cierre);
+    return horario;
+  }
+
+  private void horarios(HorarioComercio... horarios) {
+    when(repositorioHorario.buscarPorComercioId(COMERCIO_ID)).thenReturn(List.of(horarios));
+  }
+
+  private int hoy() {
+    return LocalDate.now().getDayOfWeek().getValue();
+  }
+
+  // Los horarios se arman con +/- 2 horas: cerca de la medianoche cruzarían de día
+  private LocalTime ahoraSinRiesgoDeMedianoche() {
+    LocalTime ahora = LocalTime.now();
+    assumeTrue(ahora.isAfter(LocalTime.of(2, 30)) && ahora.isBefore(LocalTime.of(21, 30)));
+    return ahora;
+  }
+
+  @Nested
+  class CasosDeBordeDeComercio {
+
+    private static final Long COMERCIO_ID = 1L;
+    private static final String DIRECCION = "Carhue 1526";
+    private static final String LOCALIDAD = "San Justo";
+    private static final String TIPO_VALIDO = TipoDeComercio.TIPOS.get(0);
+
+    private RepositorioComercio repositorioComercio;
+    private RepositorioHorario repositorioHorario;
+    private ServicioGeolocalizacion servicioGeolocalizacion;
+    private ServicioComercioImpl servicio;
+
+    @BeforeEach
+    public void init() {
+      repositorioComercio = mock(RepositorioComercio.class);
+      repositorioHorario = mock(RepositorioHorario.class);
+      servicioGeolocalizacion = mock(ServicioGeolocalizacion.class);
+      servicio =
+        new ServicioComercioImpl(repositorioComercio, repositorioHorario, servicioGeolocalizacion);
+    }
+
+    // ---------- coordenadas ----------
+
+    @Test
+    public void lasCoordenadasEnLosExtremosDelRectanguloSonValidas() {
+      assertThat(ServicioComercioImpl.esCoordenadaValida(-55.1, -73.6), equalTo(true));
+      assertThat(ServicioComercioImpl.esCoordenadaValida(-21.7, -53.5), equalTo(true));
+    }
+
+    @Test
+    public void lasCoordenadasJustoAfueraDelRectanguloSonInvalidas() {
+      assertThat(ServicioComercioImpl.esCoordenadaValida(-55.2, -60.0), equalTo(false));
+      assertThat(ServicioComercioImpl.esCoordenadaValida(-21.6, -60.0), equalTo(false));
+      assertThat(ServicioComercioImpl.esCoordenadaValida(-40.0, -73.7), equalTo(false));
+      assertThat(ServicioComercioImpl.esCoordenadaValida(-40.0, -53.4), equalTo(false));
+    }
+
+    @Test
+    public void unaCoordenadaIncompletaEsInvalida() {
+      assertThat(ServicioComercioImpl.esCoordenadaValida(null, -60.0), equalTo(false));
+      assertThat(ServicioComercioImpl.esCoordenadaValida(-40.0, null), equalTo(false));
+    }
+
+    // ---------- guardar sobre un comercio ya cargado ----------
+
+    @Test
+    public void guardarUnComercioQueYaTieneDuenoLoDevuelveSinTocarlo() {
+      Comercio existente = comercio(4L, -34.6, TIPO_VALIDO);
+      when(repositorioComercio.buscarComercioPorDireccionYLocalidad(DIRECCION, LOCALIDAD))
+        .thenReturn(existente);
+
+      Comercio resultado = servicio.guardarComercio(nuevo(9L, null));
+
+      assertThat(resultado, equalTo(existente));
+      verify(servicioGeolocalizacion, never()).buscar(anyString(), anyString());
+      verify(repositorioComercio, never()).actualizarComercio(any());
+      verify(repositorioComercio, never()).guardarComercio(any());
+    }
+
+    @Test
+    public void completarUnComercioSinCambiosNoLoActualiza() {
+      Comercio existente = comercio(4L, -34.6, TIPO_VALIDO);
+      existenteEnLaSegundaBusqueda(existente);
+
+      Comercio resultado = servicio.guardarComercio(nuevo(null, null));
+
+      assertThat(resultado, equalTo(existente));
+      verify(repositorioComercio, never()).actualizarComercio(any());
+    }
+
+    @Test
+    public void completarUnComercioSinDuenoLeAsignaElDuenoYLoActualiza() {
+      Comercio existente = comercio(null, -34.6, TIPO_VALIDO);
+      existenteEnLaSegundaBusqueda(existente);
+
+      servicio.guardarComercio(nuevo(9L, null));
+
+      assertThat(existente.getUsuarioId(), equalTo(9L));
+      verify(repositorioComercio, times(1)).actualizarComercio(existente);
+    }
+
+    @Test
+    public void completarUnComercioConDuenoNoLeCambiaElDueno() {
+      Comercio existente = comercio(4L, -34.6, TIPO_VALIDO);
+      existenteEnLaSegundaBusqueda(existente);
+
+      servicio.guardarComercio(nuevo(9L, null));
+
+      assertThat(existente.getUsuarioId(), equalTo(4L));
+      verify(repositorioComercio, never()).actualizarComercio(any());
+    }
+
+    @Test
+    public void completarUnComercioSinDuenoConUnaSolicitudSinDuenoNoLoActualiza() {
+      Comercio existente = comercio(null, -34.6, TIPO_VALIDO);
+      existenteEnLaSegundaBusqueda(existente);
+
+      servicio.guardarComercio(nuevo(null, null));
+
+      assertThat(existente.getUsuarioId(), nullValue());
+      verify(repositorioComercio, never()).actualizarComercio(any());
+    }
+
+    @Test
+    public void completarUnComercioSinUbicacionLeCopiaLaUbicacionNueva() {
+      Comercio existente = comercio(4L, null, TIPO_VALIDO);
+      existenteEnLaSegundaBusqueda(existente);
+
+      servicio.guardarComercio(nuevo(null, -34.7));
+
+      assertThat(existente.getLatitud(), equalTo(-34.7));
+      assertThat(existente.getLongitud(), equalTo(-58.5));
+      verify(repositorioComercio, times(1)).actualizarComercio(existente);
+    }
+
+    @Test
+    public void completarUnComercioConUbicacionNoLaPisa() {
+      Comercio existente = comercio(4L, -34.6, TIPO_VALIDO);
+      existenteEnLaSegundaBusqueda(existente);
+
+      servicio.guardarComercio(nuevo(null, -34.7));
+
+      assertThat(existente.getLatitud(), equalTo(-34.6));
+      verify(repositorioComercio, never()).actualizarComercio(any());
+    }
+
+    @Test
+    public void completarUnComercioSinTipoValidoLeCompletaElTipo() {
+      Comercio existente = comercio(4L, -34.6, null);
+      existenteEnLaSegundaBusqueda(existente);
+
+      servicio.guardarComercio(nuevo(null, null));
+
+      assertThat(TipoDeComercio.normalizar(existente.getTipo()) != null, equalTo(true));
+      verify(repositorioComercio, times(1)).actualizarComercio(existente);
+    }
+
+    // ---------- ubicar si falta ----------
+
+    @Test
+    public void ubicarSiFaltaSinDireccionNoBuscaNada() {
+      Comercio sinDireccion = new Comercio();
+      Comercio direccionEnBlanco = new Comercio();
+      direccionEnBlanco.setDireccion("   ");
+
+      servicio.ubicarSiFalta(sinDireccion);
+      servicio.ubicarSiFalta(direccionEnBlanco);
+
+      verify(servicioGeolocalizacion, never()).buscar(any(), any());
+      verify(repositorioComercio, never()).actualizarComercio(any());
+    }
+
+    // ---------- verificación ----------
+
+    @Test
+    public void solicitarVerificacionDeUnComercioInexistenteNoHaceNada() {
+      when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(null);
+
+      servicio.solicitarVerificacion(COMERCIO_ID);
+
+      verify(repositorioComercio, never()).actualizarComercio(any());
+    }
+
+    @Test
+    public void solicitarVerificacionMarcaLaSolicitudYGuarda() {
+      Comercio comercio = new Comercio();
+      comercio.setVerificado(false);
+      comercio.setSolicitudVerificacion(false);
+      when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(comercio);
+
+      servicio.solicitarVerificacion(COMERCIO_ID);
+
+      assertThat(comercio.getSolicitudVerificacion(), equalTo(true));
+      verify(repositorioComercio, times(1)).actualizarComercio(comercio);
+    }
+
+    @Test
+    public void aprobarVerificacionDeUnComercioInexistenteNoHaceNada() {
+      when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(null);
+
+      servicio.aprobarVerificacion(COMERCIO_ID);
+
+      verify(repositorioComercio, never()).actualizarComercio(any());
+    }
+
+    @Test
+    public void aprobarVerificacionSinSolicitudNoLaAprueba() {
+      Comercio comercio = new Comercio();
+      comercio.setVerificado(false);
+      comercio.setSolicitudVerificacion(false);
+      when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(comercio);
+
+      servicio.aprobarVerificacion(COMERCIO_ID);
+
+      assertThat(comercio.getVerificado(), equalTo(false));
+      verify(repositorioComercio, never()).actualizarComercio(any());
+    }
+
+    @Test
+    public void aprobarVerificacionVerificaElComercioYCierraLaSolicitud() {
+      Comercio comercio = new Comercio();
+      comercio.setVerificado(false);
+      comercio.setSolicitudVerificacion(true);
+      when(repositorioComercio.buscarComercio(COMERCIO_ID)).thenReturn(comercio);
+
+      servicio.aprobarVerificacion(COMERCIO_ID);
+
+      assertThat(comercio.getVerificado(), equalTo(true));
+      assertThat(comercio.getSolicitudVerificacion(), equalTo(false));
+      verify(repositorioComercio, times(1)).actualizarComercio(comercio);
+    }
+
+    // ---------- horario: está abierto ahora ----------
+
+    @Test
+    public void estaAbiertoDentroDelHorarioDeHoy() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), true, ahora.minusHours(1), ahora.plusHours(1)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(true));
+    }
+
+    @Test
+    public void estaCerradoAntesDeLaApertura() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), true, ahora.plusHours(1), ahora.plusHours(2)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+    }
+
+    @Test
+    public void estaCerradoDespuesDelCierre() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), true, ahora.minusHours(2), ahora.minusHours(1)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+    }
+
+    @Test
+    public void estaCerradoSiElHorarioEsDeOtroDia() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      int otroDia = (hoy() % 7) + 1;
+      horarios(horario(otroDia, true, ahora.minusHours(1), ahora.plusHours(1)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+    }
+
+    @Test
+    public void estaCerradoSiHoyNoAbreAunqueLaHoraCoincida() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), false, ahora.minusHours(1), ahora.plusHours(1)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+    }
+
+    @Test
+    public void estaCerradoSiFaltaLaHoraDeApertura() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), true, null, ahora.plusHours(1)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+    }
+
+    @Test
+    public void estaCerradoSiFaltaLaHoraDeCierre() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), true, ahora.minusHours(1), null));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+    }
+
+    @Test
+    public void conHorarioNocturnoEstaAbiertoDespuesDeLaApertura() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), true, ahora.minusHours(1), ahora.minusHours(2)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(true));
+    }
+
+    @Test
+    public void conHorarioNocturnoEstaAbiertoAntesDelCierre() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), true, ahora.plusHours(2), ahora.plusHours(1)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(true));
+    }
+
+    @Test
+    public void conHorarioNocturnoEstaCerradoEntreElCierreYLaApertura() {
+      LocalTime ahora = ahoraSinRiesgoDeMedianoche();
+      horarios(horario(hoy(), true, ahora.plusHours(1), ahora.minusHours(1)));
+
+      assertThat(servicio.estaAbierto(COMERCIO_ID), equalTo(false));
+    }
+
+    // ---------- armado de datos ----------
+
+    private void existenteEnLaSegundaBusqueda(Comercio existente) {
+      when(repositorioComercio.buscarComercioPorDireccionYLocalidad(DIRECCION, LOCALIDAD))
+        .thenReturn(null, existente);
+    }
+
+    private Comercio comercio(Long usuarioId, Double latitud, String tipo) {
+      Comercio comercio = new Comercio();
+      comercio.setNombre("Almacén de Don Pepe");
+      comercio.setDireccion(DIRECCION);
+      comercio.setLocalidad(LOCALIDAD);
+      comercio.setUsuarioId(usuarioId);
+      comercio.setLatitud(latitud);
+      comercio.setLongitud(latitud == null ? null : -58.4);
+      comercio.setTipo(tipo);
+      return comercio;
+    }
+
+    private Comercio nuevo(Long usuarioId, Double latitud) {
+      Comercio comercio = comercio(usuarioId, latitud, TIPO_VALIDO);
+      if (latitud != null) {
+        comercio.setLongitud(-58.5);
+      }
+      return comercio;
+    }
+
+    private HorarioComercio horario(
+      int dia,
+      boolean abierto,
+      LocalTime apertura,
+      LocalTime cierre
+    ) {
+      HorarioComercio horario = new HorarioComercio();
+      horario.setDiaSemana(dia);
+      horario.setAbierto(abierto);
+      horario.setHoraApertura(apertura);
+      horario.setHoraCierre(cierre);
+      return horario;
+    }
+
+    private void horarios(HorarioComercio... horarios) {
+      when(repositorioHorario.buscarPorComercioId(COMERCIO_ID)).thenReturn(List.of(horarios));
+    }
+
+    private int hoy() {
+      return LocalDate.now().getDayOfWeek().getValue();
+    }
+
+    // Los horarios se arman con +/- 2 horas: cerca de la medianoche cruzarían de día
+    private LocalTime ahoraSinRiesgoDeMedianoche() {
+      LocalTime ahora = LocalTime.now();
+      assumeTrue(ahora.isAfter(LocalTime.of(2, 30)) && ahora.isBefore(LocalTime.of(21, 30)));
+      return ahora;
+    }
   }
 }

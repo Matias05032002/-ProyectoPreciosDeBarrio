@@ -1,9 +1,15 @@
 package com.tallerwebi.dominio.Producto;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Reporte.Reporte;
@@ -17,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.matchers.Or;
 
@@ -1084,5 +1091,437 @@ public class ServicioProductoTest {
 
   private void dadoQueElReporteEs(Long reporteId, Reporte reporte) {
     when(this.repositorioReporteMock.buscarReporte(reporteId)).thenReturn(reporte);
+  }
+
+  // Casos de borde de la comparación de precios: dudosos, diferencias chicas y ubicaciones incompletas
+
+  private static final double LAT_VECINO = -34.6037;
+  private static final double LNG_VECINO = -58.3816;
+
+  private RepositorioReporte repositorioReporte;
+  private ServicioProducto servicio;
+
+  @BeforeEach
+  public void prepararCasosDeBorde() {
+    repositorioReporte = mock(RepositorioReporte.class);
+    servicio =
+      new ServicioProductoImpl(
+        mock(RepositorioProducto.class),
+        repositorioReporte,
+        mock(ServicioImagenProducto.class),
+        mock(ServicioFotoGenerica.class)
+      );
+  }
+
+  // ---------- precios del producto en cada local ----------
+
+  @Test
+  public void sinProductoElReporteNoTienePreciosEnOtrosLocales() {
+    Reporte sinProducto = reporte(null, 1L, 100.0, 0);
+    when(repositorioReporte.buscarReporte(1L)).thenReturn(sinProducto);
+
+    assertThat(servicio.buscarPreciosDelProductoEnCadaLocal(1L), empty());
+  }
+
+  @Test
+  public void conUnProductoSinIdElReporteNoTienePreciosEnOtrosLocales() {
+    Reporte productoSinId = reporte(null, 1L, 100.0, 0);
+    productoSinId.setProducto(new Producto());
+    when(repositorioReporte.buscarReporte(1L)).thenReturn(productoSinId);
+
+    assertThat(servicio.buscarPreciosDelProductoEnCadaLocal(1L), empty());
+  }
+
+  @Test
+  public void unReporteSinPrecioNoApareceEntreLosPreciosDeCadaLocal() {
+    Reporte elegido = reporte(5L, 1L, 100.0, 0);
+    Reporte sinPrecio = reporte(5L, 2L, 90.0, 0);
+    sinPrecio.setPrecio(null);
+    when(repositorioReporte.buscarReporte(1L)).thenReturn(elegido);
+    when(repositorioReporte.buscarPorProducto(5L)).thenReturn(List.of(elegido, sinPrecio));
+
+    List<Reporte> precios = servicio.buscarPreciosDelProductoEnCadaLocal(1L);
+
+    assertThat(precios, hasSize(1));
+    assertThat(precios.get(0), equalTo(elegido));
+  }
+
+  @Test
+  public void unReporteConLaPuntuacionJustoEnElUmbralNoEsDudosoYSeOrdenaPorPrecio() {
+    Reporte elegido = reporte(5L, 1L, 100.0, 0);
+    Reporte enElUmbral = reporte(5L, 2L, 80.0, Reporte.PUNTUACION_DUDOSO);
+    when(repositorioReporte.buscarReporte(1L)).thenReturn(elegido);
+    when(repositorioReporte.buscarPorProducto(5L)).thenReturn(List.of(elegido, enElUmbral));
+
+    List<Reporte> precios = servicio.buscarPreciosDelProductoEnCadaLocal(1L);
+
+    assertThat(precios.get(0), equalTo(enElUmbral));
+  }
+
+  @Test
+  public void unReporteDudosoQuedaDespuesDeLosConfiablesAunqueSeaMasBarato() {
+    Reporte elegido = reporte(5L, 1L, 100.0, 0);
+    Reporte dudoso = reporte(5L, 2L, 10.0, Reporte.PUNTUACION_DUDOSO + 1);
+    when(repositorioReporte.buscarReporte(1L)).thenReturn(elegido);
+    when(repositorioReporte.buscarPorProducto(5L)).thenReturn(List.of(dudoso, elegido));
+
+    List<Reporte> precios = servicio.buscarPreciosDelProductoEnCadaLocal(1L);
+
+    assertThat(precios.get(0), equalTo(elegido));
+    assertThat(precios.get(1), equalTo(dudoso));
+  }
+
+  // ---------- marca del vecino ----------
+
+  @Test
+  public void elVecinoQueMarcoUnReporteComoDudosoLoVeMarcado() {
+    Usuario vecino = new Usuario();
+    vecino.setId(9L);
+    Reporte reporte = reporte(5L, 1L, 100.0, 1);
+    reporte.setUsuariosQueMarcaron(new ArrayList<>(List.of(vecino)));
+    dadoQueLaBusquedaDevuelve(reporte);
+
+    ProductoConPrecio resultado = buscar(vecino, null, null).get(0);
+
+    assertThat(resultado.isYaMarcoDudoso(), equalTo(true));
+  }
+
+  @Test
+  public void elVecinoQueNoMarcoUnReporteNoLoVeMarcado() {
+    Usuario vecino = new Usuario();
+    vecino.setId(9L);
+    Reporte reporte = reporte(5L, 1L, 100.0, 1);
+    reporte.setUsuariosQueMarcaron(new ArrayList<>());
+    dadoQueLaBusquedaDevuelve(reporte);
+
+    assertThat(buscar(vecino, null, null).get(0).isYaMarcoDudoso(), equalTo(false));
+  }
+
+  // ---------- diferencias menores a un peso ----------
+
+  @Test
+  public void unaDiferenciaDeCincuentaCentavosIndicaCuantoMasCuestaYNoEsElMasBarato() {
+    Reporte barato = reporte(5L, 1L, 100.0, 0);
+    Reporte caro = reporte(5L, 2L, 100.5, 0);
+    dadoQueLaBusquedaDevuelve(barato, caro);
+
+    ProductoConPrecio delCaro = buscar(null, null, null)
+      .stream()
+      .filter(dto -> dto.getPrecioMinimo() == 100.5)
+      .findFirst()
+      .orElseThrow();
+
+    assertThat(delCaro.isEsMasBarato(), equalTo(false));
+    assertThat(delCaro.getDiferenciaConElMasBarato(), closeTo(0.5, 0.0001));
+  }
+
+  @Test
+  public void elAhorroDeMenosDeUnPesoTambienSeInforma() {
+    Reporte barato = reporte(5L, 1L, 100.0, 0);
+    Reporte caro = reporte(5L, 2L, 100.5, 0);
+    dadoQueLaBusquedaDevuelve(barato, caro);
+
+    ProductoConPrecio delBarato = buscar(null, null, null)
+      .stream()
+      .filter(dto -> dto.getPrecioMinimo() == 100.0)
+      .findFirst()
+      .orElseThrow();
+
+    assertThat(delBarato.isEsMasBarato(), equalTo(true));
+    assertThat(delBarato.getAhorroMaximo(), closeTo(0.5, 0.0001));
+  }
+
+  // ---------- distancia con datos incompletos ----------
+
+  @Test
+  public void sinLatitudDelVecinoNoSeCalculaLaDistancia() {
+    dadoQueLaBusquedaDevuelve(reporteConUbicacion(-34.61, -58.39));
+
+    assertThat(buscar(null, null, LNG_VECINO).get(0).getDistanciaKm(), nullValue());
+  }
+
+  @Test
+  public void sinLongitudDelVecinoNoSeCalculaLaDistancia() {
+    dadoQueLaBusquedaDevuelve(reporteConUbicacion(-34.61, -58.39));
+
+    assertThat(buscar(null, LAT_VECINO, null).get(0).getDistanciaKm(), nullValue());
+  }
+
+  @Test
+  public void conSoloLaLatitudDelComercioNoSeCalculaLaDistancia() {
+    dadoQueLaBusquedaDevuelve(reporteConUbicacion(-34.61, null));
+
+    assertThat(buscar(null, LAT_VECINO, LNG_VECINO).get(0).getDistanciaKm(), nullValue());
+  }
+
+  @Test
+  public void conSoloLaLongitudDelComercioNoSeCalculaLaDistancia() {
+    dadoQueLaBusquedaDevuelve(reporteConUbicacion(null, -58.39));
+
+    assertThat(buscar(null, LAT_VECINO, LNG_VECINO).get(0).getDistanciaKm(), nullValue());
+  }
+
+  @Test
+  public void conTodasLasUbicacionesSeCalculaLaDistancia() {
+    dadoQueLaBusquedaDevuelve(reporteConUbicacion(-34.61, -58.39));
+
+    Double distancia = buscar(null, LAT_VECINO, LNG_VECINO).get(0).getDistanciaKm();
+
+    assertThat(distancia != null && distancia > 0, equalTo(true));
+  }
+
+  // ---------- armado de datos ----------
+
+  private List<ProductoConPrecio> buscar(Usuario usuario, Double lat, Double lng) {
+    return servicio.buscarProductosConPrecio("Leche", usuario, Collections.emptyList(), lat, lng);
+  }
+
+  private void dadoQueLaBusquedaDevuelve(Reporte... reportes) {
+    when(repositorioReporte.buscarPorNombre("Leche")).thenReturn(List.of(reportes));
+  }
+
+  private Reporte reporteConUbicacion(Double latitud, Double longitud) {
+    Reporte reporte = reporte(5L, 1L, 100.0, 0);
+    reporte.getComercio().setLatitud(latitud);
+    reporte.getComercio().setLongitud(longitud);
+    return reporte;
+  }
+
+  private Reporte reporte(Long productoId, Long comercioId, double precio, int puntuacion) {
+    Producto producto = new Producto();
+    producto.setId(productoId);
+    producto.setNombre("Leche");
+    producto.setMarca("La Serenísima");
+    producto.setUnidad("1l");
+    producto.setCategoria("Lacteos");
+    Comercio comercio = new Comercio();
+    comercio.setId(comercioId);
+    comercio.setNombre("Local " + comercioId);
+    Reporte reporte = new Reporte();
+    reporte.setId(comercioId * 100);
+    reporte.setProducto(productoId == null ? null : producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(precio);
+    reporte.setPuntuacion(puntuacion);
+    reporte.setFechaDeReporte(LocalDateTime.now().minusHours(1));
+    reporte.setUsuariosQueMarcaron(new ArrayList<>());
+    return reporte;
+  }
+
+  @Nested
+  class CasosDeBordeDeProductos {
+
+    private static final double LAT_VECINO = -34.6037;
+    private static final double LNG_VECINO = -58.3816;
+
+    private RepositorioReporte repositorioReporte;
+    private ServicioProducto servicio;
+
+    @BeforeEach
+    public void init() {
+      repositorioReporte = mock(RepositorioReporte.class);
+      servicio =
+        new ServicioProductoImpl(
+          mock(RepositorioProducto.class),
+          repositorioReporte,
+          mock(ServicioImagenProducto.class),
+          mock(ServicioFotoGenerica.class)
+        );
+    }
+
+    // ---------- precios del producto en cada local ----------
+
+    @Test
+    public void sinProductoElReporteNoTienePreciosEnOtrosLocales() {
+      Reporte sinProducto = reporte(null, 1L, 100.0, 0);
+      when(repositorioReporte.buscarReporte(1L)).thenReturn(sinProducto);
+
+      assertThat(servicio.buscarPreciosDelProductoEnCadaLocal(1L), empty());
+    }
+
+    @Test
+    public void conUnProductoSinIdElReporteNoTienePreciosEnOtrosLocales() {
+      Reporte productoSinId = reporte(null, 1L, 100.0, 0);
+      productoSinId.setProducto(new Producto());
+      when(repositorioReporte.buscarReporte(1L)).thenReturn(productoSinId);
+
+      assertThat(servicio.buscarPreciosDelProductoEnCadaLocal(1L), empty());
+    }
+
+    @Test
+    public void unReporteSinPrecioNoApareceEntreLosPreciosDeCadaLocal() {
+      Reporte elegido = reporte(5L, 1L, 100.0, 0);
+      Reporte sinPrecio = reporte(5L, 2L, 90.0, 0);
+      sinPrecio.setPrecio(null);
+      when(repositorioReporte.buscarReporte(1L)).thenReturn(elegido);
+      when(repositorioReporte.buscarPorProducto(5L)).thenReturn(List.of(elegido, sinPrecio));
+
+      List<Reporte> precios = servicio.buscarPreciosDelProductoEnCadaLocal(1L);
+
+      assertThat(precios, hasSize(1));
+      assertThat(precios.get(0), equalTo(elegido));
+    }
+
+    @Test
+    public void unReporteConLaPuntuacionJustoEnElUmbralNoEsDudosoYSeOrdenaPorPrecio() {
+      Reporte elegido = reporte(5L, 1L, 100.0, 0);
+      Reporte enElUmbral = reporte(5L, 2L, 80.0, Reporte.PUNTUACION_DUDOSO);
+      when(repositorioReporte.buscarReporte(1L)).thenReturn(elegido);
+      when(repositorioReporte.buscarPorProducto(5L)).thenReturn(List.of(elegido, enElUmbral));
+
+      List<Reporte> precios = servicio.buscarPreciosDelProductoEnCadaLocal(1L);
+
+      assertThat(precios.get(0), equalTo(enElUmbral));
+    }
+
+    @Test
+    public void unReporteDudosoQuedaDespuesDeLosConfiablesAunqueSeaMasBarato() {
+      Reporte elegido = reporte(5L, 1L, 100.0, 0);
+      Reporte dudoso = reporte(5L, 2L, 10.0, Reporte.PUNTUACION_DUDOSO + 1);
+      when(repositorioReporte.buscarReporte(1L)).thenReturn(elegido);
+      when(repositorioReporte.buscarPorProducto(5L)).thenReturn(List.of(dudoso, elegido));
+
+      List<Reporte> precios = servicio.buscarPreciosDelProductoEnCadaLocal(1L);
+
+      assertThat(precios.get(0), equalTo(elegido));
+      assertThat(precios.get(1), equalTo(dudoso));
+    }
+
+    // ---------- marca del vecino ----------
+
+    @Test
+    public void elVecinoQueMarcoUnReporteComoDudosoLoVeMarcado() {
+      Usuario vecino = new Usuario();
+      vecino.setId(9L);
+      Reporte reporte = reporte(5L, 1L, 100.0, 1);
+      reporte.setUsuariosQueMarcaron(new ArrayList<>(List.of(vecino)));
+      dadoQueLaBusquedaDevuelve(reporte);
+
+      ProductoConPrecio resultado = buscar(vecino, null, null).get(0);
+
+      assertThat(resultado.isYaMarcoDudoso(), equalTo(true));
+    }
+
+    @Test
+    public void elVecinoQueNoMarcoUnReporteNoLoVeMarcado() {
+      Usuario vecino = new Usuario();
+      vecino.setId(9L);
+      Reporte reporte = reporte(5L, 1L, 100.0, 1);
+      reporte.setUsuariosQueMarcaron(new ArrayList<>());
+      dadoQueLaBusquedaDevuelve(reporte);
+
+      assertThat(buscar(vecino, null, null).get(0).isYaMarcoDudoso(), equalTo(false));
+    }
+
+    // ---------- diferencias menores a un peso ----------
+
+    @Test
+    public void unaDiferenciaDeCincuentaCentavosIndicaCuantoMasCuestaYNoEsElMasBarato() {
+      Reporte barato = reporte(5L, 1L, 100.0, 0);
+      Reporte caro = reporte(5L, 2L, 100.5, 0);
+      dadoQueLaBusquedaDevuelve(barato, caro);
+
+      ProductoConPrecio delCaro = buscar(null, null, null)
+        .stream()
+        .filter(dto -> dto.getPrecioMinimo() == 100.5)
+        .findFirst()
+        .orElseThrow();
+
+      assertThat(delCaro.isEsMasBarato(), equalTo(false));
+      assertThat(delCaro.getDiferenciaConElMasBarato(), closeTo(0.5, 0.0001));
+    }
+
+    @Test
+    public void elAhorroDeMenosDeUnPesoTambienSeInforma() {
+      Reporte barato = reporte(5L, 1L, 100.0, 0);
+      Reporte caro = reporte(5L, 2L, 100.5, 0);
+      dadoQueLaBusquedaDevuelve(barato, caro);
+
+      ProductoConPrecio delBarato = buscar(null, null, null)
+        .stream()
+        .filter(dto -> dto.getPrecioMinimo() == 100.0)
+        .findFirst()
+        .orElseThrow();
+
+      assertThat(delBarato.isEsMasBarato(), equalTo(true));
+      assertThat(delBarato.getAhorroMaximo(), closeTo(0.5, 0.0001));
+    }
+
+    // ---------- distancia con datos incompletos ----------
+
+    @Test
+    public void sinLatitudDelVecinoNoSeCalculaLaDistancia() {
+      dadoQueLaBusquedaDevuelve(reporteConUbicacion(-34.61, -58.39));
+
+      assertThat(buscar(null, null, LNG_VECINO).get(0).getDistanciaKm(), nullValue());
+    }
+
+    @Test
+    public void sinLongitudDelVecinoNoSeCalculaLaDistancia() {
+      dadoQueLaBusquedaDevuelve(reporteConUbicacion(-34.61, -58.39));
+
+      assertThat(buscar(null, LAT_VECINO, null).get(0).getDistanciaKm(), nullValue());
+    }
+
+    @Test
+    public void conSoloLaLatitudDelComercioNoSeCalculaLaDistancia() {
+      dadoQueLaBusquedaDevuelve(reporteConUbicacion(-34.61, null));
+
+      assertThat(buscar(null, LAT_VECINO, LNG_VECINO).get(0).getDistanciaKm(), nullValue());
+    }
+
+    @Test
+    public void conSoloLaLongitudDelComercioNoSeCalculaLaDistancia() {
+      dadoQueLaBusquedaDevuelve(reporteConUbicacion(null, -58.39));
+
+      assertThat(buscar(null, LAT_VECINO, LNG_VECINO).get(0).getDistanciaKm(), nullValue());
+    }
+
+    @Test
+    public void conTodasLasUbicacionesSeCalculaLaDistancia() {
+      dadoQueLaBusquedaDevuelve(reporteConUbicacion(-34.61, -58.39));
+
+      Double distancia = buscar(null, LAT_VECINO, LNG_VECINO).get(0).getDistanciaKm();
+
+      assertThat(distancia != null && distancia > 0, equalTo(true));
+    }
+
+    // ---------- armado de datos ----------
+
+    private List<ProductoConPrecio> buscar(Usuario usuario, Double lat, Double lng) {
+      return servicio.buscarProductosConPrecio("Leche", usuario, Collections.emptyList(), lat, lng);
+    }
+
+    private void dadoQueLaBusquedaDevuelve(Reporte... reportes) {
+      when(repositorioReporte.buscarPorNombre("Leche")).thenReturn(List.of(reportes));
+    }
+
+    private Reporte reporteConUbicacion(Double latitud, Double longitud) {
+      Reporte reporte = reporte(5L, 1L, 100.0, 0);
+      reporte.getComercio().setLatitud(latitud);
+      reporte.getComercio().setLongitud(longitud);
+      return reporte;
+    }
+
+    private Reporte reporte(Long productoId, Long comercioId, double precio, int puntuacion) {
+      Producto producto = new Producto();
+      producto.setId(productoId);
+      producto.setNombre("Leche");
+      producto.setMarca("La Serenísima");
+      producto.setUnidad("1l");
+      producto.setCategoria("Lacteos");
+      Comercio comercio = new Comercio();
+      comercio.setId(comercioId);
+      comercio.setNombre("Local " + comercioId);
+      Reporte reporte = new Reporte();
+      reporte.setId(comercioId * 100);
+      reporte.setProducto(productoId == null ? null : producto);
+      reporte.setComercio(comercio);
+      reporte.setPrecio(precio);
+      reporte.setPuntuacion(puntuacion);
+      reporte.setFechaDeReporte(LocalDateTime.now().minusHours(1));
+      reporte.setUsuariosQueMarcaron(new ArrayList<>());
+      return reporte;
+    }
   }
 }

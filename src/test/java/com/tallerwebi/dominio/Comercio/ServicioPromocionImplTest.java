@@ -2,12 +2,16 @@ package com.tallerwebi.dominio.Comercio;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class ServicioPromocionImplTest {
@@ -505,5 +509,250 @@ public class ServicioPromocionImplTest {
     promocion.setActiva(true);
     promocion.setComercio(comercio);
     return promocion;
+  }
+
+  // Límites de largo y combinaciones de campos faltantes al crear una promoción
+
+  private ServicioPromocion servicioDeBordes;
+
+  @BeforeEach
+  public void prepararCasosDeBorde() {
+    RepositorioPromocion repositorioPromocion = mock(RepositorioPromocion.class);
+    RepositorioComercio repositorioComercio = mock(RepositorioComercio.class);
+    Comercio comercio = new Comercio();
+    comercio.setId(3L);
+    when(repositorioComercio.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+    when(repositorioPromocion.guardar(org.mockito.ArgumentMatchers.any(Promocion.class)))
+      .thenAnswer(invocacion -> invocacion.getArgument(0));
+    servicioDeBordes = new ServicioPromocionImpl(repositorioPromocion, repositorioComercio);
+  }
+
+  @Test
+  public void unProductoDeCientoCincuentaCaracteresSeAcepta() {
+    Promocion promocion = promocionValida();
+    promocion.setProductoNombre("p".repeat(150));
+
+    assertDoesNotThrow(() -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID));
+  }
+
+  @Test
+  public void unProductoDeCientoCincuentaYUnCaracteresSeRechaza() {
+    Promocion promocion = promocionValida();
+    promocion.setProductoNombre("p".repeat(151));
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  @Test
+  public void unTituloDeCienCaracteresSeAcepta() {
+    Promocion promocion = promocionValida();
+    promocion.setTitulo("t".repeat(100));
+
+    assertDoesNotThrow(() -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID));
+  }
+
+  @Test
+  public void unTituloDeCientoUnCaracteresSeRechaza() {
+    Promocion promocion = promocionValida();
+    promocion.setTitulo("t".repeat(101));
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  @Test
+  public void unaDescripcionDeQuinientosCaracteresSeAcepta() {
+    Promocion promocion = promocionValida();
+    promocion.setDescripcion("d".repeat(500));
+
+    assertDoesNotThrow(() -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID));
+  }
+
+  @Test
+  public void unaDescripcionDeQuinientosUnCaracteresSeRechaza() {
+    Promocion promocion = promocionValida();
+    promocion.setDescripcion("d".repeat(501));
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  @Test
+  public void sinTituloSeRechazaAunqueExistaElResto() {
+    Promocion promocion = promocionValida();
+    promocion.setTitulo(null);
+
+    IllegalArgumentException error = assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID)
+    );
+    org.junit.jupiter.api.Assertions.assertEquals("El título es obligatorio.", error.getMessage());
+  }
+
+  @Test
+  public void conSoloLaFechaDeInicioSeRechaza() {
+    Promocion promocion = promocionValida();
+    promocion.setFechaFin(null);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  @Test
+  public void conSoloLaFechaDeFinSeRechaza() {
+    Promocion promocion = promocionValida();
+    promocion.setFechaInicio(null);
+
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioDeBordes.crearPromocion(promocion, USUARIO_ID)
+    );
+  }
+
+  private Promocion promocionValida() {
+    Promocion promocion = new Promocion();
+    promocion.setTitulo("Oferta especial");
+    promocion.setDescripcion("Descuento por tiempo limitado");
+    promocion.setTipo(TipoPromocion.PRODUCTO);
+    promocion.setProductoNombre("Leche entera 1l");
+    promocion.setPrecioPromocional(1500.0);
+    promocion.setFechaInicio(LocalDateTime.now().plusDays(1));
+    promocion.setFechaFin(LocalDateTime.now().plusDays(5));
+    return promocion;
+  }
+
+  @Nested
+  class CasosDeBordeDePromociones {
+
+    private static final Long USUARIO_ID = 7L;
+
+    private ServicioPromocion servicio;
+
+    @BeforeEach
+    public void init() {
+      RepositorioPromocion repositorioPromocion = mock(RepositorioPromocion.class);
+      RepositorioComercio repositorioComercio = mock(RepositorioComercio.class);
+      Comercio comercio = new Comercio();
+      comercio.setId(3L);
+      when(repositorioComercio.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+      when(repositorioPromocion.guardar(org.mockito.ArgumentMatchers.any(Promocion.class)))
+        .thenAnswer(invocacion -> invocacion.getArgument(0));
+      servicio = new ServicioPromocionImpl(repositorioPromocion, repositorioComercio);
+    }
+
+    @Test
+    public void unProductoDeCientoCincuentaCaracteresSeAcepta() {
+      Promocion promocion = promocionValida();
+      promocion.setProductoNombre("p".repeat(150));
+
+      assertDoesNotThrow(() -> servicio.crearPromocion(promocion, USUARIO_ID));
+    }
+
+    @Test
+    public void unProductoDeCientoCincuentaYUnCaracteresSeRechaza() {
+      Promocion promocion = promocionValida();
+      promocion.setProductoNombre("p".repeat(151));
+
+      assertThrows(
+        IllegalArgumentException.class,
+        () -> servicio.crearPromocion(promocion, USUARIO_ID)
+      );
+    }
+
+    @Test
+    public void unTituloDeCienCaracteresSeAcepta() {
+      Promocion promocion = promocionValida();
+      promocion.setTitulo("t".repeat(100));
+
+      assertDoesNotThrow(() -> servicio.crearPromocion(promocion, USUARIO_ID));
+    }
+
+    @Test
+    public void unTituloDeCientoUnCaracteresSeRechaza() {
+      Promocion promocion = promocionValida();
+      promocion.setTitulo("t".repeat(101));
+
+      assertThrows(
+        IllegalArgumentException.class,
+        () -> servicio.crearPromocion(promocion, USUARIO_ID)
+      );
+    }
+
+    @Test
+    public void unaDescripcionDeQuinientosCaracteresSeAcepta() {
+      Promocion promocion = promocionValida();
+      promocion.setDescripcion("d".repeat(500));
+
+      assertDoesNotThrow(() -> servicio.crearPromocion(promocion, USUARIO_ID));
+    }
+
+    @Test
+    public void unaDescripcionDeQuinientosUnCaracteresSeRechaza() {
+      Promocion promocion = promocionValida();
+      promocion.setDescripcion("d".repeat(501));
+
+      assertThrows(
+        IllegalArgumentException.class,
+        () -> servicio.crearPromocion(promocion, USUARIO_ID)
+      );
+    }
+
+    @Test
+    public void sinTituloSeRechazaAunqueExistaElResto() {
+      Promocion promocion = promocionValida();
+      promocion.setTitulo(null);
+
+      IllegalArgumentException error = assertThrows(
+        IllegalArgumentException.class,
+        () -> servicio.crearPromocion(promocion, USUARIO_ID)
+      );
+      org.junit.jupiter.api.Assertions.assertEquals(
+        "El título es obligatorio.",
+        error.getMessage()
+      );
+    }
+
+    @Test
+    public void conSoloLaFechaDeInicioSeRechaza() {
+      Promocion promocion = promocionValida();
+      promocion.setFechaFin(null);
+
+      assertThrows(
+        IllegalArgumentException.class,
+        () -> servicio.crearPromocion(promocion, USUARIO_ID)
+      );
+    }
+
+    @Test
+    public void conSoloLaFechaDeFinSeRechaza() {
+      Promocion promocion = promocionValida();
+      promocion.setFechaInicio(null);
+
+      assertThrows(
+        IllegalArgumentException.class,
+        () -> servicio.crearPromocion(promocion, USUARIO_ID)
+      );
+    }
+
+    private Promocion promocionValida() {
+      Promocion promocion = new Promocion();
+      promocion.setTitulo("Oferta especial");
+      promocion.setDescripcion("Descuento por tiempo limitado");
+      promocion.setTipo(TipoPromocion.PRODUCTO);
+      promocion.setProductoNombre("Leche entera 1l");
+      promocion.setPrecioPromocional(1500.0);
+      promocion.setFechaInicio(LocalDateTime.now().plusDays(1));
+      promocion.setFechaFin(LocalDateTime.now().plusDays(5));
+      return promocion;
+    }
   }
 }

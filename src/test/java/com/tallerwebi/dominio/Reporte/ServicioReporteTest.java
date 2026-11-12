@@ -2,8 +2,14 @@ package com.tallerwebi.dominio.Reporte;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
@@ -11,6 +17,7 @@ import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.*;
+import com.tallerwebi.dominio.excepcion.CamposObligatoriosVacios;
 import com.tallerwebi.dominio.notificacion.ServicioNotificacion;
 import com.tallerwebi.dominio.notificacion.TipoNotificacion;
 import java.time.LocalDate;
@@ -20,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class ServicioReporteTest {
@@ -1258,5 +1266,373 @@ public class ServicioReporteTest {
     servicioReporte.marcarDudoso(15L, quienMarca);
 
     verifyNoInteractions(servicioNotificacionMock);
+  }
+
+  // Límites de las reglas de ServicioReporteImpl: el plazo de edición, los largos y los campos opcionales
+
+  private static final int LARGO_CORTO = 100;
+  private static final int LARGO_NOMBRE = 150;
+
+  private RepositorioReporte repositorioReporte;
+  private ServicioReporte servicio;
+
+  @BeforeEach
+  public void prepararCasosDeBorde() {
+    repositorioReporte = mock(RepositorioReporte.class);
+    servicio =
+      new ServicioReporteImpl(
+        mock(ServicioComercio.class),
+        mock(ServicioProducto.class),
+        repositorioReporte,
+        mock(ServicioNotificacion.class)
+      );
+  }
+
+  // ---------- plazo de edición: 2 días ----------
+
+  @Test
+  public void unReporteDeHaceDosDiasYUnaHoraYaNoSePuedeEditar() {
+    when(repositorioReporte.buscarReporte(1L))
+      .thenReturn(reporteDelUsuario(1L, LocalDateTime.now().minusDays(2).minusHours(1)));
+
+    assertThat(servicio.puedeEditar(1L, 1L), equalTo(false));
+  }
+
+  @Test
+  public void unReporteDeHaceUnDiaYVeintitresHorasTodaviaSePuedeEditar() {
+    when(repositorioReporte.buscarReporte(1L))
+      .thenReturn(reporteDelUsuario(1L, LocalDateTime.now().minusDays(1).minusHours(23)));
+
+    assertThat(servicio.puedeEditar(1L, 1L), equalTo(true));
+  }
+
+  // ---------- campos obligatorios ----------
+
+  @Test
+  public void guardarSinProductoPeroConComercioLanzaCamposObligatoriosVacios() {
+    Reporte reporte = reporte(null, comercio("Almacén"));
+
+    assertThrows(CamposObligatoriosVacios.class, () -> servicio.guardarReporte(reporte));
+  }
+
+  @Test
+  public void guardarConProductoPeroSinComercioLanzaCamposObligatoriosVacios() {
+    Reporte reporte = reporte(producto("Leche"), null);
+
+    assertThrows(CamposObligatoriosVacios.class, () -> servicio.guardarReporte(reporte));
+  }
+
+  // ---------- largos máximos ----------
+
+  @Test
+  public void unaMarcaDeCienCaracteresSeAcepta() {
+    Producto producto = producto("Leche");
+    producto.setMarca("m".repeat(LARGO_CORTO));
+
+    assertDoesNotThrow(() -> servicio.guardarReporte(reporte(producto, comercio("Almacén"))));
+  }
+
+  @Test
+  public void unaMarcaDeCientoUnCaracteresSeRechaza() {
+    Producto producto = producto("Leche");
+    producto.setMarca("m".repeat(LARGO_CORTO + 1));
+
+    assertThrows(
+      CamposObligatoriosVacios.class,
+      () -> servicio.guardarReporte(reporte(producto, comercio("Almacén")))
+    );
+  }
+
+  @Test
+  public void unaCategoriaDeCientoUnCaracteresSeRechaza() {
+    Producto producto = producto("Leche");
+    producto.setCategoria("c".repeat(LARGO_CORTO + 1));
+
+    assertThrows(
+      CamposObligatoriosVacios.class,
+      () -> servicio.guardarReporte(reporte(producto, comercio("Almacén")))
+    );
+  }
+
+  @Test
+  public void unaLocalidadDeCientoUnCaracteresSeRechaza() {
+    Comercio comercio = comercio("Almacén");
+    comercio.setLocalidad("l".repeat(LARGO_CORTO + 1));
+
+    assertThrows(
+      CamposObligatoriosVacios.class,
+      () -> servicio.guardarReporte(reporte(producto("Leche"), comercio))
+    );
+  }
+
+  @Test
+  public void unNombreDeComercioDeCientoCincuentaCaracteresSeAcepta() {
+    assertDoesNotThrow(() ->
+      servicio.guardarReporte(reporte(producto("Leche"), comercio("n".repeat(LARGO_NOMBRE))))
+    );
+  }
+
+  @Test
+  public void unNombreDeComercioDeCientoCincuentaYUnCaracteresSeRechaza() {
+    assertThrows(
+      CamposObligatoriosVacios.class,
+      () ->
+        servicio.guardarReporte(reporte(producto("Leche"), comercio("n".repeat(LARGO_NOMBRE + 1))))
+    );
+  }
+
+  // ---------- foto al editar ----------
+
+  @Test
+  public void editarSinFotoNuevaConservaLaFotoDelReporte() throws Exception {
+    byte[] fotoVieja = { 1, 2, 3 };
+    Reporte original = reporteDelUsuario(1L, LocalDateTime.now());
+    original.setFoto(fotoVieja);
+    when(repositorioReporte.buscarReporte(1L)).thenReturn(original);
+    Reporte datos = reporte(producto("Leche"), comercio("Almacén"));
+    datos.setPrecio(120.0);
+
+    servicio.editarReporte(1L, datos, 1L);
+
+    assertThat(original.getFoto(), equalTo(fotoVieja));
+    verify(repositorioReporte).guardarReporte(original);
+  }
+
+  @Test
+  public void editarConFotoNuevaReemplazaLaFotoDelReporte() throws Exception {
+    byte[] fotoNueva = { 9, 8, 7 };
+    Reporte original = reporteDelUsuario(1L, LocalDateTime.now());
+    original.setFoto(new byte[] { 1, 2, 3 });
+    when(repositorioReporte.buscarReporte(1L)).thenReturn(original);
+    Reporte datos = reporte(producto("Leche"), comercio("Almacén"));
+    datos.setPrecio(120.0);
+    datos.setFoto(fotoNueva);
+
+    servicio.editarReporte(1L, datos, 1L);
+
+    assertThat(original.getFoto(), equalTo(fotoNueva));
+    verify(repositorioReporte, never()).eliminarReporte(any());
+  }
+
+  // ---------- armado de datos ----------
+
+  private Reporte reporteDelUsuario(Long usuarioId, LocalDateTime fecha) {
+    Usuario usuario = new Usuario();
+    usuario.setId(usuarioId);
+    Reporte reporte = reporte(producto("Leche"), comercio("Almacén"));
+    reporte.setUsuario(usuario);
+    reporte.setFechaDeReporte(fecha);
+    return reporte;
+  }
+
+  private Reporte reporte(Producto producto, Comercio comercio) {
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(100.0);
+    return reporte;
+  }
+
+  private Producto producto(String nombre) {
+    Producto producto = new Producto();
+    producto.setNombre(nombre);
+    producto.setMarca("La Serenísima");
+    producto.setCategoria("Lácteos");
+    producto.setUnidad("1000ml");
+    return producto;
+  }
+
+  private Comercio comercio(String nombre) {
+    Comercio comercio = new Comercio();
+    comercio.setNombre(nombre);
+    comercio.setDireccion("Av. Siempreviva 123");
+    comercio.setLocalidad("La Matanza");
+    return comercio;
+  }
+
+  @Nested
+  class CasosDeBordeDeReportes {
+
+    private static final int LARGO_CORTO = 100;
+    private static final int LARGO_NOMBRE = 150;
+
+    private RepositorioReporte repositorioReporte;
+    private ServicioReporte servicio;
+
+    @BeforeEach
+    public void init() {
+      repositorioReporte = mock(RepositorioReporte.class);
+      servicio =
+        new ServicioReporteImpl(
+          mock(ServicioComercio.class),
+          mock(ServicioProducto.class),
+          repositorioReporte,
+          mock(ServicioNotificacion.class)
+        );
+    }
+
+    // ---------- plazo de edición: 2 días ----------
+
+    @Test
+    public void unReporteDeHaceDosDiasYUnaHoraYaNoSePuedeEditar() {
+      when(repositorioReporte.buscarReporte(1L))
+        .thenReturn(reporteDelUsuario(1L, LocalDateTime.now().minusDays(2).minusHours(1)));
+
+      assertThat(servicio.puedeEditar(1L, 1L), equalTo(false));
+    }
+
+    @Test
+    public void unReporteDeHaceUnDiaYVeintitresHorasTodaviaSePuedeEditar() {
+      when(repositorioReporte.buscarReporte(1L))
+        .thenReturn(reporteDelUsuario(1L, LocalDateTime.now().minusDays(1).minusHours(23)));
+
+      assertThat(servicio.puedeEditar(1L, 1L), equalTo(true));
+    }
+
+    // ---------- campos obligatorios ----------
+
+    @Test
+    public void guardarSinProductoPeroConComercioLanzaCamposObligatoriosVacios() {
+      Reporte reporte = reporte(null, comercio("Almacén"));
+
+      assertThrows(CamposObligatoriosVacios.class, () -> servicio.guardarReporte(reporte));
+    }
+
+    @Test
+    public void guardarConProductoPeroSinComercioLanzaCamposObligatoriosVacios() {
+      Reporte reporte = reporte(producto("Leche"), null);
+
+      assertThrows(CamposObligatoriosVacios.class, () -> servicio.guardarReporte(reporte));
+    }
+
+    // ---------- largos máximos ----------
+
+    @Test
+    public void unaMarcaDeCienCaracteresSeAcepta() {
+      Producto producto = producto("Leche");
+      producto.setMarca("m".repeat(LARGO_CORTO));
+
+      assertDoesNotThrow(() -> servicio.guardarReporte(reporte(producto, comercio("Almacén"))));
+    }
+
+    @Test
+    public void unaMarcaDeCientoUnCaracteresSeRechaza() {
+      Producto producto = producto("Leche");
+      producto.setMarca("m".repeat(LARGO_CORTO + 1));
+
+      assertThrows(
+        CamposObligatoriosVacios.class,
+        () -> servicio.guardarReporte(reporte(producto, comercio("Almacén")))
+      );
+    }
+
+    @Test
+    public void unaCategoriaDeCientoUnCaracteresSeRechaza() {
+      Producto producto = producto("Leche");
+      producto.setCategoria("c".repeat(LARGO_CORTO + 1));
+
+      assertThrows(
+        CamposObligatoriosVacios.class,
+        () -> servicio.guardarReporte(reporte(producto, comercio("Almacén")))
+      );
+    }
+
+    @Test
+    public void unaLocalidadDeCientoUnCaracteresSeRechaza() {
+      Comercio comercio = comercio("Almacén");
+      comercio.setLocalidad("l".repeat(LARGO_CORTO + 1));
+
+      assertThrows(
+        CamposObligatoriosVacios.class,
+        () -> servicio.guardarReporte(reporte(producto("Leche"), comercio))
+      );
+    }
+
+    @Test
+    public void unNombreDeComercioDeCientoCincuentaCaracteresSeAcepta() {
+      assertDoesNotThrow(() ->
+        servicio.guardarReporte(reporte(producto("Leche"), comercio("n".repeat(LARGO_NOMBRE))))
+      );
+    }
+
+    @Test
+    public void unNombreDeComercioDeCientoCincuentaYUnCaracteresSeRechaza() {
+      assertThrows(
+        CamposObligatoriosVacios.class,
+        () ->
+          servicio.guardarReporte(
+            reporte(producto("Leche"), comercio("n".repeat(LARGO_NOMBRE + 1)))
+          )
+      );
+    }
+
+    // ---------- foto al editar ----------
+
+    @Test
+    public void editarSinFotoNuevaConservaLaFotoDelReporte() throws Exception {
+      byte[] fotoVieja = { 1, 2, 3 };
+      Reporte original = reporteDelUsuario(1L, LocalDateTime.now());
+      original.setFoto(fotoVieja);
+      when(repositorioReporte.buscarReporte(1L)).thenReturn(original);
+      Reporte datos = reporte(producto("Leche"), comercio("Almacén"));
+      datos.setPrecio(120.0);
+
+      servicio.editarReporte(1L, datos, 1L);
+
+      assertThat(original.getFoto(), equalTo(fotoVieja));
+      verify(repositorioReporte).guardarReporte(original);
+    }
+
+    @Test
+    public void editarConFotoNuevaReemplazaLaFotoDelReporte() throws Exception {
+      byte[] fotoNueva = { 9, 8, 7 };
+      Reporte original = reporteDelUsuario(1L, LocalDateTime.now());
+      original.setFoto(new byte[] { 1, 2, 3 });
+      when(repositorioReporte.buscarReporte(1L)).thenReturn(original);
+      Reporte datos = reporte(producto("Leche"), comercio("Almacén"));
+      datos.setPrecio(120.0);
+      datos.setFoto(fotoNueva);
+
+      servicio.editarReporte(1L, datos, 1L);
+
+      assertThat(original.getFoto(), equalTo(fotoNueva));
+      verify(repositorioReporte, never()).eliminarReporte(any());
+    }
+
+    // ---------- armado de datos ----------
+
+    private Reporte reporteDelUsuario(Long usuarioId, LocalDateTime fecha) {
+      Usuario usuario = new Usuario();
+      usuario.setId(usuarioId);
+      Reporte reporte = reporte(producto("Leche"), comercio("Almacén"));
+      reporte.setUsuario(usuario);
+      reporte.setFechaDeReporte(fecha);
+      return reporte;
+    }
+
+    private Reporte reporte(Producto producto, Comercio comercio) {
+      Reporte reporte = new Reporte();
+      reporte.setProducto(producto);
+      reporte.setComercio(comercio);
+      reporte.setPrecio(100.0);
+      return reporte;
+    }
+
+    private Producto producto(String nombre) {
+      Producto producto = new Producto();
+      producto.setNombre(nombre);
+      producto.setMarca("La Serenísima");
+      producto.setCategoria("Lácteos");
+      producto.setUnidad("1000ml");
+      return producto;
+    }
+
+    private Comercio comercio(String nombre) {
+      Comercio comercio = new Comercio();
+      comercio.setNombre(nombre);
+      comercio.setDireccion("Av. Siempreviva 123");
+      comercio.setLocalidad("La Matanza");
+      return comercio;
+    }
   }
 }

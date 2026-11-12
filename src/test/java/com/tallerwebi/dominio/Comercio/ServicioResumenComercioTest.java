@@ -2,7 +2,11 @@ package com.tallerwebi.dominio.Comercio;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Reporte.Reporte;
@@ -13,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class ServicioResumenComercioTest {
@@ -178,5 +183,303 @@ public class ServicioResumenComercioTest {
     reporte.setPrecio(precio);
     reporte.setFechaDeReporte(LocalDateTime.now().minusDays(haceDias));
     return reporte;
+  }
+
+  // Casos de borde del resumen del comercio: pasos del perfil, promociones vigentes y fechas de los precios
+
+  private Comercio comercio;
+
+  private void prepararCasosDeBorde() {
+    comercio = new Comercio();
+    comercio.setId(COMERCIO_ID);
+    comercio.setNombre("Almacén Don José");
+    when(servicioComercioMock.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+  }
+
+  // ---------- pasos del perfil ----------
+
+  @Test
+  public void unaFotoDeUnSoloByteCuentaComoFotoCargada() {
+    prepararCasosDeBorde();
+    comercio.setFoto(new byte[] { 1 });
+
+    assertThat(paso("foto"), equalTo(true));
+  }
+
+  @Test
+  public void unaFotoVaciaNoCuentaComoFotoCargada() {
+    prepararCasosDeBorde();
+    comercio.setFoto(new byte[0]);
+
+    assertThat(paso("foto"), equalTo(false));
+  }
+
+  @Test
+  public void conSoloLaLatitudLaUbicacionNoEstaCompleta() {
+    prepararCasosDeBorde();
+    comercio.setLatitud(-34.6);
+    comercio.setLongitud(null);
+
+    assertThat(paso("ubicacion"), equalTo(false));
+  }
+
+  @Test
+  public void conSoloLaLongitudLaUbicacionNoEstaCompleta() {
+    prepararCasosDeBorde();
+    comercio.setLatitud(null);
+    comercio.setLongitud(-58.4);
+
+    assertThat(paso("ubicacion"), equalTo(false));
+  }
+
+  // ---------- fecha de los últimos precios ----------
+
+  @Test
+  public void unPrecioConFechaMuestraLaFechaEnTexto() {
+    prepararCasosDeBorde();
+    LocalDateTime fecha = LocalDateTime.of(2026, 11, 10, 15, 30);
+    when(servicioReporteMock.buscarPorComercio(COMERCIO_ID)).thenReturn(List.of(reporte(fecha)));
+
+    ResumenComercio resumen = servicio.obtenerResumen(USUARIO_ID);
+
+    assertThat(resumen.ultimosPrecios().get(0).fecha(), equalTo(fecha.toString()));
+  }
+
+  @Test
+  public void unPrecioSinFechaNoMuestraFecha() {
+    prepararCasosDeBorde();
+    when(servicioReporteMock.buscarPorComercio(COMERCIO_ID)).thenReturn(List.of(reporte(null)));
+
+    ResumenComercio resumen = servicio.obtenerResumen(USUARIO_ID);
+
+    assertThat(resumen.ultimosPrecios().get(0).fecha(), nullValue());
+  }
+
+  // ---------- promociones vigentes ----------
+
+  @Test
+  public void unaPromocionYaIniciadaYAunNoVencidaEstaVigente() {
+    prepararCasosDeBorde();
+    prometer(promocion(true, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)));
+
+    assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(1));
+  }
+
+  @Test
+  public void unaPromocionQueTodaviaNoEmpezoNoEstaVigente() {
+    prepararCasosDeBorde();
+    prometer(promocion(true, LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2)));
+
+    assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(0));
+  }
+
+  @Test
+  public void unaPromocionYaVencidaNoEstaVigente() {
+    prepararCasosDeBorde();
+    prometer(promocion(true, LocalDateTime.now().minusDays(3), LocalDateTime.now().minusDays(1)));
+
+    assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(0));
+  }
+
+  @Test
+  public void unaPromocionSinFechasPeroActivaEstaVigente() {
+    prepararCasosDeBorde();
+    prometer(promocion(true, null, null));
+
+    assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(1));
+  }
+
+  @Test
+  public void unaPromocionDesactivadaNoEstaVigenteAunqueLasFechasCoincidan() {
+    prepararCasosDeBorde();
+    prometer(promocion(false, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)));
+
+    assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(0));
+  }
+
+  // ---------- armado de datos ----------
+
+  private boolean paso(String clave) {
+    return servicio
+      .obtenerResumen(USUARIO_ID)
+      .pasos()
+      .stream()
+      .filter(paso -> paso.clave().equals(clave))
+      .findFirst()
+      .orElseThrow()
+      .completo();
+  }
+
+  private void prometer(Promocion promocion) {
+    when(servicioPromocionMock.listarPorComercio(COMERCIO_ID)).thenReturn(List.of(promocion));
+  }
+
+  private Promocion promocion(boolean activa, LocalDateTime inicio, LocalDateTime fin) {
+    Promocion promocion = new Promocion();
+    promocion.setActiva(activa);
+    promocion.setFechaInicio(inicio);
+    promocion.setFechaFin(fin);
+    return promocion;
+  }
+
+  private Reporte reporte(LocalDateTime fecha) {
+    Producto producto = new Producto();
+    producto.setNombre("Leche");
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setPrecio(1150.0);
+    reporte.setFechaDeReporte(fecha);
+    return reporte;
+  }
+
+  @Nested
+  class CasosDeBordeDelResumen {
+
+    private static final Long USUARIO_ID = 7L;
+    private static final Long COMERCIO_ID = 3L;
+
+    private ServicioComercio servicioComercio;
+    private ServicioReporte servicioReporte;
+    private ServicioPromocion servicioPromocion;
+    private ServicioResumenComercio servicio;
+    private Comercio comercio;
+
+    @BeforeEach
+    public void init() {
+      servicioComercio = mock(ServicioComercio.class);
+      servicioReporte = mock(ServicioReporte.class);
+      servicioPromocion = mock(ServicioPromocion.class);
+      servicio =
+        new ServicioResumenComercioImpl(servicioComercio, servicioReporte, servicioPromocion);
+      comercio = new Comercio();
+      comercio.setId(COMERCIO_ID);
+      comercio.setNombre("Almacén Don José");
+      when(servicioComercio.buscarComercioPorUsuarioId(USUARIO_ID)).thenReturn(comercio);
+    }
+
+    // ---------- pasos del perfil ----------
+
+    @Test
+    public void unaFotoDeUnSoloByteCuentaComoFotoCargada() {
+      comercio.setFoto(new byte[] { 1 });
+
+      assertThat(paso("foto"), equalTo(true));
+    }
+
+    @Test
+    public void unaFotoVaciaNoCuentaComoFotoCargada() {
+      comercio.setFoto(new byte[0]);
+
+      assertThat(paso("foto"), equalTo(false));
+    }
+
+    @Test
+    public void conSoloLaLatitudLaUbicacionNoEstaCompleta() {
+      comercio.setLatitud(-34.6);
+      comercio.setLongitud(null);
+
+      assertThat(paso("ubicacion"), equalTo(false));
+    }
+
+    @Test
+    public void conSoloLaLongitudLaUbicacionNoEstaCompleta() {
+      comercio.setLatitud(null);
+      comercio.setLongitud(-58.4);
+
+      assertThat(paso("ubicacion"), equalTo(false));
+    }
+
+    // ---------- fecha de los últimos precios ----------
+
+    @Test
+    public void unPrecioConFechaMuestraLaFechaEnTexto() {
+      LocalDateTime fecha = LocalDateTime.of(2026, 11, 10, 15, 30);
+      when(servicioReporte.buscarPorComercio(COMERCIO_ID)).thenReturn(List.of(reporte(fecha)));
+
+      ResumenComercio resumen = servicio.obtenerResumen(USUARIO_ID);
+
+      assertThat(resumen.ultimosPrecios().get(0).fecha(), equalTo(fecha.toString()));
+    }
+
+    @Test
+    public void unPrecioSinFechaNoMuestraFecha() {
+      when(servicioReporte.buscarPorComercio(COMERCIO_ID)).thenReturn(List.of(reporte(null)));
+
+      ResumenComercio resumen = servicio.obtenerResumen(USUARIO_ID);
+
+      assertThat(resumen.ultimosPrecios().get(0).fecha(), nullValue());
+    }
+
+    // ---------- promociones vigentes ----------
+
+    @Test
+    public void unaPromocionYaIniciadaYAunNoVencidaEstaVigente() {
+      prometer(promocion(true, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)));
+
+      assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(1));
+    }
+
+    @Test
+    public void unaPromocionQueTodaviaNoEmpezoNoEstaVigente() {
+      prometer(promocion(true, LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2)));
+
+      assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(0));
+    }
+
+    @Test
+    public void unaPromocionYaVencidaNoEstaVigente() {
+      prometer(promocion(true, LocalDateTime.now().minusDays(3), LocalDateTime.now().minusDays(1)));
+
+      assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(0));
+    }
+
+    @Test
+    public void unaPromocionSinFechasPeroActivaEstaVigente() {
+      prometer(promocion(true, null, null));
+
+      assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(1));
+    }
+
+    @Test
+    public void unaPromocionDesactivadaNoEstaVigenteAunqueLasFechasCoincidan() {
+      prometer(promocion(false, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)));
+
+      assertThat(servicio.obtenerResumen(USUARIO_ID).promocionesActivas(), equalTo(0));
+    }
+
+    // ---------- armado de datos ----------
+
+    private boolean paso(String clave) {
+      return servicio
+        .obtenerResumen(USUARIO_ID)
+        .pasos()
+        .stream()
+        .filter(paso -> paso.clave().equals(clave))
+        .findFirst()
+        .orElseThrow()
+        .completo();
+    }
+
+    private void prometer(Promocion promocion) {
+      when(servicioPromocion.listarPorComercio(COMERCIO_ID)).thenReturn(List.of(promocion));
+    }
+
+    private Promocion promocion(boolean activa, LocalDateTime inicio, LocalDateTime fin) {
+      Promocion promocion = new Promocion();
+      promocion.setActiva(activa);
+      promocion.setFechaInicio(inicio);
+      promocion.setFechaFin(fin);
+      return promocion;
+    }
+
+    private Reporte reporte(LocalDateTime fecha) {
+      Producto producto = new Producto();
+      producto.setNombre("Leche");
+      Reporte reporte = new Reporte();
+      reporte.setProducto(producto);
+      reporte.setPrecio(1150.0);
+      reporte.setFechaDeReporte(fecha);
+      return reporte;
+    }
   }
 }
