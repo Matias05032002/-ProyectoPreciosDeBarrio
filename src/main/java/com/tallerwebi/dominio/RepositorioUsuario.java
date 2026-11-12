@@ -11,4 +11,5 @@ public interface RepositorioUsuario {
   Long contarTodos();
   List<Object[]> usuariosMasActivos(int limite);
   List<Object[]> distribucionPorRangoEtario();
+  List<Long> idsDeVecinosDeLocalidad(String localidad);
 }

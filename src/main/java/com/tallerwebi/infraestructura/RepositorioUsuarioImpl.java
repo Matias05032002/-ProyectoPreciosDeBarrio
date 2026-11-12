@@ -106,4 +106,17 @@ public class RepositorioUsuarioImpl implements RepositorioUsuario {
       )
       .list();
   }
+
+  @Override
+  public List<Long> idsDeVecinosDeLocalidad(String localidad) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT u.id FROM Usuario u WHERE u.rol = 'USER' AND u.activo = true " +
+        "AND LOWER(u.localidad) = LOWER(:localidad)",
+        Long.class
+      )
+      .setParameter("localidad", localidad)
+      .getResultList();
+  }
 }

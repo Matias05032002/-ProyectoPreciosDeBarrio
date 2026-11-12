@@ -2,6 +2,7 @@ package com.tallerwebi.dominio.Reporte;
 
 import com.tallerwebi.dominio.Usuario;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface RepositorioReporte {
@@ -26,5 +27,6 @@ public interface RepositorioReporte {
   List<Object[]> rangoEtariosVisitantes(Long comercioId);
   List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite);
   List<Reporte> listarRecientes(int diasMaximos);
+  List<Object[]> vecinosSinReportarDesde(LocalDateTime limite);
   List<Object[]> productosDudososPorComercio(Long comercioId);
 }

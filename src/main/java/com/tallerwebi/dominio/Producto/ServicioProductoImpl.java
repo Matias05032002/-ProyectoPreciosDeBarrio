@@ -161,12 +161,18 @@ public class ServicioProductoImpl implements ServicioProducto {
           .toList();
     }
 
+    Map<String, List<Reporte>> historial = historialPorLocal(reportes);
+    LocalDateTime ahora = LocalDateTime.now();
     Map<Object, List<ProductoConPrecio>> gruposPorProducto = new LinkedHashMap<>();
     for (Reporte reporte : quedarseConElUltimoDeCadaLocal(reportes)) {
       Producto producto = reporte.getProducto();
       if (producto == null) continue;
 
       ProductoConPrecio dto = crearProductoConPrecio(reporte, producto, usuario);
+      // Un precio dudoso no merece una tendencia: podría estar mal cargado
+      if (!dto.isEsDudoso()) {
+        dto.setTendencia(TendenciaDePrecio.calcular(historial.get(claveDelLocal(reporte)), ahora));
+      }
       asignarDistancia(dto, reporte, latUsuario, lngUsuario);
       gruposPorProducto
         .computeIfAbsent(claveDelProducto(producto), clave -> new ArrayList<>())
@@ -175,6 +181,16 @@ public class ServicioProductoImpl implements ServicioProducto {
 
     gruposPorProducto.values().forEach(this::marcarElMasBaratoDelGrupo);
     return ordenar(gruposPorProducto, ordenes);
+  }
+
+  // La tendencia es de cada comercio: se calcula solo con los reportes de ese producto en ese local
+  private Map<String, List<Reporte>> historialPorLocal(List<Reporte> reportes) {
+    Map<String, List<Reporte>> historial = new HashMap<>();
+    for (Reporte reporte : reportes) {
+      String clave = claveDelLocal(reporte);
+      if (clave != null) historial.computeIfAbsent(clave, c -> new ArrayList<>()).add(reporte);
+    }
+    return historial;
   }
 
   // Las categorías se guardaron sin tildes ("Lacteos"): se comparan sin tildes ni mayúsculas

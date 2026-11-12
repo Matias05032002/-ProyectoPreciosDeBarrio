@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.Comercio;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface RepositorioPromocion {
@@ -12,6 +13,8 @@ public interface RepositorioPromocion {
   List<Promocion> listarActivas();
 
   List<Promocion> listarProximas();
+
+  List<Promocion> listarIniciadasEntre(LocalDateTime desde, LocalDateTime hasta);
 
   void actualizar(Promocion promocion);
 }

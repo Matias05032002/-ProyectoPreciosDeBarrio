@@ -314,4 +314,19 @@ public class RepositorioReporteImpl implements RepositorioReporte {
       .setMaxResults(20)
       .getResultList();
   }
+
+  @Override
+  public List<Object[]> vecinosSinReportarDesde(LocalDateTime limite) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT usuario.id, MAX(reporte.fechaDeReporte) " +
+        "FROM Reporte reporte JOIN reporte.usuario usuario " +
+        "WHERE usuario.rol = 'USER' AND usuario.activo = true " +
+        "GROUP BY usuario.id HAVING MAX(reporte.fechaDeReporte) < :limite",
+        Object[].class
+      )
+      .setParameter("limite", limite)
+      .getResultList();
+  }
 }

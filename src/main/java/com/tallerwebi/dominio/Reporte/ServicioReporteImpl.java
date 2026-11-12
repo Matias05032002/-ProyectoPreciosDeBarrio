@@ -6,6 +6,8 @@ import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Producto.ServicioProducto;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.*;
+import com.tallerwebi.dominio.notificacion.ServicioNotificacion;
+import com.tallerwebi.dominio.notificacion.TipoNotificacion;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +27,7 @@ public class ServicioReporteImpl implements ServicioReporte {
   private RepositorioReporte repositorioReporte;
   private ServicioComercio servicioComercio;
   private ServicioProducto servicioProducto;
+  private ServicioNotificacion servicioNotificacion;
   private static final int DIAS_PLAZO_EDICION = 2;
   private static final int LARGO_MAXIMO_CORTO = 100;
   // Entre cuántos de los últimos reportes se busca los más cercanos, para que sigan siendo "últimos"
@@ -34,11 +37,13 @@ public class ServicioReporteImpl implements ServicioReporte {
   public ServicioReporteImpl(
     ServicioComercio servicioComercio,
     ServicioProducto servicioProducto,
-    RepositorioReporte repositorioReporte
+    RepositorioReporte repositorioReporte,
+    ServicioNotificacion servicioNotificacion
   ) {
     this.servicioComercio = servicioComercio;
     this.servicioProducto = servicioProducto;
     this.repositorioReporte = repositorioReporte;
+    this.servicioNotificacion = servicioNotificacion;
   }
 
   @Override
@@ -113,7 +118,28 @@ public class ServicioReporteImpl implements ServicioReporte {
     if (MarcasDeDudoso.yaLoMarco(reporte, usuario)) {
       return reporte;
     }
-    return repositorioReporte.marcarDudoso(id, usuario);
+    Reporte marcado = repositorioReporte.marcarDudoso(id, usuario);
+    avisarAlDuenioDelComercio(reporte);
+    return marcado;
+  }
+
+  // El comercio se entera de que dudan de uno de sus precios. Un aviso por reporte, aunque lo
+  // marquen varios vecinos. Si el local todavía no tiene dueño en la app, no hay a quién avisar.
+  private void avisarAlDuenioDelComercio(Reporte reporte) {
+    Comercio comercio = reporte.getComercio();
+    if (comercio == null || comercio.getUsuarioId() == null) {
+      return;
+    }
+    String producto = reporte.getProducto() == null
+      ? "un producto"
+      : reporte.getProducto().getNombre();
+    servicioNotificacion.notificar(
+      comercio.getUsuarioId(),
+      TipoNotificacion.DUDOSO_EN_TU_COMERCIO,
+      "Un vecino marcó como dudoso el precio de " + producto + " en " + comercio.getNombre(),
+      "/comercio/dashboard",
+      "dudoso:" + reporte.getId()
+    );
   }
 
   @Override

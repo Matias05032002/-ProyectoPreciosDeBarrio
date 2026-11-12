@@ -11,6 +11,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class RepositorioPromocionImpl implements RepositorioPromocion {
 
+  private static final String SELECT_CON_COMERCIO =
+    "SELECT p FROM Promocion p JOIN FETCH p.comercio ";
+
   private final SessionFactory sessionFactory;
 
   @Autowired
@@ -34,8 +37,7 @@ public class RepositorioPromocionImpl implements RepositorioPromocion {
     return sessionFactory
       .getCurrentSession()
       .createQuery(
-        "SELECT p FROM Promocion p JOIN FETCH p.comercio " +
-        "WHERE p.comercio.id = :comercioId ORDER BY p.fechaFin DESC",
+        SELECT_CON_COMERCIO + "WHERE p.comercio.id = :comercioId ORDER BY p.fechaFin DESC",
         Promocion.class
       )
       .setParameter("comercioId", comercioId)
@@ -47,7 +49,7 @@ public class RepositorioPromocionImpl implements RepositorioPromocion {
     return sessionFactory
       .getCurrentSession()
       .createQuery(
-        "SELECT p FROM Promocion p JOIN FETCH p.comercio " +
+        SELECT_CON_COMERCIO +
         "WHERE p.activa = true " +
         "AND p.fechaInicio > :ahora " +
         "ORDER BY p.fechaInicio ASC",
@@ -62,7 +64,7 @@ public class RepositorioPromocionImpl implements RepositorioPromocion {
     return sessionFactory
       .getCurrentSession()
       .createQuery(
-        "SELECT p FROM Promocion p JOIN FETCH p.comercio " +
+        SELECT_CON_COMERCIO +
         "WHERE p.activa = true " +
         "AND p.fechaInicio <= :ahora " +
         "AND p.fechaFin >= :ahora " +
@@ -76,5 +78,20 @@ public class RepositorioPromocionImpl implements RepositorioPromocion {
   @Override
   public void actualizar(Promocion promocion) {
     sessionFactory.getCurrentSession().merge(promocion);
+  }
+
+  @Override
+  public List<Promocion> listarIniciadasEntre(LocalDateTime desde, LocalDateTime hasta) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        SELECT_CON_COMERCIO +
+        "WHERE p.activa = true AND p.fechaInicio > :desde AND p.fechaInicio <= :hasta " +
+        "AND p.fechaFin > :hasta ORDER BY p.fechaInicio ASC",
+        Promocion.class
+      )
+      .setParameter("desde", desde)
+      .setParameter("hasta", hasta)
+      .list();
   }
 }
