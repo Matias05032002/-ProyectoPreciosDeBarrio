@@ -382,4 +382,9 @@ public class ServicioReporteImpl implements ServicioReporte {
   private List<Reporte> reportesDelComercio(Long comercioId) {
     return repositorioReporte.buscarPorComercio(comercioId);
   }
+
+  @Override
+  public List<Object[]> productosDudososPorComercio(Long comercioId) {
+    return repositorioReporte.productosDudososPorComercio(comercioId);
+  }
 }

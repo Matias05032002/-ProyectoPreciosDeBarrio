@@ -245,6 +245,7 @@ public class ControladorComercio {
     if (comercio == null) return new ModelAndView(REDIRECT_PERFIL);
 
     List<Reporte> reportes = servicioReporte.buscarPorComercio(comercio.getId());
+    List<Object[]> productosDudosos = servicioReporte.productosDudososPorComercio(comercio.getId());
     List<Object[]> vecinos = servicioReporte.contarUsuariosDistintosPorComercio(comercio.getId());
     Long totalDudosos = servicioReporte.contarReportesDudososPorComercio(comercio.getId());
     List<Object[]> rangosEtarios = servicioReporte.rangoEtariosVisitantes(comercio.getId());
@@ -266,6 +267,7 @@ public class ControladorComercio {
       5
     );
     mav.addObject("productosMasBuscados", productosMasBuscados);
+    mav.addObject("productosDudosos", productosDudosos);
     return mav;
   }
 

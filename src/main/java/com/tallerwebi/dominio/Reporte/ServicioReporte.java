@@ -39,4 +39,5 @@ public interface ServicioReporte {
   void validarFoto(byte[] foto) throws FotoInvalida;
   double precioPromedioDelComercio(Long comercioId);
   String productoEstrellaDelComercio(Long comercioId);
+  List<Object[]> productosDudososPorComercio(Long comercioId);
 }

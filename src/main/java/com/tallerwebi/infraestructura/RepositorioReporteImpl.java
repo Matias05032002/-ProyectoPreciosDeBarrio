@@ -210,6 +210,22 @@ public class RepositorioReporteImpl implements RepositorioReporte {
   }
 
   @Override
+  public List<Object[]> productosDudososPorComercio(Long comercioId) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "SELECT r.producto.nombre, COUNT(DISTINCT r), COUNT(u) " +
+        "FROM Reporte r JOIN r.usuariosQueMarcaron u " +
+        "WHERE r.comercio.id = :comercioId " +
+        "GROUP BY r.producto.id, r.producto.nombre " +
+        "ORDER BY COUNT(u) DESC",
+        Object[].class
+      )
+      .setParameter(PARAM_COMERCIO_ID, comercioId)
+      .list();
+  }
+
+  @Override
   public List<Object[]> contarUsuariosDistintosPorComercio(Long comercioId) {
     return sessionFactory
       .getCurrentSession()

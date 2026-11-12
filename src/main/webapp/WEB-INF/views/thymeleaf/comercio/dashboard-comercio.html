@@ -138,6 +138,46 @@
             </ol>
         </section>
 
+
+        <!-- Ranking de productos dudosos -->
+        <section class="db-tarjeta db-claro db-top" style="--i:3"
+                 aria-labelledby="db-t-ranking">
+            <div class="db-tarjeta-cabecera">
+                <h2 id="db-t-ranking">Ranking de productos dudosos</h2>
+                <span class="db-icono" aria-hidden="true">
+            <i class="bi bi-exclamation-triangle"></i>
+        </span>
+            </div>
+
+            <p class="db-nota mb-3">
+                Productos con más marcas de dudoso en tu comercio.
+            </p>
+
+            <p th:if="${productosDudosos == null or #lists.isEmpty(productosDudosos)}"
+               class="db-sin-datos">
+                Todavía no hay productos marcados como dudosos.
+            </p>
+
+            <ol th:if="${productosDudosos != null and !#lists.isEmpty(productosDudosos)}"
+                class="db-lista">
+
+                <li th:each="producto, stat : ${productosDudosos}">
+                    <span class="db-puesto" th:text="${stat.count}">1</span>
+
+                    <span class="db-texto">
+                <strong th:text="${producto[0]}">Producto</strong>
+                <small th:text="${producto[1]} + ' reportes'">0 reportes</small>
+            </span>
+
+                    <span class="db-dato"
+                          th:text="${producto[2]} + ' marcas'">
+                0 marcas
+            </span>
+                </li>
+            </ol>
+        </section>
+
+
         <!-- Rangos etarios -->
         <section class="db-tarjeta db-rangos db-ancha" style="--i:3" aria-labelledby="db-t-rangos">
             <div class="db-tarjeta-cabecera">
