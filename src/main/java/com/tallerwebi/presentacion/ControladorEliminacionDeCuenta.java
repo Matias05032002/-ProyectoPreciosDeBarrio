@@ -14,34 +14,34 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class ControladorEliminacionDeCuenta {
 
-    private static final String REDIRECT_LOGIN = "redirect:/login";
+  private static final String REDIRECT_LOGIN = "redirect:/login";
 
-    private final ServicioEliminacionDeCuenta servicioEliminacionDeCuenta;
+  private final ServicioEliminacionDeCuenta servicioEliminacionDeCuenta;
 
-    @Autowired
-    public ControladorEliminacionDeCuenta(ServicioEliminacionDeCuenta servicioEliminacionDeCuenta) {
-        this.servicioEliminacionDeCuenta = servicioEliminacionDeCuenta;
+  @Autowired
+  public ControladorEliminacionDeCuenta(ServicioEliminacionDeCuenta servicioEliminacionDeCuenta) {
+    this.servicioEliminacionDeCuenta = servicioEliminacionDeCuenta;
+  }
+
+  @RequestMapping(path = "/perfil/eliminar-cuenta", method = RequestMethod.POST)
+  public ModelAndView eliminar(
+    @RequestParam("contrasena") String contrasena,
+    HttpServletRequest request
+  ) {
+    HttpSession sesion = request.getSession(false);
+    if (sesion == null || sesion.getAttribute("ID") == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
     }
-
-    @RequestMapping(path = "/perfil/eliminar-cuenta", method = RequestMethod.POST)
-    public ModelAndView eliminar(
-            @RequestParam("contrasena") String contrasena,
-            HttpServletRequest request
-    ) {
-        HttpSession sesion = request.getSession(false);
-        if (sesion == null || sesion.getAttribute("ID") == null) {
-            return new ModelAndView(REDIRECT_LOGIN);
-        }
-        // El id sale siempre de la sesión: nadie puede eliminar la cuenta de otro
-        Long usuarioId = Long.valueOf(sesion.getAttribute("ID").toString());
-        try {
-            if (servicioEliminacionDeCuenta.eliminarCuenta(usuarioId, contrasena)) {
-                sesion.invalidate();
-                return new ModelAndView("redirect:/login?cuentaEliminada");
-            }
-        } catch (AccesoDenegado e) {
-            return new ModelAndView("redirect:/perfil?errorEliminarCuenta");
-        }
-        return new ModelAndView("redirect:/perfil?errorEliminarCuenta");
+    // El id sale siempre de la sesión: nadie puede eliminar la cuenta de otro
+    Long usuarioId = Long.valueOf(sesion.getAttribute("ID").toString());
+    try {
+      if (servicioEliminacionDeCuenta.eliminarCuenta(usuarioId, contrasena)) {
+        sesion.invalidate();
+        return new ModelAndView("redirect:/login?cuentaEliminada");
+      }
+    } catch (AccesoDenegado e) {
+      return new ModelAndView("redirect:/perfil?errorEliminarCuenta");
     }
+    return new ModelAndView("redirect:/perfil?errorEliminarCuenta");
+  }
 }

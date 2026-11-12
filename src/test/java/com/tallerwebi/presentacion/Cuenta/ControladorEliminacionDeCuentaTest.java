@@ -18,70 +18,74 @@ import org.springframework.web.servlet.ModelAndView;
 
 public class ControladorEliminacionDeCuentaTest {
 
-    private ServicioEliminacionDeCuenta servicio;
-    private HttpServletRequest request;
-    private HttpSession sesion;
-    private ControladorEliminacionDeCuenta controlador;
+  private ServicioEliminacionDeCuenta servicio;
+  private HttpServletRequest request;
+  private HttpSession sesion;
+  private ControladorEliminacionDeCuenta controlador;
 
-    @BeforeEach
-    void init() {
-        servicio = mock(ServicioEliminacionDeCuenta.class);
-        request = mock(HttpServletRequest.class);
-        sesion = mock(HttpSession.class);
-        controlador = new ControladorEliminacionDeCuenta(servicio);
-    }
+  @BeforeEach
+  void init() {
+    servicio = mock(ServicioEliminacionDeCuenta.class);
+    request = mock(HttpServletRequest.class);
+    sesion = mock(HttpSession.class);
+    controlador = new ControladorEliminacionDeCuenta(servicio);
+  }
 
-    @Test
-    void sinSesionDeberiaRedirigirAlLoginSinEliminarNada() {
-        when(request.getSession(false)).thenReturn(null);
+  @Test
+  void sinSesionDeberiaRedirigirAlLoginSinEliminarNada() {
+    when(request.getSession(false)).thenReturn(null);
 
-        ModelAndView mav = controlador.eliminar("Clave1234", request);
+    ModelAndView mav = controlador.eliminar("Clave1234", request);
 
-        assertThat(mav.getViewName(), equalTo("redirect:/login"));
-        verify(servicio, never()).eliminarCuenta(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
-    }
+    assertThat(mav.getViewName(), equalTo("redirect:/login"));
+    verify(servicio, never())
+      .eliminarCuenta(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+  }
 
-    @Test
-    void conSesionSinIdDeberiaRedirigirAlLogin() {
-        when(request.getSession(false)).thenReturn(sesion);
-        when(sesion.getAttribute("ID")).thenReturn(null);
+  @Test
+  void conSesionSinIdDeberiaRedirigirAlLogin() {
+    when(request.getSession(false)).thenReturn(sesion);
+    when(sesion.getAttribute("ID")).thenReturn(null);
 
-        assertThat(controlador.eliminar("Clave1234", request).getViewName(), equalTo("redirect:/login"));
-    }
+    assertThat(
+      controlador.eliminar("Clave1234", request).getViewName(),
+      equalTo("redirect:/login")
+    );
+  }
 
-    @Test
-    void siSeEliminoDeberiaCerrarLaSesionYVolverAlLogin() {
-        when(request.getSession(false)).thenReturn(sesion);
-        when(sesion.getAttribute("ID")).thenReturn(7L);
-        when(servicio.eliminarCuenta(7L, "Clave1234")).thenReturn(true);
+  @Test
+  void siSeEliminoDeberiaCerrarLaSesionYVolverAlLogin() {
+    when(request.getSession(false)).thenReturn(sesion);
+    when(sesion.getAttribute("ID")).thenReturn(7L);
+    when(servicio.eliminarCuenta(7L, "Clave1234")).thenReturn(true);
 
-        ModelAndView mav = controlador.eliminar("Clave1234", request);
+    ModelAndView mav = controlador.eliminar("Clave1234", request);
 
-        verify(sesion).invalidate();
-        assertThat(mav.getViewName(), equalTo("redirect:/login?cuentaEliminada"));
-    }
+    verify(sesion).invalidate();
+    assertThat(mav.getViewName(), equalTo("redirect:/login?cuentaEliminada"));
+  }
 
-    @Test
-    void conUnaContrasenaIncorrectaDeberiaVolverAlPerfilConElError() {
-        when(request.getSession(false)).thenReturn(sesion);
-        when(sesion.getAttribute("ID")).thenReturn(7L);
-        when(servicio.eliminarCuenta(7L, "mala")).thenReturn(false);
+  @Test
+  void conUnaContrasenaIncorrectaDeberiaVolverAlPerfilConElError() {
+    when(request.getSession(false)).thenReturn(sesion);
+    when(sesion.getAttribute("ID")).thenReturn(7L);
+    when(servicio.eliminarCuenta(7L, "mala")).thenReturn(false);
 
-        ModelAndView mav = controlador.eliminar("mala", request);
+    ModelAndView mav = controlador.eliminar("mala", request);
 
-        verify(sesion, never()).invalidate();
-        assertThat(mav.getViewName(), equalTo("redirect:/perfil?errorEliminarCuenta"));
-    }
+    verify(sesion, never()).invalidate();
+    assertThat(mav.getViewName(), equalTo("redirect:/perfil?errorEliminarCuenta"));
+  }
 
-    @Test
-    void unaCuentaQueNoPuedeEliminarseDeberiaVolverAlPerfilConElError() {
-        when(request.getSession(false)).thenReturn(sesion);
-        when(sesion.getAttribute("ID")).thenReturn(1L);
-        when(servicio.eliminarCuenta(1L, "Clave1234")).thenThrow(new AccesoDenegado("admin"));
+  @Test
+  void unaCuentaQueNoPuedeEliminarseDeberiaVolverAlPerfilConElError() {
+    when(request.getSession(false)).thenReturn(sesion);
+    when(sesion.getAttribute("ID")).thenReturn(1L);
+    when(servicio.eliminarCuenta(1L, "Clave1234")).thenThrow(new AccesoDenegado("admin"));
 
-        ModelAndView mav = controlador.eliminar("Clave1234", request);
+    ModelAndView mav = controlador.eliminar("Clave1234", request);
 
-        verify(sesion, never()).invalidate();
-        assertThat(mav.getViewName(), equalTo("redirect:/perfil?errorEliminarCuenta"));
-    }
+    verify(sesion, never()).invalidate();
+    assertThat(mav.getViewName(), equalTo("redirect:/perfil?errorEliminarCuenta"));
+  }
 }

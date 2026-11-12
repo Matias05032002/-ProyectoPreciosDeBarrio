@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.Consulta;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class ServicioConsultaTest {
@@ -160,5 +162,91 @@ public class ServicioConsultaTest {
     assertEquals("Juan", consulta.getNombre());
     assertEquals("juan@email.com", consulta.getEmail());
     assertEquals("Hola", consulta.getMensaje());
+  }
+
+  // Largos máximos de la consulta: nombre 100 y correo 150, coinciden con las columnas de la base
+
+  @Test
+  public void unNombreDeCienCaracteresSeAcepta() {
+    Consulta consulta = consultaValida();
+    consulta.setNombre("n".repeat(100));
+
+    assertDoesNotThrow(() -> servicioConsulta.guardar(consulta));
+  }
+
+  @Test
+  public void unNombreDeCientoUnCaracteresSeRechaza() {
+    Consulta consulta = consultaValida();
+    consulta.setNombre("n".repeat(101));
+
+    assertThrows(DatosInvalidos.class, () -> servicioConsulta.guardar(consulta));
+  }
+
+  @Test
+  public void unCorreoDeCientoCincuentaCaracteresSeAcepta() {
+    Consulta consulta = consultaValida();
+    consulta.setEmail("a".repeat(144) + "@x.com");
+
+    assertDoesNotThrow(() -> servicioConsulta.guardar(consulta));
+  }
+
+  @Test
+  public void unCorreoDeCientoCincuentaYUnCaracteresSeRechaza() {
+    Consulta consulta = consultaValida();
+    consulta.setEmail("a".repeat(145) + "@x.com");
+
+    assertThrows(DatosInvalidos.class, () -> servicioConsulta.guardar(consulta));
+  }
+
+  @Nested
+  class CasosDeBordeDeConsultas {
+
+    private ServicioConsulta servicio;
+
+    @BeforeEach
+    public void init() {
+      servicio = new ServicioConsultaImpl(mock(RepositorioConsulta.class));
+    }
+
+    @Test
+    public void unNombreDeCienCaracteresSeAcepta() {
+      Consulta consulta = consultaValida();
+      consulta.setNombre("n".repeat(100));
+
+      assertDoesNotThrow(() -> servicio.guardar(consulta));
+    }
+
+    @Test
+    public void unNombreDeCientoUnCaracteresSeRechaza() {
+      Consulta consulta = consultaValida();
+      consulta.setNombre("n".repeat(101));
+
+      assertThrows(DatosInvalidos.class, () -> servicio.guardar(consulta));
+    }
+
+    @Test
+    public void unCorreoDeCientoCincuentaCaracteresSeAcepta() {
+      Consulta consulta = consultaValida();
+      consulta.setEmail("a".repeat(144) + "@x.com");
+
+      assertDoesNotThrow(() -> servicio.guardar(consulta));
+    }
+
+    @Test
+    public void unCorreoDeCientoCincuentaYUnCaracteresSeRechaza() {
+      Consulta consulta = consultaValida();
+      consulta.setEmail("a".repeat(145) + "@x.com");
+
+      assertThrows(DatosInvalidos.class, () -> servicio.guardar(consulta));
+    }
+
+    private Consulta consultaValida() {
+      Consulta consulta = new Consulta();
+      consulta.setNombre("Matías");
+      consulta.setEmail("matias@unlam.com");
+      consulta.setAsunto("Sugerencia");
+      consulta.setMensaje("Me gustaría ver más comercios del barrio.");
+      return consulta;
+    }
   }
 }

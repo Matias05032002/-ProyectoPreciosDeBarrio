@@ -2,9 +2,14 @@ package com.tallerwebi.dominio.Lista;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Lista.*;
@@ -17,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class ServicioListaTest {
@@ -289,5 +295,313 @@ public class ServicioListaTest {
     Lista lista = servicioLista.crearLista("  Super del jueves  ", 1L);
 
     assertThat(lista.getNombre(), is("Super del jueves"));
+  }
+
+  // Cuándo dos reportes cuentan como "el mismo producto" en una lista y quién puede tocarla
+
+  private static final Long DUENIO = 1L;
+  private static final Long LISTA_ID = 10L;
+  private static final Long REPORTE_ID = 20L;
+
+  private Lista lista;
+
+  private void prepararCasosDeBorde() {
+    lista = new Lista();
+    lista.setUsuarioId(DUENIO);
+    when(repositorioLista.buscarPorId(LISTA_ID)).thenReturn(lista);
+  }
+
+  @Test
+  public void agregarElMismoProductoDelMismoComercioYPrecioSumaLaCantidad() {
+    prepararCasosDeBorde();
+    ItemLista existente = itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+    when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(reporte(1L, 1L, "Marca", 100.0));
+
+    servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 3, DUENIO);
+
+    assertThat(existente.getCantidad(), equalTo(5));
+    verify(repositorioLista, never()).agregarItem(any());
+  }
+
+  @Test
+  public void agregarUnProductoDeOtraMarcaCreaUnItemNuevo() {
+    prepararCasosDeBorde();
+    itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+    when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(reporte(1L, 1L, "Otra", 100.0));
+
+    servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+    verify(repositorioLista).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  public void agregarElMismoProductoAOtroPrecioCreaUnItemNuevo() {
+    prepararCasosDeBorde();
+    itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+    when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(reporte(1L, 1L, "Marca", 120.0));
+
+    servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+    verify(repositorioLista).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  public void agregarUnItemCuyoReporteExistenteEsNuloCreaUnItemNuevo() {
+    prepararCasosDeBorde();
+    itemConReporte(null, 2);
+    when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(reporte(1L, 1L, "Marca", 100.0));
+
+    servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+    verify(repositorioLista).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  public void agregarSiElProductoExistenteEsNuloCreaUnItemNuevo() {
+    prepararCasosDeBorde();
+    Reporte sinProducto = reporte(1L, 1L, "Marca", 100.0);
+    sinProducto.setProducto(null);
+    itemConReporte(sinProducto, 2);
+    when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(reporte(1L, 1L, "Marca", 100.0));
+
+    servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+    verify(repositorioLista).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  public void agregarSiElProductoNuevoEsNuloCreaUnItemNuevo() {
+    prepararCasosDeBorde();
+    itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+    Reporte sinProducto = reporte(1L, 1L, "Marca", 100.0);
+    sinProducto.setProducto(null);
+    when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(sinProducto);
+
+    servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+    verify(repositorioLista).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  public void agregarSiElComercioExistenteEsNuloCreaUnItemNuevo() {
+    prepararCasosDeBorde();
+    Reporte sinComercio = reporte(1L, 1L, "Marca", 100.0);
+    sinComercio.setComercio(null);
+    itemConReporte(sinComercio, 2);
+    when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(reporte(1L, 1L, "Marca", 100.0));
+
+    servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+    verify(repositorioLista).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  public void agregarSiElComercioNuevoEsNuloCreaUnItemNuevo() {
+    prepararCasosDeBorde();
+    itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+    Reporte sinComercio = reporte(1L, 1L, "Marca", 100.0);
+    sinComercio.setComercio(null);
+    when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(sinComercio);
+
+    servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+    verify(repositorioLista).agregarItem(any(ItemLista.class));
+  }
+
+  // ---------- dueño de la lista ----------
+
+  @Test
+  public void agregarSinUsuarioEnSesionLanzaAccesoDenegado() {
+    prepararCasosDeBorde();
+    assertThrows(
+      AccesoDenegado.class,
+      () -> servicioLista.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, null)
+    );
+  }
+
+  @Test
+  public void eliminarUnItemSinListaLanzaAccesoDenegado() {
+    prepararCasosDeBorde();
+    ItemLista huerfano = new ItemLista();
+    when(repositorioLista.buscarItemPorId(7L)).thenReturn(huerfano);
+
+    assertThrows(AccesoDenegado.class, () -> servicioLista.eliminarItemDeLista(7L, DUENIO));
+  }
+
+  // ---------- armado de datos ----------
+
+  private ItemLista itemConReporte(Reporte reporte, int cantidad) {
+    ItemLista item = new ItemLista(lista, reporte, cantidad);
+    lista.getItems().add(item);
+    return item;
+  }
+
+  private Reporte reporte(Long productoId, Long comercioId, String marca, Double precio) {
+    Producto producto = new Producto();
+    producto.setId(productoId);
+    producto.setMarca(marca);
+    Comercio comercio = new Comercio();
+    comercio.setId(comercioId);
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(precio);
+    return reporte;
+  }
+
+  @Nested
+  class CasosDeBordeDeListas {
+
+    private static final Long DUENIO = 1L;
+    private static final Long LISTA_ID = 10L;
+    private static final Long REPORTE_ID = 20L;
+
+    private RepositorioLista repositorioLista;
+    private RepositorioReporte repositorioReporte;
+    private ServicioLista servicio;
+    private Lista lista;
+
+    @BeforeEach
+    public void init() {
+      repositorioLista = mock(RepositorioLista.class);
+      repositorioReporte = mock(RepositorioReporte.class);
+      servicio = new ServicioListaImpl(repositorioLista, repositorioReporte);
+      lista = new Lista();
+      lista.setUsuarioId(DUENIO);
+      when(repositorioLista.buscarPorId(LISTA_ID)).thenReturn(lista);
+    }
+
+    @Test
+    public void agregarElMismoProductoDelMismoComercioYPrecioSumaLaCantidad() {
+      ItemLista existente = itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+      when(repositorioReporte.buscarReporte(REPORTE_ID))
+        .thenReturn(reporte(1L, 1L, "Marca", 100.0));
+
+      servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 3, DUENIO);
+
+      assertThat(existente.getCantidad(), equalTo(5));
+      verify(repositorioLista, never()).agregarItem(any());
+    }
+
+    @Test
+    public void agregarUnProductoDeOtraMarcaCreaUnItemNuevo() {
+      itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+      when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(reporte(1L, 1L, "Otra", 100.0));
+
+      servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+      verify(repositorioLista).agregarItem(any(ItemLista.class));
+    }
+
+    @Test
+    public void agregarElMismoProductoAOtroPrecioCreaUnItemNuevo() {
+      itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+      when(repositorioReporte.buscarReporte(REPORTE_ID))
+        .thenReturn(reporte(1L, 1L, "Marca", 120.0));
+
+      servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+      verify(repositorioLista).agregarItem(any(ItemLista.class));
+    }
+
+    @Test
+    public void agregarUnItemCuyoReporteExistenteEsNuloCreaUnItemNuevo() {
+      itemConReporte(null, 2);
+      when(repositorioReporte.buscarReporte(REPORTE_ID))
+        .thenReturn(reporte(1L, 1L, "Marca", 100.0));
+
+      servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+      verify(repositorioLista).agregarItem(any(ItemLista.class));
+    }
+
+    @Test
+    public void agregarSiElProductoExistenteEsNuloCreaUnItemNuevo() {
+      Reporte sinProducto = reporte(1L, 1L, "Marca", 100.0);
+      sinProducto.setProducto(null);
+      itemConReporte(sinProducto, 2);
+      when(repositorioReporte.buscarReporte(REPORTE_ID))
+        .thenReturn(reporte(1L, 1L, "Marca", 100.0));
+
+      servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+      verify(repositorioLista).agregarItem(any(ItemLista.class));
+    }
+
+    @Test
+    public void agregarSiElProductoNuevoEsNuloCreaUnItemNuevo() {
+      itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+      Reporte sinProducto = reporte(1L, 1L, "Marca", 100.0);
+      sinProducto.setProducto(null);
+      when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(sinProducto);
+
+      servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+      verify(repositorioLista).agregarItem(any(ItemLista.class));
+    }
+
+    @Test
+    public void agregarSiElComercioExistenteEsNuloCreaUnItemNuevo() {
+      Reporte sinComercio = reporte(1L, 1L, "Marca", 100.0);
+      sinComercio.setComercio(null);
+      itemConReporte(sinComercio, 2);
+      when(repositorioReporte.buscarReporte(REPORTE_ID))
+        .thenReturn(reporte(1L, 1L, "Marca", 100.0));
+
+      servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+      verify(repositorioLista).agregarItem(any(ItemLista.class));
+    }
+
+    @Test
+    public void agregarSiElComercioNuevoEsNuloCreaUnItemNuevo() {
+      itemConReporte(reporte(1L, 1L, "Marca", 100.0), 2);
+      Reporte sinComercio = reporte(1L, 1L, "Marca", 100.0);
+      sinComercio.setComercio(null);
+      when(repositorioReporte.buscarReporte(REPORTE_ID)).thenReturn(sinComercio);
+
+      servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, DUENIO);
+
+      verify(repositorioLista).agregarItem(any(ItemLista.class));
+    }
+
+    // ---------- dueño de la lista ----------
+
+    @Test
+    public void agregarSinUsuarioEnSesionLanzaAccesoDenegado() {
+      assertThrows(
+        AccesoDenegado.class,
+        () -> servicio.agregarProductoALista(LISTA_ID, REPORTE_ID, 1, null)
+      );
+    }
+
+    @Test
+    public void eliminarUnItemSinListaLanzaAccesoDenegado() {
+      ItemLista huerfano = new ItemLista();
+      when(repositorioLista.buscarItemPorId(7L)).thenReturn(huerfano);
+
+      assertThrows(AccesoDenegado.class, () -> servicio.eliminarItemDeLista(7L, DUENIO));
+    }
+
+    // ---------- armado de datos ----------
+
+    private ItemLista itemConReporte(Reporte reporte, int cantidad) {
+      ItemLista item = new ItemLista(lista, reporte, cantidad);
+      lista.getItems().add(item);
+      return item;
+    }
+
+    private Reporte reporte(Long productoId, Long comercioId, String marca, Double precio) {
+      Producto producto = new Producto();
+      producto.setId(productoId);
+      producto.setMarca(marca);
+      Comercio comercio = new Comercio();
+      comercio.setId(comercioId);
+      Reporte reporte = new Reporte();
+      reporte.setProducto(producto);
+      reporte.setComercio(comercio);
+      reporte.setPrecio(precio);
+      return reporte;
+    }
   }
 }
