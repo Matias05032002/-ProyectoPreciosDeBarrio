@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +45,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Controller
 @RequestMapping("/reporte")
 public class ControladorReporte {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ControladorReporte.class);
 
   private ServicioReporte servicioReporte;
   private ServicioProducto servicioProducto;
@@ -57,8 +61,11 @@ public class ControladorReporte {
   private static final String PARAM_NOMBRE = "nombre";
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String SESSION_ROL = "ROL";
+  private static final String PARAM_VOLVER_A = "volverA";
+  private static final String ORIGEN_PERFIL = "perfil";
   private static final String SESSION_EMAIL = "EMAIL";
   private static final String NOMBRE_ERROR = "error";
+  private static final String NOMBRE_LECTURA_FALLIDA = "lecturaFallida";
   private static final String PREFIJO_ITEMS = "items[";
   private static final String ROL_COMERCIO = "COMERCIO";
   private static final String PARAM_PAGINA = "pagina";
@@ -381,12 +388,16 @@ public class ControladorReporte {
     }
     // El dueño sale siempre de la sesión: lo que manda el cliente es solo el id del reporte
     Long usuarioId = (Long) request.getSession().getAttribute("ID");
+    // Desde el perfil se vuelve al perfil; cualquier otro valor se ignora (no hay redirecciones libres)
+    String destino = ORIGEN_PERFIL.equals(request.getParameter(PARAM_VOLVER_A))
+      ? "redirect:/perfil"
+      : "redirect:/reporte/mis-reportes";
     try {
       servicioReporte.eliminarReporte(id, usuarioId);
     } catch (AccesoDenegado e) {
-      return new ModelAndView("redirect:/reporte/mis-reportes?errorEliminar=true");
+      return new ModelAndView(destino + "?errorEliminar=true");
     }
-    return new ModelAndView("redirect:/reporte/mis-reportes?eliminado=true");
+    return new ModelAndView(destino + "?eliminado=true");
   }
 
   private ModelAndView vistaConError(String mensaje, HttpServletRequest request) {
@@ -479,13 +490,16 @@ public class ControladorReporte {
       mav.addObject("comercioLocalidad", comercioLocalidad);
       return mav;
     } catch (Exception e) {
+      // El vecino ve un mensaje genérico; el motivo real (clave, cuota, modelo) queda en el log
+      LOGGER.error("No se pudo leer el ticket con la IA", e);
       ModelAndView mav = new ModelAndView(VISTA_SUBIR_TICKET);
-      mav.addObject(
-        NOMBRE_ERROR,
-        "No pudimos leer el ticket en este momento. " +
-        "Probá de nuevo en unos minutos o cargá los productos manualmente."
-      );
+      mav.addObject(NOMBRE_ERROR, "No pudimos leer el ticket en este momento.");
+      mav.addObject(NOMBRE_LECTURA_FALLIDA, true);
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+      // Se devuelven los datos del comercio para que no tenga que escribirlos de nuevo
+      mav.addObject("comercioNombre", comercioNombre);
+      mav.addObject("comercioDireccion", comercioDireccion);
+      mav.addObject("comercioLocalidad", comercioLocalidad);
       return mav;
     }
   }

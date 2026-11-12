@@ -51,10 +51,7 @@ public class ServicioRegistroComercioImpl implements ServicioRegistroComercio {
     String direccionLimpia = direccion.trim();
     String localidadLimpia = localidad.trim();
 
-    Comercio existente = servicioComercio.buscarPorDireccionYLocalidad(
-      direccionLimpia,
-      localidadLimpia
-    );
+    Comercio existente = servicioComercio.buscarEnElMismoLugar(direccionLimpia, localidadLimpia);
     if (existente != null && existente.getUsuarioId() != null) {
       throw new ComercioYaRegistrado();
     }
@@ -73,6 +70,7 @@ public class ServicioRegistroComercioImpl implements ServicioRegistroComercio {
     if (existente != null) {
       existente.setUsuarioId(usuarioCreado.getId());
       existente.setTipo(tipoLimpio);
+      servicioComercio.ubicarSiFalta(existente);
       servicioComercio.actualizarComercio(existente);
     } else {
       servicioComercio.guardarComercio(

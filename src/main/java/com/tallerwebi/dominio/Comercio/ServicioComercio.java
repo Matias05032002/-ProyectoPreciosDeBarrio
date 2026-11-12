@@ -25,6 +25,13 @@ public interface ServicioComercio {
    */
   void ubicarSiFalta(Comercio comercio);
   Comercio buscarPorDireccionYLocalidad(String direccion, String localidad);
+
+  /**
+   * Busca el comercio que ya está cargado en ese lugar, aunque la dirección esté escrita distinto
+   * ("Av de los corrales" y "Avenida de los corrales"). Primero compara el texto, después la
+   * dirección oficial del servicio de mapas y, por último, la distancia en el mapa.
+   */
+  Comercio buscarEnElMismoLugar(String direccion, String localidad);
   void guardarHorarios(Long comercioId, List<HorarioComercio> horarios);
   List<HorarioComercio> obtenerHorarios(Long comercioId);
   Boolean estaAbierto(Long comercioId);

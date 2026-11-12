@@ -1371,4 +1371,253 @@ public class ServicioComercioTest {
       return ahora;
     }
   }
+
+  @Nested
+  class ComercioEnElMismoLugar {
+
+    private static final String LOCALIDAD = "Buenos Aires";
+
+    private UbicacionSugerida lugar(String direccion, double latitud, double longitud) {
+      return new UbicacionSugerida(direccion, direccion, LOCALIDAD, latitud, longitud, "georef");
+    }
+
+    private Comercio comercioEn(String direccion, double latitud, double longitud, Long dueno) {
+      Comercio comercio = new Comercio();
+      comercio.setDireccion(direccion);
+      comercio.setLocalidad(LOCALIDAD);
+      comercio.setLatitud(latitud);
+      comercio.setLongitud(longitud);
+      comercio.setUsuarioId(dueno);
+      return comercio;
+    }
+
+    @Test
+    public void conElMismoTextoDeDireccionDevuelveEseComercioSinConsultarElMapa() {
+      Comercio cargado = comercioEn("Carhue 1526", -34.65, -58.51, null);
+      when(repositorioComercioMock.buscarComercioPorDireccionYLocalidad("Carhue 1526", LOCALIDAD))
+        .thenReturn(cargado);
+
+      Comercio resultado = servicioComercio.buscarEnElMismoLugar("Carhue 1526", LOCALIDAD);
+
+      assertThat(resultado, equalTo(cargado));
+      verify(servicioGeolocalizacionMock, never()).buscar(anyString(), anyString());
+    }
+
+    @Test
+    public void conOtraGrafiaDeLaCalleLoEncuentraPorLaDireccionOficial() {
+      Comercio cargado = comercioEn("Avenida de los corrales 7535", -34.66, -58.50, null);
+      when(servicioGeolocalizacionMock.buscar("Av de los corrales 7535", LOCALIDAD))
+        .thenReturn(List.of(lugar("Avenida de los corrales 7535", -34.66, -58.50)));
+      when(
+        repositorioComercioMock.buscarComercioPorDireccionYLocalidad(
+          "Avenida de los corrales 7535",
+          LOCALIDAD
+        )
+      )
+        .thenReturn(cargado);
+
+      Comercio resultado = servicioComercio.buscarEnElMismoLugar(
+        "Av de los corrales 7535",
+        LOCALIDAD
+      );
+
+      assertThat(resultado, equalTo(cargado));
+    }
+
+    @Test
+    public void conUnComercioCargadoEnElMismoPuntoDelMapaDevuelveEse() {
+      Comercio cargado = comercioEn("Av de los corrales 7535", -34.6678494, -58.5064855, null);
+      when(servicioGeolocalizacionMock.buscar("Avenida de los corrales 7535", LOCALIDAD))
+        .thenReturn(List.of(lugar("Avenida de los corrales 7535", -34.6678494, -58.5064855)));
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(cargado));
+
+      Comercio resultado = servicioComercio.buscarEnElMismoLugar(
+        "Avenida de los corrales 7535",
+        LOCALIDAD
+      );
+
+      assertThat(resultado, equalTo(cargado));
+    }
+
+    @Test
+    public void unComercioAUnos110MetrosEsOtroLocal() {
+      Comercio otro = comercioEn("Rivadavia 1334", -34.6010, -58.5000, null);
+      when(servicioGeolocalizacionMock.buscar("Rivadavia 1234", LOCALIDAD))
+        .thenReturn(List.of(lugar("Rivadavia 1234", -34.6000, -58.5000)));
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(otro));
+
+      assertThat(servicioComercio.buscarEnElMismoLugar("Rivadavia 1234", LOCALIDAD), nullValue());
+    }
+
+    @Test
+    public void unComercioDeOtraLocalidadEnElMismoPuntoNoCuenta() {
+      Comercio deOtraLocalidad = comercioEn("Rivadavia 1234", -34.6000, -58.5000, null);
+      deOtraLocalidad.setLocalidad("La Matanza");
+      when(servicioGeolocalizacionMock.buscar("Rivadavia 1234", LOCALIDAD))
+        .thenReturn(List.of(lugar("Rivadavia 1234", -34.6000, -58.5000)));
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(deOtraLocalidad));
+
+      assertThat(servicioComercio.buscarEnElMismoLugar("Rivadavia 1234", LOCALIDAD), nullValue());
+    }
+
+    @Test
+    public void sinResultadosDelMapaYSinTextoCoincidenteDevuelveNull() {
+      when(servicioGeolocalizacionMock.buscar("Calle inventada 1", LOCALIDAD))
+        .thenReturn(Collections.emptyList());
+
+      assertThat(
+        servicioComercio.buscarEnElMismoLugar("Calle inventada 1", LOCALIDAD),
+        nullValue()
+      );
+    }
+
+    @Test
+    public void conDireccionVaciaODatosNulosDevuelveNullSinConsultar() {
+      assertThat(servicioComercio.buscarEnElMismoLugar(" ", LOCALIDAD), nullValue());
+      assertThat(servicioComercio.buscarEnElMismoLugar(null, LOCALIDAD), nullValue());
+      assertThat(servicioComercio.buscarEnElMismoLugar("Carhue 1526", null), nullValue());
+      verifyNoInteractions(repositorioComercioMock, servicioGeolocalizacionMock);
+    }
+
+    @Test
+    public void alGuardarUnComercioEnUnLugarYaCargadoConOtraGrafiaNoCreaOtro() {
+      Comercio cargado = comercioEn("Av de los corrales 7535", -34.6678494, -58.5064855, null);
+      when(servicioGeolocalizacionMock.buscar("Avenida de los corrales 7535", LOCALIDAD))
+        .thenReturn(List.of(lugar("Avenida de los corrales 7535", -34.6678494, -58.5064855)));
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(cargado));
+      Comercio nuevo = new Comercio();
+      nuevo.setNombre("Dia");
+      nuevo.setDireccion("Avenida de los corrales 7535");
+      nuevo.setLocalidad(LOCALIDAD);
+      nuevo.setUsuarioId(5L);
+
+      Comercio resultado = servicioComercio.guardarComercio(nuevo);
+
+      assertThat(resultado, equalTo(cargado));
+      assertThat(cargado.getUsuarioId(), equalTo(5L));
+      verify(repositorioComercioMock, never()).guardarComercio(any());
+      verify(repositorioComercioMock).actualizarComercio(cargado);
+    }
+
+    @Test
+    public void alGuardarUnComercioEnElLugarDeOtroConDuenoDevuelveElQueYaTieneDueno() {
+      Comercio conDueno = comercioEn("Av de los corrales 7535", -34.6678494, -58.5064855, 3L);
+      when(servicioGeolocalizacionMock.buscar("Avenida de los corrales 7535", LOCALIDAD))
+        .thenReturn(List.of(lugar("Avenida de los corrales 7535", -34.6678494, -58.5064855)));
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(conDueno));
+      Comercio nuevo = new Comercio();
+      nuevo.setNombre("Dia");
+      nuevo.setDireccion("Avenida de los corrales 7535");
+      nuevo.setLocalidad(LOCALIDAD);
+      nuevo.setUsuarioId(9L);
+
+      Comercio resultado = servicioComercio.guardarComercio(nuevo);
+
+      assertThat(resultado, equalTo(conDueno));
+      assertThat(conDueno.getUsuarioId(), equalTo(3L));
+      verify(repositorioComercioMock, never()).guardarComercio(any());
+    }
+
+    @Test
+    public void unaDireccionConEspaciosDeMasEsLaMismaDireccion() {
+      Comercio cargado = comercioEn("Av  de los corrales 7535", -34.6644774, -58.5025962, 5L);
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(cargado));
+
+      Comercio resultado = servicioComercio.buscarEnElMismoLugar(
+        "Av de los corrales 7535",
+        LOCALIDAD
+      );
+
+      assertThat(resultado, equalTo(cargado));
+      verify(servicioGeolocalizacionMock, never()).buscar(anyString(), anyString());
+    }
+
+    @Test
+    public void mayusculasTildesYPuntosNoCambianLaDireccion() {
+      Comercio cargado = comercioEn("Avenida de los Córrales 7535", -34.66, -58.50, null);
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(cargado));
+
+      assertThat(
+        servicioComercio.buscarEnElMismoLugar("AV. DE LOS CORRALES, 7535", LOCALIDAD),
+        equalTo(cargado)
+      );
+    }
+
+    @Test
+    public void otroNumeroDeLaMismaCalleEsOtraDireccion() {
+      Comercio cargado = comercioEn("Av de los corrales 7535", -34.66, -58.50, null);
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(cargado));
+
+      assertThat(
+        servicioComercio.buscarEnElMismoLugar("Av de los corrales 7536", LOCALIDAD),
+        nullValue()
+      );
+    }
+
+    @Test
+    public void laMismaDireccionEnOtraLocalidadEsOtroComercio() {
+      Comercio cargado = comercioEn("Av de los corrales 7535", -34.66, -58.50, null);
+      cargado.setLocalidad("La Matanza");
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(cargado));
+
+      assertThat(
+        servicioComercio.buscarEnElMismoLugar("Av de los corrales 7535", LOCALIDAD),
+        nullValue()
+      );
+    }
+
+    @Test
+    public void unComercioDadoDeBajaNoCuentaComoElMismoLugar() {
+      Comercio dadoDeBaja = comercioEn("Av de los corrales 7535", -34.66, -58.50, null);
+      dadoDeBaja.setActivo(false);
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(dadoDeBaja));
+
+      assertThat(
+        servicioComercio.buscarEnElMismoLugar("Av de los corrales 7535", LOCALIDAD),
+        nullValue()
+      );
+    }
+
+    @Test
+    public void siHayDosConLaMismaDireccionPrefiereElQueTieneDueno() {
+      Comercio sinDueno = comercioEn("Av de los corrales 7535", -34.66, -58.50, null);
+      Comercio conDueno = comercioEn("Av  de los corrales 7535", -34.66, -58.50, 5L);
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(sinDueno, conDueno));
+
+      assertThat(
+        servicioComercio.buscarEnElMismoLugar("AV DE LOS CORRALES 7535", LOCALIDAD),
+        equalTo(conDueno)
+      );
+    }
+
+    @Test
+    public void guardarUnComercioConLaMismaDireccionEscritaDistintoNoLoDuplicaAunqueElMapaLoUbiqueLejos() {
+      Comercio conDueno = comercioEn("Av  de los corrales 7535", -34.6644774, -58.5025962, 5L);
+      when(repositorioComercioMock.listarTodos()).thenReturn(List.of(conDueno));
+      Comercio nuevo = new Comercio();
+      nuevo.setNombre("Dia");
+      nuevo.setDireccion("Av de los corrales 7535");
+      nuevo.setLocalidad(LOCALIDAD);
+      nuevo.setLatitud(-34.6638589);
+      nuevo.setLongitud(-58.5016684);
+
+      Comercio resultado = servicioComercio.guardarComercio(nuevo);
+
+      assertThat(resultado, equalTo(conDueno));
+      verify(repositorioComercioMock, never()).guardarComercio(any());
+    }
+
+    @Test
+    public void direccionNormalizadaUnificaEscrituras() {
+      assertThat(
+        BuscadorDeComercioEnElMismoLugar.direccionNormalizada("  Av.  de los Córrales  7535 "),
+        equalTo("avenida de los corrales 7535")
+      );
+      assertThat(
+        BuscadorDeComercioEnElMismoLugar.direccionNormalizada("Avda de los corrales 7535"),
+        equalTo("avenida de los corrales 7535")
+      );
+      assertThat(BuscadorDeComercioEnElMismoLugar.direccionNormalizada(null), equalTo(""));
+    }
+  }
 }

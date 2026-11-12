@@ -101,7 +101,7 @@ public class ServicioGeminiTest {
   @Test
   public void llamarGeminiSiElPrimerModeloEstaSaturadoUsaElSiguiente() throws Exception {
     ServicioGeminiImpl servicio = servicioContraServidorFalso(
-      Map.of("gemini-3.8-flash", 503, "gemini-3.5-flash", 200)
+      Map.of("gemini-3.8-flash", 503, "gemini-3.6-flash", 200)
     );
 
     String respuesta = servicio.llamarGemini("{}");
@@ -109,19 +109,19 @@ public class ServicioGeminiTest {
     assertThat(respuesta, equalTo(RESPUESTA_OK));
     assertThat(
       modelosLlamados,
-      contains("gemini-3.8-flash", "gemini-3.8-flash", "gemini-3.5-flash")
+      contains("gemini-3.8-flash", "gemini-3.8-flash", "gemini-3.6-flash")
     );
   }
 
   @Test
   public void llamarGeminiSiElModeloNoExisteMasPasaAlSiguienteSinReintentar() throws Exception {
     ServicioGeminiImpl servicio = servicioContraServidorFalso(
-      Map.of("gemini-3.8-flash", 404, "gemini-3.5-flash", 200)
+      Map.of("gemini-3.8-flash", 404, "gemini-3.6-flash", 200)
     );
 
     servicio.llamarGemini("{}");
 
-    assertThat(modelosLlamados, contains("gemini-3.8-flash", "gemini-3.5-flash"));
+    assertThat(modelosLlamados, contains("gemini-3.8-flash", "gemini-3.6-flash"));
   }
 
   @Test
@@ -142,7 +142,7 @@ public class ServicioGeminiTest {
     Exception error = assertThrows(Exception.class, () -> servicio.llamarGemini("{}"));
 
     assertThat(error.getMessage(), containsString("503"));
-    assertThat(modelosLlamados.size(), equalTo(6));
+    assertThat(modelosLlamados.size(), equalTo(8));
   }
 
   // Levanta un servidor HTTP local que responde con el código configurado para cada modelo.

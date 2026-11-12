@@ -549,6 +549,28 @@ public class ControladorReporteTest {
     assertThat(mav.getModel().containsKey("error"), is(true));
   }
 
+  @Test
+  public void analizarTicketSiLaIaFallaOfreceCargarAManoYConservaLosDatosDelComercio()
+    throws Exception {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(servicioComercioMock.listarTodos()).thenReturn(Collections.emptyList());
+    when(servicioOcrMock.leerTicket(any())).thenThrow(new Exception("Gemini y el respaldo caídos"));
+
+    ModelAndView mav = controladorReporte.analizarTicket(
+      "data:image/jpeg;base64,QUJD",
+      "Almacen Don Pepe",
+      "Calle 1 123",
+      "La Matanza",
+      requestMock
+    );
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("reporte/subir-ticket"));
+    assertThat(mav.getModel().get("lecturaFallida"), equalTo(true));
+    assertThat(mav.getModel().get("comercioNombre"), equalTo("Almacen Don Pepe"));
+    assertThat(mav.getModel().get("comercioDireccion"), equalTo("Calle 1 123"));
+    assertThat(mav.getModel().get("comercioLocalidad"), equalTo("La Matanza"));
+  }
+
   // --- verFormularioEdicion ---
 
   @Test
@@ -683,6 +705,46 @@ public class ControladorReporteTest {
     assertThat(
       mav.getViewName(),
       equalToIgnoringCase("redirect:/reporte/mis-reportes?errorEliminar=true")
+    );
+  }
+
+  @Test
+  public void eliminarReporteDesdeElPerfilVuelveAlPerfilAvisandoQueSeElimino() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(requestMock.getParameter("volverA")).thenReturn("perfil");
+
+    ModelAndView mav = controladorReporte.eliminarReporte(5L, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/perfil?eliminado=true"));
+    verify(servicioReporteMock, times(1)).eliminarReporte(5L, 1L);
+  }
+
+  @Test
+  public void eliminarReporteAjenoDesdeElPerfilVuelveAlPerfilConError() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(requestMock.getParameter("volverA")).thenReturn("perfil");
+    doThrow(new AccesoDenegado("No podés eliminar este reporte"))
+      .when(servicioReporteMock)
+      .eliminarReporte(5L, 1L);
+
+    ModelAndView mav = controladorReporte.eliminarReporte(5L, requestMock);
+
+    assertThat(mav.getViewName(), equalToIgnoringCase("redirect:/perfil?errorEliminar=true"));
+  }
+
+  @Test
+  public void eliminarReporteIgnoraUnDestinoDeRetornoDesconocido() {
+    when(sessionMock.getAttribute("ROL")).thenReturn("USER");
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+    when(requestMock.getParameter("volverA")).thenReturn("http://sitio-externo.com");
+
+    ModelAndView mav = controladorReporte.eliminarReporte(5L, requestMock);
+
+    assertThat(
+      mav.getViewName(),
+      equalToIgnoringCase("redirect:/reporte/mis-reportes?eliminado=true")
     );
   }
 
