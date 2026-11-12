@@ -636,4 +636,80 @@ public class RepositorioReporteTest {
   private void entoncesElReporteEsCorrecto(Reporte resultado) {
     assertThat(resultado, is(notNullValue()));
   }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void productosDudososPorComercioDeberiaAgruparOrdenarYFiltrar() {
+    Comercio comercio = new Comercio();
+    comercio.setNombre("Comercio Ranking");
+    comercio.setDireccion("Av. Test 100");
+    comercio.setLocalidad("Matanza");
+    sessionFactory.getCurrentSession().persist(comercio);
+
+    Comercio otroComercio = new Comercio();
+    otroComercio.setNombre("Otro Comercio");
+    otroComercio.setDireccion("Av. Test 200");
+    otroComercio.setLocalidad("Matanza");
+    sessionFactory.getCurrentSession().persist(otroComercio);
+
+    Producto leche = new Producto();
+    leche.setNombre("Leche");
+    sessionFactory.getCurrentSession().persist(leche);
+
+    Producto arroz = new Producto();
+    arroz.setNombre("Arroz");
+    sessionFactory.getCurrentSession().persist(arroz);
+
+    Producto aceite = new Producto();
+    aceite.setNombre("Aceite");
+    sessionFactory.getCurrentSession().persist(aceite);
+
+    Usuario vecino1 = dadoQueExisteUnVecino();
+    Usuario vecino2 = dadoQueExisteUnVecino();
+    Usuario vecino3 = dadoQueExisteUnVecino();
+    Usuario vecino4 = dadoQueExisteUnVecino();
+
+    Reporte leche1 = new Reporte();
+    leche1.setProducto(leche);
+    leche1.setComercio(comercio);
+    leche1.setPrecio(100.0);
+    leche1.setUsuariosQueMarcaron(List.of(vecino1, vecino2));
+    dadoQueExisteElReporte(leche1);
+
+    Reporte leche2 = new Reporte();
+    leche2.setProducto(leche);
+    leche2.setComercio(comercio);
+    leche2.setPrecio(110.0);
+    leche2.setUsuariosQueMarcaron(List.of(vecino3));
+    dadoQueExisteElReporte(leche2);
+
+    Reporte arroz1 = new Reporte();
+    arroz1.setProducto(arroz);
+    arroz1.setComercio(comercio);
+    arroz1.setPrecio(200.0);
+    arroz1.setUsuariosQueMarcaron(List.of(vecino4));
+    dadoQueExisteElReporte(arroz1);
+
+    Reporte aceite1 = new Reporte();
+    aceite1.setProducto(aceite);
+    aceite1.setComercio(otroComercio);
+    aceite1.setPrecio(300.0);
+    aceite1.setUsuariosQueMarcaron(List.of(vecino1, vecino2, vecino3, vecino4));
+    dadoQueExisteElReporte(aceite1);
+
+    sessionFactory.getCurrentSession().flush();
+
+    List<Object[]> resultado = repositorioReporte.productosDudososPorComercio(comercio.getId());
+
+    assertThat(resultado.size(), is(2));
+
+    assertThat(resultado.get(0)[0], is("Leche"));
+    assertThat(resultado.get(0)[1], is(2L));
+    assertThat(resultado.get(0)[2], is(3L));
+
+    assertThat(resultado.get(1)[0], is("Arroz"));
+    assertThat(resultado.get(1)[1], is(1L));
+    assertThat(resultado.get(1)[2], is(1L));
+  }
 }

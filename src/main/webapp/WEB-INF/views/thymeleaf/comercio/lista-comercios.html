@@ -43,7 +43,11 @@
 
     <!-- Filtros por tipo: se arman con los tipos que hay en la lista -->
     <div class="co-tipos aparece" style="--d:.24s" id="co-tipos" role="group" aria-label="Filtrar por tipo" hidden></div>
-
+    <div id="co-tipos-disponibles" hidden>
+    <span th:each="tipo : ${tiposComercio}"
+          th:attr="data-tipo=${tipo}">
+    </span>
+    </div>
     <div class="co-barra aparece" style="--d:.3s">
         <div class="co-vista" role="radiogroup" aria-label="Cómo ver los comercios">
             <label class="co-vista-opcion">
@@ -163,38 +167,71 @@
         // ---------- Filtros ----------
         var contTipos = document.getElementById('co-tipos');
 
+
         function armarChips() {
             var tipos = [];
-            cards.forEach(function (c) {
-                var t = c.getAttribute('data-tipo');
-                if (t && tipos.indexOf(t) === -1) { tipos.push(t); }
+
+            document.querySelectorAll('#co-tipos-disponibles [data-tipo]').forEach(function (elemento) {
+                var tipo = elemento.getAttribute('data-tipo');
+
+                if (tipo && tipos.indexOf(tipo) === -1) {
+                    tipos.push(tipo);
+                }
             });
-            var hayAbiertos = cards.some(function (c) { return c.getAttribute('data-abierto') === 'true'; });
-            if (tipos.length < 2 && !hayAbiertos) { return; }
+
+            var hayAbiertos = cards.some(function (c) {
+                return c.getAttribute('data-abierto') === 'true';
+            });
 
             function chip(texto, icono, accion, id) {
                 var b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'co-chip';
-                if (id) { b.id = id; }
+
+                if (id) {
+                    b.id = id;
+                }
+
                 b.setAttribute('aria-pressed', 'false');
-                b.innerHTML = (icono ? '<i class="bi ' + icono + '" aria-hidden="true"></i> ' : '');
+
+                b.innerHTML = icono
+                    ? '<i class="bi ' + icono + '" aria-hidden="true"></i> '
+                    : '';
+
                 b.appendChild(document.createTextNode(texto));
-                b.addEventListener('click', function () { accion(b); });
+
+                b.addEventListener('click', function () {
+                    accion(b);
+                });
+
                 contTipos.appendChild(b);
                 return b;
             }
 
-            var todos = chip('Todos', null, function () { filtro.tipo = null; filtro.soloAbiertos = false; aplicar(); }, 'chip-todos');
+            var todos = chip('Todos', null, function () {
+                filtro.tipo = null;
+                filtro.soloAbiertos = false;
+                aplicar();
+            }, 'chip-todos');
+
             tipos.forEach(function (t) {
-                chip(t, null, function () { filtro.tipo = (filtro.tipo === t ? null : t); aplicar(); });
+                chip(t, null, function () {
+                    filtro.tipo = (filtro.tipo === t ? null : t);
+                    aplicar();
+                });
             });
+
             if (hayAbiertos) {
-                chip('Abiertos ahora', 'bi-clock', function () { filtro.soloAbiertos = !filtro.soloAbiertos; aplicar(); }, 'chip-abiertos');
+                chip('Abiertos ahora', 'bi-clock', function () {
+                    filtro.soloAbiertos = !filtro.soloAbiertos;
+                    aplicar();
+                }, 'chip-abiertos');
             }
+
             contTipos.hidden = false;
             contTipos._todos = todos;
         }
+
 
         function pintarChips() {
             var botones = contTipos.querySelectorAll('.co-chip');
@@ -339,17 +376,53 @@
         function mostrarVista(vista) {
             var panel = document.getElementById('co-mapa-panel');
             var verMapa = vista === 'mapa';
+
             panel.hidden = !verMapa;
             lista.hidden = verMapa;
-            if (!verMapa) { return; }
+
+            if (!verMapa) {
+                return;
+            }
+
             if (!mapa) {
                 mapa = L.map('co-mapa').setView([-34.67, -58.56], 13);
+
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap'
                 }).addTo(mapa);
+
                 capa = L.layerGroup().addTo(mapa);
             }
-            setTimeout(function () { mapa.invalidateSize(); pintarMapa(); }, 50);
+
+            setTimeout(function () {
+                mapa.invalidateSize();
+                pintarMapa();
+
+                if (!usuario) {
+                    if (!navigator.geolocation) {
+                        return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        function (pos) {
+                            usuario = {
+                                lat: pos.coords.latitude,
+                                lng: pos.coords.longitude
+                            };
+
+                            pintarMapa();
+                        },
+                        function () {
+                            console.log('No se pudo obtener la ubicación del usuario.');
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 60000
+                        }
+                    );
+                }
+            }, 50);
         }
 
         Array.prototype.forEach.call(document.querySelectorAll('input[name="co-vista"]'), function (r) {

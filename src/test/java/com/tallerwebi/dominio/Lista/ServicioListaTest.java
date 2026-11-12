@@ -6,10 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Lista.*;
+import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.excepcion.AccesoDenegado;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -179,6 +182,80 @@ public class ServicioListaTest {
   void editarCantidadACeroDeberiaLanzarExcepcion() {
     assertThrows(IllegalArgumentException.class, () -> servicioLista.editarCantidadItem(1L, 0, 1L));
     verify(repositorioLista, never()).editarCantidadItem(anyLong(), anyInt());
+  }
+
+  @Test
+  void deberiaSumarCantidadSiElProductoYaExisteConLosMismosDatos() {
+    Lista lista = new Lista("Mi lista", 1L);
+    lista.setItems(new ArrayList<>());
+
+    Reporte reporteExistente = crearReporte(10L, 20L, "La Serenisima", 1500.0);
+    Reporte reporteNuevo = crearReporte(10L, 20L, "La Serenisima", 1500.0);
+
+    ItemLista itemExistente = new ItemLista(lista, reporteExistente, 2);
+    lista.getItems().add(itemExistente);
+
+    when(repositorioLista.buscarPorId(1L)).thenReturn(lista);
+    when(repositorioReporte.buscarReporte(5L)).thenReturn(reporteNuevo);
+
+    servicioLista.agregarProductoALista(1L, 5L, 3, 1L);
+
+    assertThat(itemExistente.getCantidad(), is(5));
+    verify(repositorioLista, never()).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
+  void deberiaCrearOtroItemSiCambiaElComercio() {
+    verificarQueCreaOtroItem(
+      crearReporte(10L, 20L, "La Serenisima", 1500.0),
+      crearReporte(10L, 30L, "La Serenisima", 1500.0)
+    );
+  }
+
+  @Test
+  void deberiaCrearOtroItemSiCambiaLaMarca() {
+    verificarQueCreaOtroItem(
+      crearReporte(10L, 20L, "La Serenisima", 1500.0),
+      crearReporte(10L, 20L, "Milkaut", 1500.0)
+    );
+  }
+
+  @Test
+  void deberiaCrearOtroItemSiCambiaElPrecio() {
+    verificarQueCreaOtroItem(
+      crearReporte(10L, 20L, "La Serenisima", 1500.0),
+      crearReporte(10L, 20L, "La Serenisima", 1800.0)
+    );
+  }
+
+  private void verificarQueCreaOtroItem(Reporte existente, Reporte nuevo) {
+    Lista lista = new Lista("Mi lista", 1L);
+    lista.setItems(new ArrayList<>());
+
+    lista.getItems().add(new ItemLista(lista, existente, 2));
+
+    when(repositorioLista.buscarPorId(1L)).thenReturn(lista);
+    when(repositorioReporte.buscarReporte(5L)).thenReturn(nuevo);
+
+    servicioLista.agregarProductoALista(1L, 5L, 1, 1L);
+
+    verify(repositorioLista).agregarItem(any(ItemLista.class));
+  }
+
+  private Reporte crearReporte(Long productoId, Long comercioId, String marca, Double precio) {
+    Producto producto = new Producto();
+    producto.setId(productoId);
+    producto.setMarca(marca);
+
+    Comercio comercio = new Comercio();
+    comercio.setId(comercioId);
+
+    Reporte reporte = new Reporte();
+    reporte.setProducto(producto);
+    reporte.setComercio(comercio);
+    reporte.setPrecio(precio);
+
+    return reporte;
   }
 
   private ItemLista itemDeLista(Long itemId, Long duenioId) {

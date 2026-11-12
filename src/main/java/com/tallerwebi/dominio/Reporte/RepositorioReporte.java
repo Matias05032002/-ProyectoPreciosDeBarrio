@@ -28,4 +28,5 @@ public interface RepositorioReporte {
   List<Object[]> productosMasBuscadosPorLocalidad(String localidad, int limite);
   List<Reporte> listarRecientes(int diasMaximos);
   List<Object[]> vecinosSinReportarDesde(LocalDateTime limite);
+  List<Object[]> productosDudososPorComercio(Long comercioId);
 }

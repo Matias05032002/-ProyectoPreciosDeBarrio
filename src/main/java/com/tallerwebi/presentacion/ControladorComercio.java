@@ -3,6 +3,7 @@ package com.tallerwebi.presentacion;
 import com.tallerwebi.dominio.Comercio.Comercio;
 import com.tallerwebi.dominio.Comercio.HorarioComercio;
 import com.tallerwebi.dominio.Comercio.ServicioComercio;
+import com.tallerwebi.dominio.Comercio.TipoDeComercio;
 import com.tallerwebi.dominio.Comercio.UbicacionSugerida;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
@@ -64,6 +65,7 @@ public class ControladorComercio {
     ModelAndView mav = new ModelAndView("comercio/lista-comercios");
     mav.addObject("comercios", comercios);
     mav.addObject("estadosAbierto", estadosAbierto);
+    mav.addObject("tiposComercio", TipoDeComercio.TIPOS);
     return mav;
   }
 
@@ -245,6 +247,7 @@ public class ControladorComercio {
     if (comercio == null) return new ModelAndView(REDIRECT_PERFIL);
 
     List<Reporte> reportes = servicioReporte.buscarPorComercio(comercio.getId());
+    List<Object[]> productosDudosos = servicioReporte.productosDudososPorComercio(comercio.getId());
     List<Object[]> vecinos = servicioReporte.contarUsuariosDistintosPorComercio(comercio.getId());
     Long totalDudosos = servicioReporte.contarReportesDudososPorComercio(comercio.getId());
     List<Object[]> rangosEtarios = servicioReporte.rangoEtariosVisitantes(comercio.getId());
@@ -266,6 +269,7 @@ public class ControladorComercio {
       5
     );
     mav.addObject("productosMasBuscados", productosMasBuscados);
+    mav.addObject("productosDudosos", productosDudosos);
     return mav;
   }
 
