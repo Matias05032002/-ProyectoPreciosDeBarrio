@@ -268,6 +268,31 @@
         })();
     </script>
 
+    <script>
+        // Evita enviar dos veces un formulario (doble click, tap repetido): el segundo envío se descarta
+        (function () {
+            document.addEventListener('submit', function (evento) {
+                var formulario = evento.target;
+                if (formulario.dataset.enviando === 'true') {
+                    evento.preventDefault();
+                    return;
+                }
+                if (evento.defaultPrevented || (formulario.method || '').toLowerCase() !== 'post') {
+                    return;
+                }
+                formulario.dataset.enviando = 'true';
+                formulario.setAttribute('aria-busy', 'true');
+            });
+            // Al volver con "atrás" la página puede quedar con el formulario marcado como enviado
+            window.addEventListener('pageshow', function () {
+                document.querySelectorAll('form[data-enviando]').forEach(function (formulario) {
+                    delete formulario.dataset.enviando;
+                    formulario.removeAttribute('aria-busy');
+                });
+            });
+        })();
+    </script>
+
 </div>
 
 </body>

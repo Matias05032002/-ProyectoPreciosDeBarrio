@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,9 @@ public class ControladorReporte {
   private static final String ORIGEN_PERFIL = "perfil";
   private static final String SESSION_EMAIL = "EMAIL";
   private static final String NOMBRE_ERROR = "error";
+  private static final String PARAM_COMERCIO_NOMBRE = "comercioNombre";
+  private static final String PARAM_COMERCIO_DIRECCION = "comercioDireccion";
+  private static final String PARAM_COMERCIO_LOCALIDAD = "comercioLocalidad";
   private static final String NOMBRE_LECTURA_FALLIDA = "lecturaFallida";
   private static final String PREFIJO_ITEMS = "items[";
   private static final String ROL_COMERCIO = "COMERCIO";
@@ -481,13 +485,23 @@ public class ControladorReporte {
     try {
       int inicio = ticketBase64.indexOf(',');
       byte[] bytes = java.util.Base64.getDecoder().decode(ticketBase64.substring(inicio + 1));
+      // Antes de gastar una consulta a la IA se comprueba que sea una imagen real y no muy grande
+      servicioReporte.validarFoto(bytes);
       TicketLeido ticket = servicioOcr.leerTicket(bytes);
       ModelAndView mav = new ModelAndView("reporte/confirmar-ticket");
       mav.addObject("items", ticket.items());
       mav.addObject("comercioTipo", ticket.tipoComercio());
-      mav.addObject("comercioNombre", comercioNombre);
-      mav.addObject("comercioDireccion", comercioDireccion);
-      mav.addObject("comercioLocalidad", comercioLocalidad);
+      mav.addObject(PARAM_COMERCIO_NOMBRE, comercioNombre);
+      mav.addObject(PARAM_COMERCIO_DIRECCION, comercioDireccion);
+      mav.addObject(PARAM_COMERCIO_LOCALIDAD, comercioLocalidad);
+      return mav;
+    } catch (FotoInvalida e) {
+      ModelAndView mav = new ModelAndView(VISTA_SUBIR_TICKET);
+      mav.addObject(NOMBRE_ERROR, e.getMessage());
+      mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
+      mav.addObject(PARAM_COMERCIO_NOMBRE, comercioNombre);
+      mav.addObject(PARAM_COMERCIO_DIRECCION, comercioDireccion);
+      mav.addObject(PARAM_COMERCIO_LOCALIDAD, comercioLocalidad);
       return mav;
     } catch (Exception e) {
       // El vecino ve un mensaje genérico; el motivo real (clave, cuota, modelo) queda en el log
@@ -497,26 +511,26 @@ public class ControladorReporte {
       mav.addObject(NOMBRE_LECTURA_FALLIDA, true);
       mav.addObject(NOMBRE_COMERCIOS, servicioComercio.listarTodos());
       // Se devuelven los datos del comercio para que no tenga que escribirlos de nuevo
-      mav.addObject("comercioNombre", comercioNombre);
-      mav.addObject("comercioDireccion", comercioDireccion);
-      mav.addObject("comercioLocalidad", comercioLocalidad);
+      mav.addObject(PARAM_COMERCIO_NOMBRE, comercioNombre);
+      mav.addObject(PARAM_COMERCIO_DIRECCION, comercioDireccion);
+      mav.addObject(PARAM_COMERCIO_LOCALIDAD, comercioLocalidad);
       return mav;
     }
   }
 
   private boolean faltanDatosDelComercio(String nombre, String direccion, String localidad) {
-    return estaVacio(nombre) || estaVacio(direccion) || estaVacio(localidad);
+    return Stream.of(nombre, direccion, localidad).anyMatch(this::estaVacio);
   }
 
   private boolean estaVacio(String texto) {
-    return texto == null || texto.isBlank();
+    return Optional.ofNullable(texto).map(String::isBlank).orElse(true);
   }
 
   @RequestMapping(path = "/ticket/guardar", method = RequestMethod.POST)
   public ModelAndView guardarTicket(
-    @RequestParam("comercioNombre") String comercioNombre,
-    @RequestParam("comercioDireccion") String comercioDireccion,
-    @RequestParam("comercioLocalidad") String comercioLocalidad,
+    @RequestParam(PARAM_COMERCIO_NOMBRE) String comercioNombre,
+    @RequestParam(PARAM_COMERCIO_DIRECCION) String comercioDireccion,
+    @RequestParam(PARAM_COMERCIO_LOCALIDAD) String comercioLocalidad,
     @RequestParam Map<String, String> params,
     HttpServletRequest request
   ) {
@@ -579,7 +593,7 @@ public class ControladorReporte {
     producto.setNombre(nombre);
     producto.setMarca(params.getOrDefault(prefijo + "marca", "Sin marca"));
     producto.setCategoria(params.getOrDefault(prefijo + "categoria", "Varios"));
-    producto.setUnidad(unidad.isBlank() ? "1u" : unidad);
+    producto.setUnidad(Optional.of(unidad).filter(u -> !u.isBlank()).orElse("1u"));
     Reporte reporte = new Reporte();
     reporte.setProducto(producto);
     reporte.setPrecio(precio);

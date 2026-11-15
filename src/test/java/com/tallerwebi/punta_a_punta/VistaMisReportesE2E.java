@@ -141,7 +141,7 @@ public class VistaMisReportesE2E {
 
   @Test
   void alCambiarElComercioDeUnReporteNoDeberiaModificarseElComercioOriginal() {
-    // El seed deja un reporte del usuario 1 en el comercio "Almacen Test"
+    // El seed deja un reporte del vecino de prueba en el comercio "Almacen Test"
     ReiniciarDB.sembrarProductoConReporte();
     dadoQueElUsuarioEstaLogueado();
     VistaMisReportes vistaMisReportes = new VistaMisReportes(context.pages().get(0));
@@ -169,7 +169,7 @@ public class VistaMisReportesE2E {
 
   private void dadoQueElUsuarioEstaLogueado() {
     VistaReporte vistaReporte = new VistaReporte(context.pages().get(0));
-    vistaReporte.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
+    vistaReporte.iniciarSesionYNavegar("test-vecino@unlam.edu.ar", "test");
   }
 
   private void dadoQuePublicoUnReporte() {

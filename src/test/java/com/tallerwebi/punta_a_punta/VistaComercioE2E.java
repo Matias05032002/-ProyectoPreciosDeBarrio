@@ -44,7 +44,7 @@ public class VistaComercioE2E {
     context = browser.newContext();
     Page page = context.newPage();
     VistaLogin vistaLogin = new VistaLogin(page);
-    vistaLogin.escribirEMAIL("test@unlam.edu.ar");
+    vistaLogin.escribirEMAIL("test-vecino@unlam.edu.ar");
     vistaLogin.escribirClave("test");
     vistaLogin.darClickEnIniciarSesion();
     vistaComercio = new VistaComercio(page);
@@ -109,7 +109,7 @@ public class VistaComercioE2E {
 
   private void dadoQueExisteUnReporteCargado() {
     VistaReporte vistaReporte = new VistaReporte(context.pages().get(0));
-    vistaReporte.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
+    vistaReporte.iniciarSesionYNavegar("test-vecino@unlam.edu.ar", "test");
     vistaReporte.escribirNombreProducto("Leche");
     vistaReporte.escribirMarcaProducto("La Serenisima");
     vistaReporte.escribirCategoriaProducto("Lacteos");

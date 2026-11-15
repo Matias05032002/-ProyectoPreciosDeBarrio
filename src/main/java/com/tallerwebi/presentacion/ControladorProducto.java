@@ -12,6 +12,8 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.presentacion.DTO.ProductoConPrecio;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -213,15 +215,15 @@ public class ControladorProducto {
   }
 
   @RequestMapping(path = "/buscar/{id}", method = RequestMethod.GET)
-  public ModelAndView buscarPorId(@PathVariable Long id) {
+  public ModelAndView buscarPorId(@PathVariable("id") Long id) {
     Producto producto = servicioProducto.buscarProductoPorId(id);
 
     if (producto == null) {
-      return new ModelAndView("redirect:/producto/lista");
+      return new ModelAndView("redirect:/producto/buscar?nombre=");
     }
 
-    ModelAndView mav = new ModelAndView(VISTA_PRODUCTOS);
-    mav.addObject("productos", Collections.singletonList(producto));
-    return mav;
+    // La pantalla de productos trabaja con precios (ProductoConPrecio): se deriva a la búsqueda
+    String nombre = URLEncoder.encode(producto.getNombre(), StandardCharsets.UTF_8);
+    return new ModelAndView("redirect:/producto/buscar?nombre=" + nombre);
   }
 }

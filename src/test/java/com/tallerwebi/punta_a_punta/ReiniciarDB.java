@@ -42,7 +42,10 @@ public class ReiniciarDB {
         "', 'ADMIN', b'1', b'1', 'Admin Test'); " +
         "INSERT INTO Usuario(id, email, password, rol, activo, verificado, nombre) VALUES(null, 'test-comercio@unlam.edu.ar', '" +
         hashComercio +
-        "', 'COMERCIO', b'1', b'1', 'Comercio Test');";
+        "', 'COMERCIO', b'1', b'1', 'Comercio Test'); " +
+        "INSERT INTO Usuario(id, email, password, rol, activo, verificado, nombre) VALUES(null, 'test-vecino@unlam.edu.ar', '" +
+        hashTest +
+        "', 'USER', b'1', b'1', 'Vecino Test');";
       String dockerCmd = String.format(
         "docker exec tallerwebi-mysql mysql -h %s -P %s -u %s -p%s %s -e \"%s\"",
         dbHost,
@@ -93,8 +96,8 @@ public class ReiniciarDB {
         "INSERT INTO Producto(nombre, marca, categoria, descripcion, unidad, precio, disponible, fechaDeSubida) " +
         "VALUES('Leche', 'La Serenisima', 'Lacteos', 'Leche entera', '1L', 100.0, b'1', NOW()); " +
         "INSERT INTO Reporte(precio, puntuacion, fechaDeReporte, comercio_id, producto_id, usuario_id) " +
-        "VALUES(100.00, 8, NOW(), 1, 1, 1); " +
-        "INSERT INTO LISTA(nombre, usuarioId, fechaCreacion) VALUES('Lista con item', 1, NOW()); " +
+        "VALUES(100.00, 8, NOW(), 1, 1, 3); " +
+        "INSERT INTO LISTA(nombre, usuarioId, fechaCreacion) VALUES('Lista con item', 3, NOW()); " +
         "INSERT INTO ITEM_LISTA(lista_id, reporte_id, cantidad) VALUES(1, 1, 1);";
 
       String dockerCmd = String.format(
@@ -212,9 +215,9 @@ public class ReiniciarDB {
     }
   }
 
-  // El reporte es del usuario 1, el mismo con el que se loguean los E2E
+  // El reporte es del usuario 3 (test-vecino), el mismo con el que se loguean los E2E de vecino
   public static void sembrarProductoConReporte() {
-    sembrarProductoConReporteDelUsuario(1);
+    sembrarProductoConReporteDelUsuario(3);
   }
 
   // El reporte es del usuario 2: sirve para probar acciones que solo se hacen sobre reportes ajenos

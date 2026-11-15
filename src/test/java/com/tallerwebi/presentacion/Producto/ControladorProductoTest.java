@@ -383,17 +383,17 @@ public class ControladorProductoTest {
   }
 
   @Test
-  public void buscarPorIdConProductoExistenteDeberiaRetornarVistaConProducto() {
+  public void buscarPorIdConProductoExistenteDeberiaRedirigirALaBusquedaPorNombre() {
     Producto producto = new Producto();
-    producto.setNombre("Leche");
+    producto.setNombre("Leche entera");
     when(this.servicioProductoMock.buscarProductoPorId(1L)).thenReturn(producto);
 
     ModelAndView modelAndView = this.controladorProducto.buscarPorId(1L);
 
-    assertThat(modelAndView.getViewName(), equalTo("producto/lista-productos"));
-    @SuppressWarnings("unchecked")
-    java.util.List<?> productos = (java.util.List<?>) modelAndView.getModel().get("productos");
-    assertThat(productos.size(), equalTo(1));
+    assertThat(
+      modelAndView.getViewName(),
+      equalTo("redirect:/producto/buscar?nombre=Leche+entera")
+    );
     verify(this.servicioProductoMock, times(1)).buscarProductoPorId(1L);
   }
 
@@ -403,7 +403,7 @@ public class ControladorProductoTest {
 
     ModelAndView modelAndView = this.controladorProducto.buscarPorId(99L);
 
-    assertThat(modelAndView.getViewName(), equalTo("redirect:/producto/lista"));
+    assertThat(modelAndView.getViewName(), equalTo("redirect:/producto/buscar?nombre="));
     verify(this.servicioProductoMock, times(1)).buscarProductoPorId(99L);
   }
 

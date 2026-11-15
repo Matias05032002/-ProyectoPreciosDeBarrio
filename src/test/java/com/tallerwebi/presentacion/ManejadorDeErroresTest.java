@@ -10,11 +10,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -79,6 +83,28 @@ public class ManejadorDeErroresTest {
   }
 
   @Test
+  public void unIdNoNumericoEnLaRutaDeberiaMostrarUnErrorAmableConStatus404() throws Exception {
+    Exception error = errorDeTipoEnElParametro("idEnLaRuta");
+
+    ModelAndView mav = manejador.manejarErrorInesperado(error, requestMock, responseMock);
+
+    assertThat(mav.getViewName(), equalTo("error"));
+    verify(responseMock).setStatus(HttpServletResponse.SC_NOT_FOUND);
+    assertThat(mav.getModel().get("titulo"), equalTo("No encontramos lo que buscás"));
+    assertThat(mav.getModel().toString(), not(containsString("abc")));
+  }
+
+  @Test
+  public void unParametroDeLaConsultaConTipoIncorrectoSigueDandoStatus400() throws Exception {
+    Exception error = errorDeTipoEnElParametro("paginaEnLaConsulta");
+
+    ModelAndView mav = manejador.manejarErrorInesperado(error, requestMock, responseMock);
+
+    assertThat(mav.getViewName(), equalTo("error"));
+    verify(responseMock).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+  }
+
+  @Test
   public void unParametroQueFaltaDeberiaMostrarUnErrorAmableConStatus400() throws Exception {
     Exception error = new MissingServletRequestParameterException("precio", "double");
 
@@ -116,6 +142,21 @@ public class ManejadorDeErroresTest {
 
     assertThat(mav.getModel().toString(), not(containsString("abc")));
     assertThat(mav.getModel().toString(), not(containsString("Double")));
+  }
+
+  // Métodos de ejemplo para armar un MethodParameter con y sin @PathVariable
+  static class RutaDeEjemplo {
+
+    public void idEnLaRuta(@PathVariable("id") Long id) {}
+
+    public void paginaEnLaConsulta(@RequestParam("pagina") Integer pagina) {}
+  }
+
+  private MethodArgumentTypeMismatchException errorDeTipoEnElParametro(String metodo)
+    throws NoSuchMethodException {
+    Class<?> tipo = metodo.equals("idEnLaRuta") ? Long.class : Integer.class;
+    MethodParameter parametro = new MethodParameter(RutaDeEjemplo.class.getMethod(metodo, tipo), 0);
+    return new MethodArgumentTypeMismatchException("abc", tipo, "id", parametro, null);
   }
 
   @Test

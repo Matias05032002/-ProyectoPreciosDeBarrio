@@ -15,6 +15,7 @@ public class RolInterceptor implements HandlerInterceptor {
 
   public static final String ROL_ADMIN = "ADMIN";
   public static final String ROL_COMERCIO = "COMERCIO";
+  public static final String ROL_USER = "USER";
 
   private static final String ATRIBUTO_ROL = "ROL";
   private static final String DESTINO_NO_AUTORIZADO = "/home";
@@ -45,9 +46,12 @@ public class RolInterceptor implements HandlerInterceptor {
     Regla.soloPara("/promociones/nueva/**", ROL_COMERCIO, false),
     Regla.soloPara("/promociones/crear/**", ROL_COMERCIO, false),
     Regla.soloPara("/promociones/*/desactivar", ROL_COMERCIO, false),
+    // El admin es de solo lectura: no entra a lo que crea o edita datos del vecino
+    Regla.prohibidoPara("/asistente/**", ROL_ADMIN, true),
+    Regla.prohibidoPara("/reporte/**", ROL_ADMIN, false),
     Regla.prohibidoPara("/producto/precios/**", ROL_COMERCIO, true),
     Regla.prohibidoPara("/producto/**", ROL_COMERCIO, false),
-    Regla.prohibidoPara("/mis-listas/**", ROL_COMERCIO, false)
+    Regla.soloPara("/mis-listas/**", ROL_USER, false)
   );
 
   private final AntPathMatcher comparador = new AntPathMatcher();

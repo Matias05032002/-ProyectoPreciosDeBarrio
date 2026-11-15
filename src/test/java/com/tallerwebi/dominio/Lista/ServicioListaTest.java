@@ -172,6 +172,19 @@ public class ServicioListaTest {
   }
 
   @Test
+  void agregarProductoConCantidadMayorAlMaximoDeberiaLanzarExcepcion() {
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioLista.agregarProductoALista(1L, 5L, 100, 1L)
+    );
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> servicioLista.editarCantidadItem(7L, 100000, 1L)
+    );
+    verify(repositorioLista, never()).agregarItem(any(ItemLista.class));
+  }
+
+  @Test
   void agregarProductoConCantidadCeroONegativaDeberiaLanzarExcepcion() {
     assertThrows(
       IllegalArgumentException.class,

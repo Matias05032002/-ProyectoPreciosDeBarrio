@@ -1,5 +1,7 @@
 package com.tallerwebi.dominio.Comercio;
 
+import com.tallerwebi.dominio.excepcion.ComercioYaRegistrado;
+import com.tallerwebi.dominio.excepcion.DatosDeComercioInvalidos;
 import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import java.util.List;
 
@@ -17,6 +19,15 @@ public interface ServicioComercio {
     Double latitudConfirmada,
     Double longitudConfirmada
   );
+
+  /**
+   * Revisa lo que escribió el comerciante en su perfil antes de guardarlo: nombre, dirección y
+   * localidad obligatorios, largos que entran en la base y que otro comercio no esté ya en esa
+   * dirección y localidad.
+   */
+  void validarDatosDelPerfil(Comercio existente, Comercio datos)
+    throws DatosDeComercioInvalidos, ComercioYaRegistrado;
+
   List<UbicacionSugerida> sugerirUbicaciones(String direccion, String localidad);
 
   /**

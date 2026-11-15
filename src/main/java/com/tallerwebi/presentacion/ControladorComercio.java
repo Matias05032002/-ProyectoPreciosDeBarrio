@@ -9,6 +9,8 @@ import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.ServicioReporte;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.ComercioYaRegistrado;
+import com.tallerwebi.dominio.excepcion.DatosDeComercioInvalidos;
 import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -82,6 +85,8 @@ public class ControladorComercio {
       // Sin horarios cargados "abierto" queda en null y la vista muestra "Sin horario cargado"
       mav.addObject("abierto", servicioComercio.estaAbierto(id));
       mav.addObject("horarios", servicioComercio.obtenerHorarios(id));
+    } else {
+      mav.setStatus(HttpStatus.NOT_FOUND);
     }
     return mav;
   }
@@ -145,6 +150,13 @@ public class ControladorComercio {
     if (!esComercio(request)) return new ModelAndView(REDIRECT_HOME);
     Comercio existente = servicioComercio.buscarComercioPorUsuarioId(usuarioId);
     if (existente == null) return new ModelAndView(REDIRECT_PERFIL);
+    try {
+      servicioComercio.validarDatosDelPerfil(existente, comercio);
+    } catch (ComercioYaRegistrado e) {
+      return new ModelAndView(REDIRECT_PERFIL + "?errorEdicion=duplicado");
+    } catch (DatosDeComercioInvalidos e) {
+      return new ModelAndView(REDIRECT_PERFIL + "?errorEdicion=invalido");
+    }
     servicioComercio.actualizarDatosDelComercio(
       existente,
       comercio,

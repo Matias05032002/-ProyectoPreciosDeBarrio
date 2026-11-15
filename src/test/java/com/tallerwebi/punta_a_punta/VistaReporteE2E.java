@@ -42,7 +42,7 @@ public class VistaReporteE2E {
     context = browser.newContext();
     Page page = context.newPage();
     vistaReporte = new VistaReporte(page);
-    vistaReporte.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
+    vistaReporte.iniciarSesionYNavegar("test-vecino@unlam.edu.ar", "test");
   }
 
   @AfterEach

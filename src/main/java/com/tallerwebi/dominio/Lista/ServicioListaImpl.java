@@ -17,6 +17,7 @@ public class ServicioListaImpl implements ServicioLista {
 
   private static final String LISTA_AJENA = "La lista no pertenece al usuario";
   private static final int CANTIDAD_MINIMA = 1;
+  private static final int CANTIDAD_MAXIMA = 99;
   private static final int LARGO_MAXIMO_NOMBRE = 100;
 
   private final RepositorioLista repositorioLista;
@@ -73,6 +74,7 @@ public class ServicioListaImpl implements ServicioLista {
 
     for (ItemLista item : lista.getItems()) {
       if (esMismoProducto(item.getReporte(), reporte)) {
+        validarCantidad(item.getCantidad() + cantidad);
         item.setCantidad(item.getCantidad() + cantidad);
         return;
       }
@@ -149,6 +151,9 @@ public class ServicioListaImpl implements ServicioLista {
   private void validarCantidad(int cantidad) {
     if (cantidad < CANTIDAD_MINIMA) {
       throw new IllegalArgumentException("La cantidad debe ser al menos 1");
+    }
+    if (cantidad > CANTIDAD_MAXIMA) {
+      throw new IllegalArgumentException("La cantidad no puede superar " + CANTIDAD_MAXIMA);
     }
   }
 }

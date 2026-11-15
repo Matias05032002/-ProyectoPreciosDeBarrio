@@ -14,6 +14,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.excepcion.ComercioYaRegistrado;
+import com.tallerwebi.dominio.excepcion.DatosDeComercioInvalidos;
 import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -420,6 +422,63 @@ public class ServicioComercioTest {
 
     assertThat(comercio.getLatitud() == null, equalTo(true));
     verify(repositorioComercioMock).guardarComercio(comercio);
+  }
+
+  @Test
+  public void validarElPerfilConNombreVacioDeberiaLanzarDatosInvalidos() {
+    Comercio existente = comercioEn("Arieta 3000", "La Matanza");
+    Comercio datos = comercioEn("Arieta 3000", "La Matanza");
+    datos.setNombre("   ");
+
+    assertThrows(
+      DatosDeComercioInvalidos.class,
+      () -> servicioComercio.validarDatosDelPerfil(existente, datos)
+    );
+  }
+
+  @Test
+  public void validarElPerfilConDescripcionDeMasDe500CaracteresDeberiaLanzarDatosInvalidos() {
+    Comercio existente = comercioEn("Arieta 3000", "La Matanza");
+    Comercio datos = comercioEn("Arieta 3000", "La Matanza");
+    datos.setDescripcion("D".repeat(501));
+
+    assertThrows(
+      DatosDeComercioInvalidos.class,
+      () -> servicioComercio.validarDatosDelPerfil(existente, datos)
+    );
+  }
+
+  @Test
+  public void validarElPerfilConLaDireccionDeOtroComercioDeberiaLanzarComercioYaRegistrado() {
+    Comercio existente = comercioEn("Arieta 3000", "La Matanza");
+    existente.setId(1L);
+    Comercio otro = comercioEn("Florencio Varela 1900", "La Matanza");
+    otro.setId(2L);
+    Comercio datos = comercioEn("Florencio Varela 1900", "La Matanza");
+    when(
+      repositorioComercioMock.buscarComercioPorDireccionYLocalidad(
+        "Florencio Varela 1900",
+        "La Matanza"
+      )
+    )
+      .thenReturn(otro);
+
+    assertThrows(
+      ComercioYaRegistrado.class,
+      () -> servicioComercio.validarDatosDelPerfil(existente, datos)
+    );
+  }
+
+  @Test
+  public void validarElPerfilConLaMismaDireccionDelPropioComercioNoDeberiaFallar()
+    throws Exception {
+    Comercio existente = comercioEn("Arieta 3000", "La Matanza");
+    existente.setId(1L);
+    Comercio datos = comercioEn("Arieta 3000", "La Matanza");
+    when(repositorioComercioMock.buscarComercioPorDireccionYLocalidad("Arieta 3000", "La Matanza"))
+      .thenReturn(existente);
+
+    servicioComercio.validarDatosDelPerfil(existente, datos);
   }
 
   @Test
