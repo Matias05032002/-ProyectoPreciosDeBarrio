@@ -39,7 +39,7 @@ public class VistaTicketE2E {
     context = browser.newContext();
     Page page = context.newPage();
     vistaTicket = new VistaTicket(page);
-    vistaTicket.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
+    vistaTicket.iniciarSesionYNavegar("test-vecino@unlam.edu.ar", "test");
   }
 
   @AfterEach

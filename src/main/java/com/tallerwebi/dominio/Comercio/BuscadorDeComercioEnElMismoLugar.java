@@ -5,6 +5,7 @@ import java.text.Normalizer;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 final class BuscadorDeComercioEnElMismoLugar {
 
@@ -19,6 +20,12 @@ final class BuscadorDeComercioEnElMismoLugar {
   ) {
     this.repositorioComercio = repositorioComercio;
     this.servicioGeolocalizacion = servicioGeolocalizacion;
+  }
+
+  // True si ya hay un comercio distinto de `propio` cargado en esa dirección y localidad
+  boolean ocupadoPorOtro(Comercio propio, String direccion, String localidad) {
+    Comercio enElLugar = porTexto(direccion.trim(), localidad.trim());
+    return enElLugar != null && !Objects.equals(enElLugar.getId(), propio.getId());
   }
 
   Comercio porDireccion(String direccion, String localidad) {

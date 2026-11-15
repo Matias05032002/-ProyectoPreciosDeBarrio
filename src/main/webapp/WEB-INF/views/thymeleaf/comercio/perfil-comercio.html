@@ -151,6 +151,17 @@
             <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
 
+        <div th:if="${param.errorEdicion != null and param.errorEdicion[0] == 'duplicado'}" class="cm-alerta cm-alerta-error" role="alert">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">Ya hay otro comercio cargado en esa dirección y localidad. Revisá los datos.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        </div>
+        <div th:if="${param.errorEdicion != null and param.errorEdicion[0] == 'invalido'}" class="cm-alerta cm-alerta-error" role="alert">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <div class="cm-alerta-texto">No se guardaron los cambios. El nombre, la dirección y la localidad son obligatorios, y no pueden pasar de 150, 200 y 100 caracteres. La descripción admite hasta 500.</div>
+            <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        </div>
+
         <div th:if="${comercio.latitud == null}" id="alerta-sin-ubicacion" class="cm-alerta cm-alerta-aviso" role="alert">
             <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
             <div class="cm-alerta-texto">Tu local todavía no aparece en el mapa: no pudimos ubicar la dirección.
@@ -166,7 +177,7 @@
 
         <div th:if="${param.errorContrasena == 'incorrecta'}" class="cm-alerta cm-alerta-error" role="alert">
             <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
-            <div class="cm-alerta-texto">La contraseña actual es incorrecta.</div>
+            <div class="cm-alerta-texto">No se pudo cambiar la contraseña. Revisá que la actual sea correcta y que la nueva cumpla los requisitos de seguridad.</div>
             <button type="button" class="cm-alerta-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
 

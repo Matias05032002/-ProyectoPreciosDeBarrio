@@ -183,8 +183,11 @@
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap'
                 }).addTo(map);
+                // textContent y no un string: la dirección la escribe el comerciante y podría traer HTML
+                var textoPopup = document.createElement('span');
+                textoPopup.textContent = mapaDiv.dataset.direccion;
                 var marcador = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(map)
-                    .bindPopup(mapaDiv.dataset.direccion).openPopup();
+                    .bindPopup(textoPopup).openPopup();
 
                 // "Ver en el mapa": baja hasta el mapa, lo resalta y reabre el popup
                 var botonMapa = document.getElementById('btn-ver-ubicacion');

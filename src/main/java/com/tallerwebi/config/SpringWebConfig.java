@@ -65,7 +65,9 @@ public class SpringWebConfig implements WebMvcConfigurer {
         "/comercio/**",
         "/promociones/**",
         "/producto/**",
-        "/mis-listas/**"
+        "/mis-listas/**",
+        "/reporte/**",
+        "/asistente/**"
       );
   }
 

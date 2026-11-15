@@ -21,6 +21,10 @@ public class AuthInterceptor implements HandlerInterceptor {
       return false;
     }
 
+    // Con sesión iniciada la página es privada: sin esto, "atrás" tras cerrar sesión podría
+    // mostrar datos desde la caché del navegador
+    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    response.setHeader("Pragma", "no-cache");
     return true;
   }
 }

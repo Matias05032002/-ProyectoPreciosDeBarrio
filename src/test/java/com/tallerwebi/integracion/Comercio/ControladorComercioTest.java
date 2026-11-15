@@ -67,9 +67,11 @@ public class ControladorComercioTest {
   }
 
   @Test
-  public void verificarQueGetIdDevuelveLavistaCorrecta() throws Exception {
+  public void verificarQueGetIdDeUnComercioInexistenteDevuelve404ConLaVistaCorrecta()
+    throws Exception {
+    // La base de prueba está vacía: el comercio 1 no existe
     MvcResult result =
-      this.mockMvc.perform(get("/comercio/1")).andExpect(status().isOk()).andReturn();
+      this.mockMvc.perform(get("/comercio/1")).andExpect(status().isNotFound()).andReturn();
 
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;
@@ -77,9 +79,10 @@ public class ControladorComercioTest {
   }
 
   @Test
-  public void verificarQueGetIdDevuelveElModeloConComercioYReportes() throws Exception {
+  public void verificarQueGetIdDeUnComercioInexistenteDevuelve404ConElModeloConComercioYReportes()
+    throws Exception {
     MvcResult result =
-      this.mockMvc.perform(get("/comercio/1")).andExpect(status().isOk()).andReturn();
+      this.mockMvc.perform(get("/comercio/1")).andExpect(status().isNotFound()).andReturn();
 
     ModelAndView modelAndView = result.getModelAndView();
     assert modelAndView != null;

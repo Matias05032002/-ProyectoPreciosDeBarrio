@@ -1,5 +1,6 @@
 package com.tallerwebi.infraestructura;
 
+import com.tallerwebi.dominio.Lista.ItemLista;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
 import com.tallerwebi.dominio.Usuario;
@@ -67,7 +68,7 @@ public class RepositorioReporteImpl implements RepositorioReporte {
         reporte.getUsuariosQueMarcaron().add(usuario);
       }
       if (reporte.getPuntuacion() > Reporte.PUNTUACION_MAXIMA) {
-        sessionFactory.getCurrentSession().remove(reporte);
+        borrarConSusItemsDeLista(reporte);
         return null;
       }
       sessionFactory.getCurrentSession().merge(reporte);
@@ -94,8 +95,23 @@ public class RepositorioReporteImpl implements RepositorioReporte {
   public void eliminarReporte(Long id) {
     Reporte reporte = sessionFactory.getCurrentSession().get(Reporte.class, id);
     if (reporte != null) {
-      sessionFactory.getCurrentSession().remove(reporte);
+      borrarConSusItemsDeLista(reporte);
     }
+  }
+
+  // Si otros vecinos lo agregaron a sus listas, esos ítems dependen del reporte (FK): se quitan
+  // primero para que el borrado no falle con un error de integridad.
+  private void borrarConSusItemsDeLista(Reporte reporte) {
+    List<ItemLista> items = sessionFactory
+      .getCurrentSession()
+      .createQuery("from ItemLista where reporte.id = :id", ItemLista.class)
+      .setParameter("id", reporte.getId())
+      .list();
+    for (ItemLista item : items) {
+      item.getLista().getItems().remove(item);
+      sessionFactory.getCurrentSession().remove(item);
+    }
+    sessionFactory.getCurrentSession().remove(reporte);
   }
 
   @Override

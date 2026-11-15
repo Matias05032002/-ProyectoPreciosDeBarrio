@@ -39,7 +39,7 @@ public class VistaListaE2E {
     context = browser.newContext();
     Page page = context.newPage();
     vistaLista = new VistaLista(page, context);
-    vistaLista.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
+    vistaLista.iniciarSesionYNavegar("test-vecino@unlam.edu.ar", "test");
   }
 
   @AfterEach

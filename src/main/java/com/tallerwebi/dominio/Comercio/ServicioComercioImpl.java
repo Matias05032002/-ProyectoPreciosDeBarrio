@@ -1,6 +1,8 @@
 package com.tallerwebi.dominio.Comercio;
 
 import com.tallerwebi.dominio.Imagen.TipoDeImagen;
+import com.tallerwebi.dominio.excepcion.ComercioYaRegistrado;
+import com.tallerwebi.dominio.excepcion.DatosDeComercioInvalidos;
 import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import jakarta.transaction.Transactional;
 import java.util.Collections;
@@ -215,6 +217,17 @@ public class ServicioComercioImpl implements ServicioComercio {
       ubicarSegunLaDireccion(existente);
     }
     repositorioComercio.actualizarComercio(existente);
+  }
+
+  @Override
+  public void validarDatosDelPerfil(Comercio existente, Comercio datos)
+    throws DatosDeComercioInvalidos, ComercioYaRegistrado {
+    ValidadorDePerfilDeComercio.validar(datos);
+    if (
+      buscadorEnElMismoLugar.ocupadoPorOtro(existente, datos.getDireccion(), datos.getLocalidad())
+    ) {
+      throw new ComercioYaRegistrado();
+    }
   }
 
   @Override

@@ -42,7 +42,7 @@ public class VistaProductoE2E {
     context = browser.newContext();
     Page page = context.newPage();
     VistaLogin vistaLogin = new VistaLogin(page);
-    vistaLogin.escribirEMAIL("test@unlam.edu.ar");
+    vistaLogin.escribirEMAIL("test-vecino@unlam.edu.ar");
     vistaLogin.escribirClave("test");
     vistaLogin.darClickEnIniciarSesion();
     vistaProducto = new VistaProducto(page);

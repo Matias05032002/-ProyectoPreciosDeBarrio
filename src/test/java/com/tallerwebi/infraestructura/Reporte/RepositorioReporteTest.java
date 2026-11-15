@@ -4,6 +4,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 import com.tallerwebi.dominio.Comercio.Comercio;
+import com.tallerwebi.dominio.Lista.ItemLista;
+import com.tallerwebi.dominio.Lista.Lista;
 import com.tallerwebi.dominio.Producto.Producto;
 import com.tallerwebi.dominio.Reporte.Reporte;
 import com.tallerwebi.dominio.Reporte.RepositorioReporte;
@@ -504,6 +506,52 @@ public class RepositorioReporteTest {
       sessionFactory.getCurrentSession().get(com.tallerwebi.dominio.Usuario.class, vecino.getId()),
       is(notNullValue())
     );
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void eliminarUnReporteQueOtroVecinoAgregoASuListaDeberiaBorrarTambienEseItem() {
+    Reporte reporte = dadoQueTengoUnReporte("Fideos", "Almacen", 120.0);
+    dadoQueExisteElReporte(reporte);
+    Lista lista = new Lista("Lista de otro vecino", 99L);
+    sessionFactory.getCurrentSession().persist(lista);
+    ItemLista item = new ItemLista(lista, reporte, 2);
+    sessionFactory.getCurrentSession().persist(item);
+    sessionFactory.getCurrentSession().flush();
+    Long itemId = item.getId();
+
+    repositorioReporte.eliminarReporte(reporte.getId());
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    assertThat(repositorioReporte.buscarReporte(reporte.getId()), is(nullValue()));
+    assertThat(sessionFactory.getCurrentSession().get(ItemLista.class, itemId), is(nullValue()));
+    assertThat(
+      sessionFactory.getCurrentSession().get(Lista.class, lista.getId()),
+      is(notNullValue())
+    );
+  }
+
+  @Test
+  @Transactional
+  @Rollback
+  public void marcarDudosoPorEncimaDelMaximoDeberiaEliminarElReporteAunqueEsteEnUnaLista() {
+    Reporte reporte = dadoQueTengoUnReporte("Arroz", "Almacen", 150.0);
+    reporte.setPuntuacion(Reporte.PUNTUACION_MAXIMA);
+    dadoQueExisteElReporte(reporte);
+    Lista lista = new Lista("Lista de otro vecino", 99L);
+    sessionFactory.getCurrentSession().persist(lista);
+    sessionFactory.getCurrentSession().persist(new ItemLista(lista, reporte, 1));
+    sessionFactory.getCurrentSession().flush();
+    Usuario vecino = dadoQueExisteUnVecino();
+
+    Reporte resultado = repositorioReporte.marcarDudoso(reporte.getId(), vecino);
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    assertThat(resultado, is(nullValue()));
+    assertThat(repositorioReporte.buscarReporte(reporte.getId()), is(nullValue()));
   }
 
   @Test

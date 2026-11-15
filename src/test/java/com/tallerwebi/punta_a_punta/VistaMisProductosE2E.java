@@ -89,7 +89,7 @@ public class VistaMisProductosE2E {
   private void dadoQueUnVecinoReportoUnProductoEnMiComercio() {
     Page page = context.pages().get(0);
     VistaReporte vistaReporte = new VistaReporte(page);
-    vistaReporte.iniciarSesionYNavegar("test@unlam.edu.ar", "test");
+    vistaReporte.iniciarSesionYNavegar("test-vecino@unlam.edu.ar", "test");
     vistaReporte.escribirNombreProducto("Leche");
     vistaReporte.escribirMarcaProducto("La Serenisima");
     vistaReporte.escribirCategoriaProducto("Lacteos");

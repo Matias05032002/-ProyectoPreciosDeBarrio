@@ -130,9 +130,30 @@ class RolInterceptorTest {
   }
 
   @Test
-  void elAdminNoQuedaBloqueadoEnProductosNiListas() throws Exception {
+  void elAdminPuedeConsultarProductosPeroNoTocarListas() throws Exception {
     assertTrue(entrar("/producto/buscar", "ADMIN"));
-    assertTrue(entrar("/mis-listas", "ADMIN"));
+    assertFalse(entrar("/mis-listas", "ADMIN"));
+    assertFalse(entrar("/mis-listas/crear", "ADMIN"));
+    assertFalse(entrar("/mis-listas/eliminar", "ADMIN"));
+  }
+
+  @Test
+  void elAdminNoPuedeReportarPreciosNiSubirTicketsNiUsarElAsistente() throws Exception {
+    assertFalse(entrar("/reporte", "ADMIN"));
+    assertFalse(entrar("/reporte/ticket", "ADMIN"));
+    assertFalse(entrar("/reporte/ticket/guardar", "ADMIN"));
+    assertFalse(entrar("/reporte/5/eliminar", "ADMIN"));
+    assertFalse(entrar("/reporte/5/dudoso", "ADMIN"));
+    assertFalse(entrar("/asistente/consultar", "ADMIN"));
+    assertEquals(403, response.getStatus());
+  }
+
+  @Test
+  void vecinosYComerciosSiguenEntrandoALosReportes() throws Exception {
+    assertTrue(entrar("/reporte", "USER"));
+    assertTrue(entrar("/reporte/mis-reportes", "USER"));
+    assertTrue(entrar("/reporte", "COMERCIO"));
+    assertTrue(entrar("/asistente/consultar", "USER"));
   }
 
   @Test
