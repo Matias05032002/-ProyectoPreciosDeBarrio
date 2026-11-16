@@ -422,7 +422,9 @@
 }
 
 .co-foto {
-    object-fit: cover;
+    object-fit: contain;
+    /* Fondo blanco: los logos se ven enteros y no dejan bandas grises */
+    background: #fff;
     animation: co-aparece .5s ease both;
 }
 
