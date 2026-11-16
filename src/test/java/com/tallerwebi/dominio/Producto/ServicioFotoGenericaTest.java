@@ -1,479 +1,173 @@
 package com.tallerwebi.dominio.Producto;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.startsWith;
 
-import com.tallerwebi.dominio.Gemini.ServicioGemini;
-import com.tallerwebi.dominio.Producto.ServicioFotoGenericaImpl.ClienteWikipedia;
-import java.io.IOException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 public class ServicioFotoGenericaTest {
 
-  private static final String FOTO =
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Avocado.jpg/500px-Avocado.jpg";
+  private final ServicioFotoGenericaImpl servicio = new ServicioFotoGenericaImpl();
 
-  private ClienteWikipedia wikipedia;
-  private ServicioGemini groq;
-  private ServicioFotoGenerica servicio;
+  @Test
+  public void laFotoDeLaLecheEsUnaFotoDeIngredienteDeSpoonacular() {
+    String foto = servicio.buscarFoto("Leche", "Lacteos");
 
-  @BeforeEach
-  public void init() throws Exception {
-    wikipedia = mock(ClienteWikipedia.class);
-    groq = mock(ServicioGemini.class);
-    servicio = new ServicioFotoGenericaImpl(wikipedia, groq);
-    dadoQueGroqResponde("avocado");
-  }
-
-  private void dadoQueGroqResponde(String contenido) throws Exception {
-    doReturn("{\"choices\":[{\"message\":{\"content\":\"" + contenido + "\"}}]}")
-      .when(groq)
-      .llamar(anyString(), anyString());
-  }
-
-  private static String fotos(String... urls) {
-    StringBuilder paginas = new StringBuilder();
-    int indice = 1;
-    for (String url : urls) {
-      paginas
-        .append(indice == 1 ? "" : ",")
-        .append("\"")
-        .append(100 + indice)
-        .append("\":{\"index\":")
-        .append(indice)
-        .append(",\"thumbnail\":{\"source\":\"")
-        .append(url)
-        .append("\"}}");
-      indice++;
-    }
-    return "{\"query\":{\"pages\":{" + paginas + "}}}";
-  }
-
-  private void dadaLaBusqueda(String json) throws Exception {
-    doReturn(json).when(wikipedia).buscar(anyString());
+    assertThat(foto, startsWith("https://spoonacular.com/cdn/ingredients_250x250/"));
+    assertThat(foto, endsWith("milk.jpg"));
   }
 
   @Test
-  public void devuelveLaPrimeraFotoDelTerminoQueDevuelveGroq() throws Exception {
-    dadaLaBusqueda(
-      fotos(
-        FOTO,
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Otra.jpg/500px-Otra.jpg"
-      )
-    );
-
-    assertThat(servicio.buscarFoto("PALTA", "Verduras y frutas"), is(FOTO));
+  public void reconoceElProductoSinImportarMayusculasNiTildes() {
+    assertThat(servicio.buscarFoto("JAMÓN cocido", "Fiambres"), endsWith("ham.jpg"));
+    assertThat(servicio.buscarFoto("Pan de pancho x6", "Panaderia"), endsWith("hot-dog-buns.jpg"));
   }
 
   @Test
-  public void buscaEnWikipediaConElTermino() throws Exception {
-    dadaLaBusqueda(fotos(FOTO));
-    ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
-
-    servicio.buscarFoto("PALTA", "Verduras y frutas");
-
-    verify(wikipedia).buscar(url.capture());
-    assertThat(url.getValue(), containsString("https://en.wikipedia.org/w/api.php?"));
-    assertThat(url.getValue(), containsString("titles=avocado"));
-  }
-
-  @Test
-  public void leDiceAGroqQueElNombreVieneAbreviadoYQueNoUseMarcas() throws Exception {
-    dadaLaBusqueda(fotos(FOTO));
-    ArgumentCaptor<String> sistema = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<String> usuario = ArgumentCaptor.forClass(String.class);
-
-    servicio.buscarFoto("ALGODON FAMILI CLASI", "Farmacia y perfumeria");
-
-    verify(groq).llamar(sistema.capture(), usuario.capture());
-    assertThat(sistema.getValue(), containsString("sin marcas"));
-    assertThat(usuario.getValue(), containsString("ALGODON FAMILI CLASI"));
-    assertThat(usuario.getValue(), containsString("Farmacia y perfumeria"));
-  }
-
-  // La foto de la categoría ("Vegetable", "Food") es un collage o un puesto de feria: peor que
-  // ninguna, porque parece la foto del producto. Sin foto propia queda el ícono de siempre.
-  @Test
-  public void siElTerminoNoTieneFotosQuedaSinFotoYNoUsaLaDeLaCategoria() throws Exception {
-    doReturn("{\"batchcomplete\":\"\"}").when(wikipedia).buscar(anyString());
-
-    assertThat(servicio.buscarFoto("PALTA", "Verduras y frutas"), is(nullValue()));
-
-    verify(wikipedia, times(1)).buscar(anyString());
-    verify(wikipedia, never()).buscar(org.mockito.ArgumentMatchers.contains("Vegetable"));
-  }
-
-  @Test
-  public void siGroqFallaQuedaSinFotoYNoConsultaPorLaCategoria() throws Exception {
-    when(groq.llamar(anyString(), anyString())).thenThrow(new IOException("429"));
-    dadaLaBusqueda(fotos(FOTO));
-
-    assertThat(servicio.buscarFoto("PALTA", "Lacteos"), is(nullValue()));
-
-    verify(wikipedia, never()).buscar(anyString());
-  }
-
-  @Test
-  public void unaRespuestaDeGroqConTextoDeMasSeLimpia() throws Exception {
-    dadoQueGroqResponde("\\\"Avocado.\\\"");
-    dadaLaBusqueda(fotos(FOTO));
-    ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
-
-    servicio.buscarFoto("PALTA", "Verduras y frutas");
-
-    verify(wikipedia).buscar(url.capture());
-    assertThat(url.getValue(), containsString("titles=avocado"));
-  }
-
-  @Test
-  public void unaRespuestaDeGroqLargaOConSimbolosSeIgnora() throws Exception {
-    dadoQueGroqResponde("No puedo ayudar con eso porque es una consulta ambigua y larga");
-    dadaLaBusqueda(fotos(FOTO));
-
-    assertThat(servicio.buscarFoto("PALTA", "Verduras y frutas"), is(nullValue()));
-
-    verify(wikipedia, never()).buscar(anyString());
-  }
-
-  @Test
-  public void soloAceptaFotosDeWikimediaPorHttps() throws Exception {
-    dadaLaBusqueda(
-      fotos(
-        "https://sitio-malicioso.com/a.jpg",
-        "https://upload.wikimedia.org.evil.com/b.jpg",
-        "javascript:alert(1)",
-        "http://upload.wikimedia.org/wikipedia/commons/c.jpg"
-      )
-    );
-
+  public void laPechugaYElMusloTienenSuPropiaFotoYNoLaDelPolloEntero() {
     assertThat(
-      servicio.buscarFoto("PALTA", "Verduras y frutas"),
-      is("https://upload.wikimedia.org/wikipedia/commons/c.jpg")
+      servicio.buscarFoto("Pechuga de pollo", "Carnes y aves"),
+      endsWith("chicken-breast.jpg")
     );
-  }
-
-  @Test
-  public void tomaElArticuloMasRelevanteQueTengaImagen() throws Exception {
-    dadaLaBusqueda(
-      "{\"query\":{\"pages\":{" +
-      "\"7\":{\"index\":3,\"thumbnail\":{\"source\":\"https://upload.wikimedia.org/tercero.jpg\"}}," +
-      "\"8\":{\"index\":1}," +
-      "\"9\":{\"index\":2,\"thumbnail\":{\"source\":\"https://upload.wikimedia.org/segundo.jpg\"}}" +
-      "}}}"
-    );
-
     assertThat(
-      servicio.buscarFoto("PALTA", "Verduras y frutas"),
-      is("https://upload.wikimedia.org/segundo.jpg")
+      servicio.buscarFoto("Pata y muslo", "Carnes y aves"),
+      endsWith("chicken-thighs.png")
     );
+    assertThat(servicio.buscarFoto("Pollo entero", "Carnes y aves"), endsWith("whole-chicken.jpg"));
   }
 
   @Test
-  public void siNingunaConsultaDaFotosDevuelveNull() throws Exception {
-    dadaLaBusqueda("{\"batchcomplete\":\"\"}");
-
-    assertThat(servicio.buscarFoto("PALTA", "Verduras y frutas"), is(nullValue()));
+  public void reconocePiezasDeCarniceria() {
+    assertThat(servicio.buscarFoto("Vacío", "Carnes y aves"), endsWith("flank-steak.jpg"));
+    assertThat(servicio.buscarFoto("Tira de asado", "Carnes y aves"), endsWith("ribs.jpg"));
+    assertThat(servicio.buscarFoto("Peceto", "Carnes y aves"), endsWith("roast-beef.jpg"));
+    assertThat(servicio.buscarFoto("Lomo", "Carnes y aves"), endsWith("beef-tenderloin.jpg"));
+    assertThat(servicio.buscarFoto("Bondiola", "Carnes y aves"), endsWith("pork-loin.jpg"));
+    assertThat(servicio.buscarFoto("Merluza", "Pescados y mariscos"), endsWith("fish-fillet.jpg"));
   }
 
   @Test
-  public void siWikipediaFallaDevuelveNullSinLanzar() throws Exception {
-    when(wikipedia.buscar(anyString())).thenThrow(new IOException("403"));
-
-    assertThat(servicio.buscarFoto("PALTA", "Verduras y frutas"), is(nullValue()));
+  public void elLomoDeCerdoNoTomaLaFotoDelLomoVacuno() {
+    assertThat(servicio.buscarFoto("Lomo de cerdo", "Carnes y aves"), endsWith("pork-loin.jpg"));
   }
 
   @Test
-  public void unJsonInvalidoDevuelveNull() throws Exception {
-    dadaLaBusqueda("<html>error</html>");
-
-    assertThat(servicio.buscarFoto("PALTA", "Verduras y frutas"), is(nullValue()));
-  }
-
-  @Test
-  public void repetirLaMismaConsultaNoVuelveAWikipedia() throws Exception {
-    dadaLaBusqueda(fotos(FOTO));
-
-    servicio.buscarFoto("PALTA", "Verduras y frutas");
-    servicio.buscarFoto("PALTA HASS", "Verduras y frutas");
-
-    verify(wikipedia, times(1)).buscar(anyString());
-  }
-
-  @Test
-  public void sinNombreNoBuscaNadaNiLePreguntaAGroq() throws Exception {
-    dadaLaBusqueda(fotos(FOTO));
-
-    assertThat(servicio.buscarFoto(" ", "Lacteos"), is(nullValue()));
-
-    verify(wikipedia, never()).buscar(anyString());
-    verify(groq, never()).llamar(any(), any());
-  }
-
-  @Test
-  public void siWikipediaPideEsperarEsperaYReintenta() throws Exception {
-    ServicioFotoGenericaImpl.Pausa pausa = mock(ServicioFotoGenericaImpl.Pausa.class);
-    servicio = new ServicioFotoGenericaImpl(wikipedia, groq, pausa);
-    when(wikipedia.buscar(anyString()))
-      .thenThrow(new ServicioFotoGenericaImpl.LimiteExcedido(1500))
-      .thenReturn(fotos(FOTO));
-
-    assertThat(servicio.buscarFoto("PALTA", "Verduras y frutas"), is(FOTO));
-
-    verify(pausa).esperar(1500);
-    verify(wikipedia, times(2)).buscar(anyString());
-  }
-
-  @Test
-  public void siWikipediaSigueLimitandoDespuesDeVariosIntentosDevuelveNull() throws Exception {
-    ServicioFotoGenericaImpl.Pausa pausa = mock(ServicioFotoGenericaImpl.Pausa.class);
-    servicio = new ServicioFotoGenericaImpl(wikipedia, groq, pausa);
-    when(wikipedia.buscar(anyString()))
-      .thenThrow(new ServicioFotoGenericaImpl.LimiteExcedido(1000));
-
-    assertThat(servicio.buscarFoto("PALTA", "Verduras y frutas"), is(nullValue()));
-
-    verify(pausa, times(3)).esperar(1000);
-  }
-
-  private static final String PIXABAY = "https://pixabay.com/get/g1234_640.jpg";
-
-  private ServicioFotoGenerica servicioConPixabay() {
-    return new ServicioFotoGenericaImpl(wikipedia, groq, milisegundos -> {}, "mi-clave");
-  }
-
-  private static String hits(String... urls) {
-    StringBuilder lista = new StringBuilder();
-    for (String url : urls) {
-      lista
-        .append(lista.length() == 0 ? "" : ",")
-        .append(hit(url, "avocado, fruit, isolated, white background"));
-    }
-    return "{\"total\":1,\"hits\":[" + lista + "]}";
-  }
-
-  private static String hit(String url, String tags) {
-    return "{\"webformatURL\":\"" + url + "\",\"tags\":\"" + tags + "\"}";
-  }
-
-  @Test
-  public void conClaveBuscaPrimeroEnPixabayYNoLlamaAWikipedia() throws Exception {
-    doReturn(hits(PIXABAY, "https://pixabay.com/get/otra.jpg"))
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-    ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
-
-    assertThat(servicioConPixabay().buscarFoto("PALTA", "Verduras y frutas"), is(PIXABAY));
-
-    verify(wikipedia).buscar(url.capture());
-    assertThat(url.getValue(), containsString("key=mi-clave"));
-    assertThat(url.getValue(), containsString("q=avocado%20isolated"));
-    assertThat(url.getValue(), containsString("image_type=photo"));
-    assertThat(url.getValue(), containsString("category=food"));
-  }
-
-  @Test
-  public void paraProductosQueNoSonComidaNoPideLaCategoriaDeComida() throws Exception {
-    dadoQueGroqResponde("sponge");
-    doReturn("{\"hits\":[" + hit(PIXABAY, "sponge, cleaning, isolated") + "]}")
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-    ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
-
-    servicioConPixabay().buscarFoto("ESPONJA", "Limpieza del hogar");
-
-    verify(wikipedia).buscar(url.capture());
-    assertThat(url.getValue(), containsString("q=sponge%20isolated"));
+  public void laSalNoSeConfundeConLaSalsa() {
+    assertThat(servicio.buscarFoto("Sal fina", "Almacen"), endsWith("salt.jpg"));
     assertThat(
-      org.hamcrest.Matchers.not(containsString("category=")).matches(url.getValue()),
-      is(true)
+      servicio.buscarFoto("Salsa barbacoa", "Condimentos y salsas"),
+      endsWith("barbecue-sauce.jpg")
+    );
+    assertThat(servicio.buscarFoto("Salsa golf", "Condimentos y salsas"), is(nullValue()));
+  }
+
+  @Test
+  public void elAceiteDeOlivaNoTomaLaFotoDelAceiteComun() {
+    assertThat(servicio.buscarFoto("Aceite de girasol", "Almacen"), endsWith("vegetable-oil.jpg"));
+    assertThat(servicio.buscarFoto("Aceite de oliva", "Almacen"), endsWith("olive-oil.jpg"));
+    assertThat(servicio.buscarFoto("Aceite de coco", "Almacen"), is(nullValue()));
+  }
+
+  @Test
+  public void losFideosConFormaEspecialNoTomanLaFotoDelEspagueti() {
+    assertThat(servicio.buscarFoto("Fideos tallarines", "Almacen"), endsWith("spaghetti.jpg"));
+    assertThat(servicio.buscarFoto("Fideos moños", "Almacen"), is(nullValue()));
+  }
+
+  @Test
+  public void laLecheEnPolvoOElDulceDeLecheNoTomanLaFotoDeLaLeche() {
+    assertThat(servicio.buscarFoto("Leche en polvo", "Lacteos"), is(nullValue()));
+    assertThat(servicio.buscarFoto("Dulce de leche", "Almacen"), is(nullValue()));
+  }
+
+  @Test
+  public void elPureDeTomateNoTomaLaFotoDelTomate() {
+    assertThat(servicio.buscarFoto("Tomate perita", "Verduras y frutas"), endsWith("tomato.jpg"));
+    assertThat(servicio.buscarFoto("Puré de tomate", "Almacen"), is(nullValue()));
+  }
+
+  @Test
+  public void lasSemillasSinDetalleNoTienenFoto() {
+    assertThat(servicio.buscarFoto("Semillas", "Almacen"), is(nullValue()));
+    assertThat(
+      servicio.buscarFoto("Semillas de girasol", "Almacen"),
+      endsWith("sunflower-seeds.jpg")
     );
   }
 
   @Test
-  public void siPixabayNoTieneFotosUsaWikipedia() throws Exception {
-    doReturn("{\"total\":0,\"hits\":[]}")
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-    doReturn(fotos(FOTO))
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("wikipedia.org"));
-
-    assertThat(servicioConPixabay().buscarFoto("PALTA", "Verduras y frutas"), is(FOTO));
+  public void unProductoQueNoEstaEnLaListaQuedaSinFoto() {
+    assertThat(servicio.buscarFoto("Broches de plastico", "Ferreteria y bazar"), is(nullValue()));
+    assertThat(servicio.buscarFoto("Jabon liquido", "Limpieza del hogar"), is(nullValue()));
   }
 
   @Test
-  public void sinClaveNoConsultaPixabay() throws Exception {
-    dadaLaBusqueda(fotos(FOTO));
-
-    servicio.buscarFoto("PALTA", "Verduras y frutas");
-
-    verify(wikipedia, never()).buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-  }
-
-  @Test
-  public void ignoraLasFotosDePixabayQueNoSonDeSuDominio() throws Exception {
-    doReturn(hits("https://sitio-raro.com/foto.jpg"))
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-    doReturn(fotos(FOTO))
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("wikipedia.org"));
-
-    assertThat(servicioConPixabay().buscarFoto("PALTA", "Verduras y frutas"), is(FOTO));
-  }
-
-  @Test
-  public void repetirElTerminoNoVuelveAPixabay() throws Exception {
-    doReturn(hits(PIXABAY))
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-    ServicioFotoGenerica conClave = servicioConPixabay();
-
-    conClave.buscarFoto("PALTA", "Verduras y frutas");
-    conClave.buscarFoto("PALTA HASS", "Verduras y frutas");
-
-    verify(wikipedia, times(1)).buscar(anyString());
-  }
-
-  @Test
-  public void soloUsaLasFotosCuyosTagsTienenElTerminoYSonDeProductoSolo() throws Exception {
-    String artistica = hit("https://pixabay.com/get/arte.jpg", "avocado, dark, knife, art");
-    String otraCosa = hit("https://pixabay.com/get/otra.jpg", "pear, isolated");
-    String buena = hit(PIXABAY, "Avocado, Fruit, white background");
-    doReturn("{\"hits\":[" + artistica + "," + otraCosa + "," + buena + "]}")
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-
-    assertThat(servicioConPixabay().buscarFoto("PALTA", "Verduras y frutas"), is(PIXABAY));
-  }
-
-  @Test
-  public void siNingunaFotoDePixabayEsDeProductoSoloUsaWikipedia() throws Exception {
-    doReturn(
-      "{\"hits\":[" + hit("https://pixabay.com/get/arte.jpg", "avocado, dark, knife, art") + "]}"
-    )
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-    doReturn(fotos(FOTO))
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("wikipedia.org"));
-
-    assertThat(servicioConPixabay().buscarFoto("PALTA", "Verduras y frutas"), is(FOTO));
-  }
-
-  @Test
-  public void entreLasFotosDeProductoSoloPrefiereLaDeFondoBlanco() throws Exception {
-    String sobreNegro = hit("https://pixabay.com/get/negro.jpg", "avocado, isolated, studio");
-    String sobreBlanco = hit(PIXABAY, "avocado, fruit, white background");
-    doReturn("{\"hits\":[" + sobreNegro + "," + sobreBlanco + "]}")
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-
-    assertThat(servicioConPixabay().buscarFoto("PALTA", "Verduras y frutas"), is(PIXABAY));
-  }
-
-  @Test
-  public void siNoHayFondoBlancoAceptaUnaIsolatedDeFondoClaro() throws Exception {
-    doReturn("{\"hits\":[" + hit(PIXABAY, "avocado, fruit, isolated") + "]}")
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-
-    assertThat(servicioConPixabay().buscarFoto("PALTA", "Verduras y frutas"), is(PIXABAY));
-  }
-
-  @Test
-  public void descartaLasFotosDeFondoNegro() throws Exception {
-    String sobreNegro = hit(
-      "https://pixabay.com/get/negro.jpg",
-      "potato, isolated, black background, dark"
+  public void reconoceFrutasYVerdurasDeLaVerduleria() {
+    assertThat(servicio.buscarFoto("Papa", "Verduras y frutas"), endsWith("red-potatoes.jpg"));
+    assertThat(servicio.buscarFoto("Zanahoria", "Verduras y frutas"), endsWith("carrots.jpg"));
+    assertThat(
+      servicio.buscarFoto("Lechuga crespa", "Verduras y frutas"),
+      endsWith("iceberg-lettuce.jpg")
     );
-    doReturn("{\"hits\":[" + sobreNegro + "]}")
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("pixabay.com"));
-    doReturn(fotos(FOTO))
-      .when(wikipedia)
-      .buscar(org.mockito.ArgumentMatchers.contains("wikipedia.org"));
-    dadoQueGroqResponde("potato");
-
-    assertThat(servicioConPixabay().buscarFoto("PAPA NEGRA", "Verduras y frutas"), is(FOTO));
+    assertThat(servicio.buscarFoto("Zapallito", "Verduras y frutas"), endsWith("zucchini.jpg"));
+    assertThat(servicio.buscarFoto("Banana", "Verduras y frutas"), endsWith("bananas.jpg"));
+    assertThat(servicio.buscarFoto("Manzana roja", "Verduras y frutas"), endsWith("apple.jpg"));
+    assertThat(servicio.buscarFoto("Frutillas", "Verduras y frutas"), endsWith("strawberries.jpg"));
+    assertThat(servicio.buscarFoto("Palta", "Verduras y frutas"), endsWith("avocado.jpg"));
   }
 
   @Test
-  public void alNormalizarUnaMarcaSoloPideElProductoPorElQueSeLaConoce() throws Exception {
-    dadaLaBusqueda(fotos(FOTO));
-    ArgumentCaptor<String> sistema = ArgumentCaptor.forClass(String.class);
-
-    servicio.buscarFoto("Hellmanns", "Condimentos y salsas");
-
-    verify(groq).llamar(sistema.capture(), anyString());
-    assertThat(sistema.getValue(), containsString("Si solo se lee una marca"));
-    assertThat(sistema.getValue(), containsString("mayonnaise"));
-  }
-
-  @Test
-  public void aceptaLasMiniaturasDeThumbWikimedia() throws Exception {
-    String miniatura =
-      "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/60/Mayo.jpg/500px-Mayo.jpg";
-    dadaLaBusqueda(fotos(miniatura));
-
-    assertThat(servicio.buscarFoto("MAYONESA", "Condimentos y salsas"), is(miniatura));
-  }
-
-  @Test
-  public void tambienPideElArticuloDeLaCosaCuandoElTituloEsUnaDesambiguacion() throws Exception {
-    dadoQueGroqResponde("mustard");
-    ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
-    dadaLaBusqueda(fotos(FOTO));
-
-    servicio.buscarFoto("MOSTAZA", "Condimentos y salsas");
-
-    verify(wikipedia).buscar(url.capture());
-    assertThat(url.getValue(), containsString("titles=mustard%7Cmustard%20%28condiment%29"));
-  }
-
-  @Test
-  public void siElTituloExactoNoTieneFotoUsaElDeLaCondimento() throws Exception {
-    dadoQueGroqResponde("mustard");
-    dadaLaBusqueda(
-      "{\"query\":{\"pages\":{" +
-      "\"1\":{\"title\":\"Mustard\"}," +
-      "\"2\":{\"title\":\"Mustard (condiment)\",\"thumbnail\":{\"source\":\"" +
-      FOTO +
-      "\"}}" +
-      "}}}"
+  public void laCebollaDeVerdeoYLaMoradaTienenSuPropiaFoto() {
+    assertThat(servicio.buscarFoto("Cebolla", "Verduras y frutas"), endsWith("white-onion.jpg"));
+    assertThat(
+      servicio.buscarFoto("Cebolla de verdeo", "Verduras y frutas"),
+      endsWith("green-onion.jpg")
     );
-
-    assertThat(servicio.buscarFoto("MOSTAZA", "Condimentos y salsas"), is(FOTO));
+    assertThat(
+      servicio.buscarFoto("Cebolla morada", "Verduras y frutas"),
+      endsWith("red-onion.jpg")
+    );
   }
 
   @Test
-  public void siHayFotoEnElTituloExactoEsaGanaALaDeLaVariante() throws Exception {
-    dadoQueGroqResponde("mustard");
-    String exacta = "https://upload.wikimedia.org/exacta.jpg";
-    dadaLaBusqueda(
-      "{\"query\":{\"pages\":{" +
-      "\"2\":{\"title\":\"Mustard (condiment)\",\"thumbnail\":{\"source\":\"" +
-      FOTO +
-      "\"}}," +
-      "\"1\":{\"title\":\"Mustard\",\"thumbnail\":{\"source\":\"" +
-      exacta +
-      "\"}}" +
-      "}}}"
+  public void elTomateCherryYElZapalloAncoTienenSuPropiaFoto() {
+    assertThat(
+      servicio.buscarFoto("Tomate cherry", "Verduras y frutas"),
+      endsWith("cherry-tomatoes.jpg")
     );
+    assertThat(
+      servicio.buscarFoto("Zapallo anco", "Verduras y frutas"),
+      endsWith("butternut-squash.jpg")
+    );
+    assertThat(servicio.buscarFoto("Zapallo", "Verduras y frutas"), endsWith("pumpkin.jpg"));
+  }
 
-    assertThat(servicio.buscarFoto("MOSTAZA", "Condimentos y salsas"), is(exacta));
+  @Test
+  public void unProductoElaboradoNoTomaLaFotoDeLaFrutaQueNombra() {
+    assertThat(servicio.buscarFoto("Jugo de limón", "Bebidas sin alcohol"), is(nullValue()));
+    assertThat(servicio.buscarFoto("Detergente limón", "Limpieza del hogar"), is(nullValue()));
+    assertThat(servicio.buscarFoto("Gaseosa naranja", "Bebidas sin alcohol"), is(nullValue()));
+    assertThat(servicio.buscarFoto("Papas fritas", "Snacks y golosinas"), is(nullValue()));
+    assertThat(servicio.buscarFoto("Lima de uñas", "Higiene personal"), is(nullValue()));
+  }
+
+  @Test
+  public void laHarinaDeMaizNoTomaLaFotoDeLaHarinaDeTrigo() {
+    assertThat(servicio.buscarFoto("Harina 000", "Almacen"), endsWith("flour.jpg"));
+    assertThat(servicio.buscarFoto("Harina de maíz", "Almacen"), is(nullValue()));
+  }
+
+  @Test
+  public void laLecheDeCocoNoTomaLaFotoDeLaLeche() {
+    assertThat(servicio.buscarFoto("Leche de coco", "Almacen"), is(nullValue()));
+  }
+
+  @Test
+  public void sinNombreNoHayFoto() {
+    assertThat(servicio.buscarFoto(null, "Almacen"), is(nullValue()));
+    assertThat(servicio.buscarFoto("  ", "Almacen"), is(nullValue()));
   }
 }
