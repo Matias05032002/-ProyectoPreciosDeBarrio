@@ -124,7 +124,7 @@ public class ControladorProductoTest {
         .andReturn();
 
     String html = result.getResponse().getContentAsString();
-    assertThat(html.contains("Fresco"), is(true));
+    assertThat(html.contains("Reciente"), is(true));
   }
 
   @Test

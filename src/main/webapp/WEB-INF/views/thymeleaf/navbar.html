@@ -191,8 +191,11 @@
                         <span th:if="${session['ROL'] != null and session['EMAIL'] != null}"
                               class="nav-link cuenta-nav"
                               th:title="${session['EMAIL']}">
-                    <span class="cuenta-avatar" aria-hidden="true"
-                          th:text="${#strings.toUpperCase(#strings.substring(session['EMAIL'], 0, 1))}">M</span>
+                    <span class="cuenta-avatar" aria-hidden="true" style="position:relative;overflow:hidden">
+                        <img th:if="${session['ROL'] == 'USER'}" th:src="@{/perfil/foto}" alt=""
+                             class="cuenta-avatar-foto" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">
+                        <span th:text="${#strings.toUpperCase(#strings.substring(session['EMAIL'], 0, 1))}">M</span>
+                    </span>
                     <span class="cuenta-email d-lg-none" th:text="${session['EMAIL']}"></span>
                     <span class="visually-hidden d-none d-lg-inline"
                           th:text="'Sesión iniciada como ' + ${session['EMAIL']}"></span>

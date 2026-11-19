@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
+@SuppressWarnings("PMD.TooManyFields")
 public class Usuario {
 
   @Id
@@ -34,6 +35,16 @@ public class Usuario {
   private LocalDate fechaNacimiento;
 
   private String localidad;
+
+  @Column(name = "direccion", length = 200)
+  private String direccion;
+
+  @Lob
+  @Column(name = "foto", columnDefinition = "LONGBLOB")
+  private byte[] foto;
+
+  @Column(name = "fotoTipo", length = 50)
+  private String fotoTipo;
 
   public Long getId() {
     return id;
@@ -117,6 +128,34 @@ public class Usuario {
 
   public void setLocalidad(String localidad) {
     this.localidad = localidad;
+  }
+
+  public String getDireccion() {
+    return direccion;
+  }
+
+  public void setDireccion(String direccion) {
+    this.direccion = direccion;
+  }
+
+  public byte[] getFoto() {
+    return foto == null ? new byte[0] : foto.clone();
+  }
+
+  public void setFoto(byte[] foto) {
+    this.foto = foto == null ? new byte[0] : foto.clone();
+  }
+
+  public String getFotoTipo() {
+    return fotoTipo;
+  }
+
+  public void setFotoTipo(String fotoTipo) {
+    this.fotoTipo = fotoTipo;
+  }
+
+  public boolean tieneFoto() {
+    return foto != null && foto.length > 0;
   }
 
   @Override

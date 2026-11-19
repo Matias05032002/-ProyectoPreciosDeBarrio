@@ -817,3 +817,45 @@ select.cu-control {
     color: #FFFFFF;
     background: #8F1B12;
 }
+/* Foto de perfil del vecino: tapa la inicial y se recorta en círculo */
+.cu-avatar {
+    position: relative;
+    overflow: hidden;
+}
+
+.cu-avatar-foto {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Avatar con el botón "Cambiar foto" debajo */
+.cu-avatar-col {
+    display: flex;
+    flex: 0 0 76px;
+    flex-direction: column;
+    align-items: center;
+    width: 76px;
+    gap: .45rem;
+}
+
+.cu-avatar-col form {
+    width: max-content;
+    margin: 0;
+}
+
+/* El botón es más ancho que el avatar y sobresale parejo de los dos lados,
+   así no empuja el nombre */
+.cu-avatar-col .cu-btn {
+    min-height: 0;
+    padding: .3rem .45rem;
+    font-size: .7rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.cu-avatar-col .cu-btn i {
+    margin-right: .15rem;
+}

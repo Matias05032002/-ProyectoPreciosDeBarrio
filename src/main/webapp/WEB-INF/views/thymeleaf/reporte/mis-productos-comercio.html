@@ -77,6 +77,9 @@
                 </button>
                 <span class="cm-prod-foto" th:unless="${reporte.foto != null}" aria-hidden="true">
                     <i class="bi bi-box-seam"></i>
+                    <img th:if="${reporte.producto != null and reporte.producto.imagenUrl != null}"
+                         th:src="${reporte.producto.imagenUrl}" alt="" loading="lazy"
+                         referrerpolicy="no-referrer" onerror="this.remove()">
                 </span>
 
                 <div class="cm-prod-datos">
@@ -105,8 +108,8 @@
                      th:with="dias=${reporte.fechaDeReporte != null ? T(java.time.temporal.ChronoUnit).DAYS.between(reporte.fechaDeReporte, T(java.time.LocalDateTime).now()) : 0}">
                     <strong th:text="${'$' + #numbers.formatDecimal(reporte.precio, 1, 'POINT', 2, 'COMMA')}">$0,00</strong>
                     <span class="cm-chip"
-                          th:text="${dias <= 3 ? 'Fresco' : (dias <= 14 ? 'Reciente' : 'Desactualizado')}"
-                          th:classappend="${dias <= 3 ? 'cm-chip-ok' : (dias <= 14 ? 'cm-chip-aviso' : 'cm-chip-error')}">Fresco</span>
+                          th:text="${dias <= 7 ? 'Reciente' : (dias <= 45 ? 'Desactualizado' : 'Vencido')}"
+                          th:classappend="${dias <= 7 ? 'cm-chip-ok' : (dias <= 45 ? 'cm-chip-aviso' : 'cm-chip-error')}">Reciente</span>
                     <span class="cm-chip cm-chip-neutro" th:if="${reporte.puntuacion != null and reporte.puntuacion > 0}">
                         <i class="bi bi-flag" aria-hidden="true"></i>
                         <span th:text="${reporte.puntuacion}">1</span> dudoso(s)

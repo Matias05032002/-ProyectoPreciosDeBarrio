@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,10 @@ public class ControladorLista {
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String REDIRECT_MIS_LISTAS = "redirect:/mis-listas";
   private static final String PARAM_LISTA_ID = "listaId";
+  private static final Pattern DESTINO_PRODUCTOS = Pattern.compile(
+    "^/producto(/[\\w\\-/]*)?(\\?[\\w\\-.~%&=+,*]*)?$"
+  );
+  private static final String ATRIBUTO_LISTA_AGREGADA = "listaAgregadaId";
 
   @Autowired
   public ControladorLista(ServicioLista servicioLista) {
@@ -75,7 +80,9 @@ public class ControladorLista {
     @RequestParam(PARAM_LISTA_ID) Long listaId,
     @RequestParam("reporteId") Long reporteId,
     @RequestParam(value = "cantidad", defaultValue = "1") int cantidad,
-    HttpSession session
+    @RequestParam(value = "volverA", required = false) String volverA,
+    HttpSession session,
+    RedirectAttributes redirectAttrs
   ) {
     Long usuarioId = (Long) session.getAttribute("ID");
     if (usuarioId == null) return new ModelAndView(REDIRECT_LOGIN);
@@ -85,7 +92,16 @@ public class ControladorLista {
     } catch (AccesoDenegado | IllegalArgumentException e) {
       return new ModelAndView(REDIRECT_MIS_LISTAS);
     }
+    if (esDestinoDeProductos(volverA)) {
+      redirectAttrs.addFlashAttribute(ATRIBUTO_LISTA_AGREGADA, listaId);
+      return new ModelAndView("redirect:" + volverA);
+    }
     return new ModelAndView(REDIRECT_MIS_LISTAS + "/" + listaId);
+  }
+
+  // Solo se vuelve a una pantalla de productos de la propia app: evita redirecciones a otros sitios.
+  private boolean esDestinoDeProductos(String destino) {
+    return destino != null && DESTINO_PRODUCTOS.matcher(destino).matches();
   }
 
   @PostMapping("/mis-listas/eliminar-item")

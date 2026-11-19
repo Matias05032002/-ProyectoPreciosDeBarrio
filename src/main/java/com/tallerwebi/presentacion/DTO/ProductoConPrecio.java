@@ -126,7 +126,7 @@ public class ProductoConPrecio {
     }
     long dias = ChronoUnit.DAYS.between(fechaDeReporte, LocalDateTime.now());
     if (dias <= DIAS_FRESCO) {
-      return "Fresco";
+      return "Reciente";
     } else if (dias <= DIAS_DESACTUALIZADO) {
       return "Desactualizado";
     } else {
