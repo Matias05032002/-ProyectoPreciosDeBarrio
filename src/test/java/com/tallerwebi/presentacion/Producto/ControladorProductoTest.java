@@ -287,7 +287,7 @@ public class ControladorProductoTest {
   }
 
   @Test
-  public void productoConFechaDeHacePocoEsFresco() {
+  public void productoConFechaDeHacePocoEsReciente() {
     ProductoConPrecio dto = new ProductoConPrecio(
       "Leche",
       "La Serenisima",
@@ -299,7 +299,7 @@ public class ControladorProductoTest {
       LocalDateTime.now().minusDays(3),
       0
     );
-    assertThat(dto.getAntiguedad(), equalTo("Fresco"));
+    assertThat(dto.getAntiguedad(), equalTo("Reciente"));
   }
 
   @Test
@@ -437,7 +437,7 @@ public class ControladorProductoTest {
     assertThat(precios.get(0).get("direccion"), is("Av. Rivadavia 9840"));
     assertThat(precios.get(0).get("localidad"), is("Villa Luro"));
     assertThat(precios.get(0).get("precio"), is(1307.99));
-    assertThat(precios.get(0).get("antiguedad"), is("Fresco"));
+    assertThat(precios.get(0).get("antiguedad"), is("Reciente"));
     assertThat(precios.get(0).get("esDudoso"), is(false));
   }
 

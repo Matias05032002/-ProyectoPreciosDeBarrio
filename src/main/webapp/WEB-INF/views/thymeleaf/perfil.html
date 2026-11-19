@@ -17,8 +17,18 @@
 
 <header class="cu-cabecera">
     <div class="container cu-persona">
-        <div class="cu-avatar" id="cu-avatar" aria-hidden="true"
-             th:attr="data-inicial=${usuario.nombre != null and !#strings.isEmpty(usuario.nombre) ? usuario.nombre : usuario.email}">?</div>
+        <div class="cu-avatar-col">
+            <div class="cu-avatar" id="cu-avatar" aria-hidden="true"
+                 th:attr="data-inicial=${usuario.nombre != null and !#strings.isEmpty(usuario.nombre) ? usuario.nombre : usuario.email}">?<img th:if="${usuario.tieneFoto()}" th:src="@{/perfil/foto(v=${#dates.createNow().time})}" alt="Tu foto de perfil" class="cu-avatar-foto" onerror="this.remove()"></div>
+            <form th:if="${usuario.rol == 'USER'}" id="form-foto-perfil" th:action="@{/perfil/foto}"
+                  method="post" enctype="multipart/form-data">
+                <input type="file" id="foto-perfil" name="foto" class="visually-hidden"
+                       accept="image/jpeg,image/png,image/webp" tabindex="-1">
+                <button type="button" id="btn-cambiar-foto" class="cu-btn cu-btn-principal cu-btn-chico">
+                    <i class="bi bi-camera" aria-hidden="true"></i> Cambiar foto
+                </button>
+            </form>
+        </div>
         <div class="cu-persona-datos">
             <h1 id="titulo-pagina"
                 th:text="${usuario.nombre != null and usuario.apellido != null and !#strings.isEmpty(usuario.nombre)} ? ${usuario.nombre + ' ' + usuario.apellido} : 'Mi perfil'">Mi perfil</h1>
@@ -44,6 +54,22 @@
 
 <main class="container cu-principal">
 
+    <div th:if="${param.fotoActualizada}" class="cu-alerta cu-alerta-ok" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div>Foto de perfil actualizada.</div>
+    </div>
+    <div th:if="${param.errorFoto}" class="cu-alerta cu-alerta-error" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div>No se pudo guardar la foto. Usá una imagen JPG, PNG o WebP de hasta 5 MB.</div>
+    </div>
+    <div th:if="${param.ubicacionActualizada}" class="cu-alerta cu-alerta-ok" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div>Dirección y localidad actualizadas.</div>
+    </div>
+    <div th:if="${param.errorUbicacion}" class="cu-alerta cu-alerta-error" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div>No se pudo actualizar. Elegí una localidad y revisá que la dirección no supere los 200 caracteres.</div>
+    </div>
     <div th:if="${param.emailActualizado}" class="cu-alerta cu-alerta-ok" role="status">
         <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
         <div>Email actualizado correctamente.</div>
@@ -167,6 +193,80 @@
                         </div>
                     </dl>
                     <p class="cu-ayuda">Estos datos se cargan al registrarte y no se pueden modificar.</p>
+                </div>
+            </details>
+
+            <details class="cu-acordeon" th:if="${usuario.rol == 'USER'}" th:open="${param.errorUbicacion != null}">
+                <summary>
+                    <span class="cu-icono"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+                    Dirección y localidad
+                    <i class="bi bi-chevron-down cu-flecha" aria-hidden="true"></i>
+                </summary>
+                <div class="cu-acordeon-cuerpo">
+                    <form th:action="@{/perfil/ubicacion}" method="post">
+                        <div class="cu-campo">
+                            <label for="direccion" class="cu-etiqueta">Dirección</label>
+                            <input type="text" id="direccion" name="direccion" class="cu-control"
+                                   th:value="${usuario.direccion}" maxlength="200"
+                                   placeholder="Ej: Av. Rivadavia 1234" autocomplete="street-address">
+                        </div>
+                        <div class="cu-campo">
+                            <label for="localidad" class="cu-etiqueta">Localidad</label>
+                            <select id="localidad" name="localidad" class="cu-control" required>
+                                <option value="">Seleccionar partido/localidad</option>
+                                <option value="Almirante Brown" th:selected="${usuario.localidad == 'Almirante Brown'}">Almirante Brown</option>
+                                <option value="Avellaneda" th:selected="${usuario.localidad == 'Avellaneda'}">Avellaneda</option>
+                                <option value="Bahia Blanca" th:selected="${usuario.localidad == 'Bahia Blanca'}">Bahía Blanca</option>
+                                <option value="Berazategui" th:selected="${usuario.localidad == 'Berazategui'}">Berazategui</option>
+                                <option value="Berisso" th:selected="${usuario.localidad == 'Berisso'}">Berisso</option>
+                                <option value="Brandsen" th:selected="${usuario.localidad == 'Brandsen'}">Brandsen</option>
+                                <option value="Buenos Aires" th:selected="${usuario.localidad == 'Buenos Aires'}">Buenos Aires (CABA)</option>
+                                <option value="Campana" th:selected="${usuario.localidad == 'Campana'}">Campana</option>
+                                <option value="Canuelas" th:selected="${usuario.localidad == 'Canuelas'}">Cañuelas</option>
+                                <option value="Ensenada" th:selected="${usuario.localidad == 'Ensenada'}">Ensenada</option>
+                                <option value="Escobar" th:selected="${usuario.localidad == 'Escobar'}">Escobar</option>
+                                <option value="Esteban Echeverria" th:selected="${usuario.localidad == 'Esteban Echeverria'}">Esteban Echeverría</option>
+                                <option value="Exaltacion de la Cruz" th:selected="${usuario.localidad == 'Exaltacion de la Cruz'}">Exaltación de la Cruz</option>
+                                <option value="Ezeiza" th:selected="${usuario.localidad == 'Ezeiza'}">Ezeiza</option>
+                                <option value="Florencio Varela" th:selected="${usuario.localidad == 'Florencio Varela'}">Florencio Varela</option>
+                                <option value="General Las Heras" th:selected="${usuario.localidad == 'General Las Heras'}">General Las Heras</option>
+                                <option value="General Rodriguez" th:selected="${usuario.localidad == 'General Rodriguez'}">General Rodríguez</option>
+                                <option value="Hurlingham" th:selected="${usuario.localidad == 'Hurlingham'}">Hurlingham</option>
+                                <option value="Ituzaingo" th:selected="${usuario.localidad == 'Ituzaingo'}">Ituzaingó</option>
+                                <option value="Jose C. Paz" th:selected="${usuario.localidad == 'Jose C. Paz'}">José C. Paz</option>
+                                <option value="La Matanza" th:selected="${usuario.localidad == 'La Matanza'}">La Matanza</option>
+                                <option value="La Plata" th:selected="${usuario.localidad == 'La Plata'}">La Plata</option>
+                                <option value="Lanus" th:selected="${usuario.localidad == 'Lanus'}">Lanús</option>
+                                <option value="Lobos" th:selected="${usuario.localidad == 'Lobos'}">Lobos</option>
+                                <option value="Lomas de Zamora" th:selected="${usuario.localidad == 'Lomas de Zamora'}">Lomas de Zamora</option>
+                                <option value="Lujan" th:selected="${usuario.localidad == 'Lujan'}">Luján</option>
+                                <option value="Magdalena" th:selected="${usuario.localidad == 'Magdalena'}">Magdalena</option>
+                                <option value="Malvinas Argentinas" th:selected="${usuario.localidad == 'Malvinas Argentinas'}">Malvinas Argentinas</option>
+                                <option value="Mar del Plata" th:selected="${usuario.localidad == 'Mar del Plata'}">Mar del Plata</option>
+                                <option value="Marcos Paz" th:selected="${usuario.localidad == 'Marcos Paz'}">Marcos Paz</option>
+                                <option value="Merlo" th:selected="${usuario.localidad == 'Merlo'}">Merlo</option>
+                                <option value="Moreno" th:selected="${usuario.localidad == 'Moreno'}">Moreno</option>
+                                <option value="Moron" th:selected="${usuario.localidad == 'Moron'}">Morón</option>
+                                <option value="Navarro" th:selected="${usuario.localidad == 'Navarro'}">Navarro</option>
+                                <option value="Pilar" th:selected="${usuario.localidad == 'Pilar'}">Pilar</option>
+                                <option value="Presidente Peron" th:selected="${usuario.localidad == 'Presidente Peron'}">Presidente Perón</option>
+                                <option value="Punta Indio" th:selected="${usuario.localidad == 'Punta Indio'}">Punta Indio</option>
+                                <option value="Quilmes" th:selected="${usuario.localidad == 'Quilmes'}">Quilmes</option>
+                                <option value="Ramallo" th:selected="${usuario.localidad == 'Ramallo'}">Ramallo</option>
+                                <option value="San Fernando" th:selected="${usuario.localidad == 'San Fernando'}">San Fernando</option>
+                                <option value="San Isidro" th:selected="${usuario.localidad == 'San Isidro'}">San Isidro</option>
+                                <option value="San Martin" th:selected="${usuario.localidad == 'San Martin'}">San Martín</option>
+                                <option value="San Miguel" th:selected="${usuario.localidad == 'San Miguel'}">San Miguel</option>
+                                <option value="San Nicolas" th:selected="${usuario.localidad == 'San Nicolas'}">San Nicolás</option>
+                                <option value="San Vicente" th:selected="${usuario.localidad == 'San Vicente'}">San Vicente</option>
+                                <option value="Tigre" th:selected="${usuario.localidad == 'Tigre'}">Tigre</option>
+                                <option value="Tres de Febrero" th:selected="${usuario.localidad == 'Tres de Febrero'}">Tres de Febrero</option>
+                                <option value="Vicente Lopez" th:selected="${usuario.localidad == 'Vicente Lopez'}">Vicente López</option>
+                                <option value="Zarate" th:selected="${usuario.localidad == 'Zarate'}">Zárate</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="cu-btn cu-btn-principal cu-btn-bloque">Guardar ubicación</button>
+                    </form>
                 </div>
             </details>
 
@@ -316,7 +416,17 @@
     // Inicial del avatar
     var avatar = document.getElementById('cu-avatar');
     var texto = (avatar.getAttribute('data-inicial') || '').trim();
-    if (texto) { avatar.textContent = texto.charAt(0).toUpperCase(); }
+    if (texto && !avatar.querySelector('img')) { avatar.textContent = texto.charAt(0).toUpperCase(); }
+
+    // Cambiar foto: abre el selector y envía el formulario apenas se elige una imagen
+    var botonFoto = document.getElementById('btn-cambiar-foto');
+    if (botonFoto) {
+        var campoFoto = document.getElementById('foto-perfil');
+        botonFoto.addEventListener('click', function () { campoFoto.click(); });
+        campoFoto.addEventListener('change', function () {
+            if (campoFoto.files.length > 0) { document.getElementById('form-foto-perfil').submit(); }
+        });
+    }
 
     // Si la contraseña estaba mal, se vuelve a abrir el modal para reintentar
     var modalEliminar = document.getElementById('modalEliminarCuenta');

@@ -226,7 +226,7 @@
     border-radius: 50%;
 }
 
-.lp-estado.lp-fresco {
+.lp-estado.lp-reciente {
     color: #0E6F46;
     background: #E3F4EA;
 }
@@ -843,7 +843,7 @@
     border-radius: 999px;
 }
 
-.lp-mini-fresco {
+.lp-mini-reciente {
     color: #0E6F46;
     background: #E3F4EA;
 }

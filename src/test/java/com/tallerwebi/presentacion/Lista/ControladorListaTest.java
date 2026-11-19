@@ -156,7 +156,14 @@ public class ControladorListaTest {
   public void agregarProductoSinSesionDeberiaRedirigirAlLogin() {
     when(sessionMock.getAttribute("ID")).thenReturn(null);
 
-    ModelAndView mav = controladorLista.agregarProducto(1L, 5L, 2, sessionMock);
+    ModelAndView mav = controladorLista.agregarProducto(
+      1L,
+      5L,
+      2,
+      null,
+      sessionMock,
+      redirectAttrs
+    );
 
     assertThat(mav.getViewName(), equalTo("redirect:/login"));
     verifyNoInteractions(servicioListaMock);
@@ -166,10 +173,67 @@ public class ControladorListaTest {
   public void agregarProductoConSesionDeberiaAgregarYRedirigirAlDetalle() {
     when(sessionMock.getAttribute("ID")).thenReturn(1L);
 
-    ModelAndView mav = controladorLista.agregarProducto(3L, 5L, 2, sessionMock);
+    ModelAndView mav = controladorLista.agregarProducto(
+      3L,
+      5L,
+      2,
+      null,
+      sessionMock,
+      redirectAttrs
+    );
 
     assertThat(mav.getViewName(), equalTo("redirect:/mis-listas/3"));
     verify(servicioListaMock, times(1)).agregarProductoALista(3L, 5L, 2, 1L);
+  }
+
+  @Test
+  public void agregarProductoConDestinoDeProductosDeberiaVolverAEsaPantalla() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView mav = controladorLista.agregarProducto(
+      3L,
+      5L,
+      1,
+      "/producto/buscar?nombre=leche&orden=precio",
+      sessionMock,
+      redirectAttrs
+    );
+
+    assertThat(mav.getViewName(), equalTo("redirect:/producto/buscar?nombre=leche&orden=precio"));
+    assertThat(redirectAttrs.getFlashAttributes().get("listaAgregadaId"), equalTo(3L));
+    verify(servicioListaMock, times(1)).agregarProductoALista(3L, 5L, 1, 1L);
+  }
+
+  @Test
+  public void agregarProductoConDestinoExternoDeberiaIrAlDetalleDeLaLista() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView mav = controladorLista.agregarProducto(
+      3L,
+      5L,
+      1,
+      "//sitio-externo.com/producto",
+      sessionMock,
+      redirectAttrs
+    );
+
+    assertThat(mav.getViewName(), equalTo("redirect:/mis-listas/3"));
+  }
+
+  @Test
+  public void agregarProductoConDestinoQueNoEsDeProductosDeberiaIrAlDetalleDeLaLista() {
+    when(sessionMock.getAttribute("ID")).thenReturn(1L);
+
+    ModelAndView mav = controladorLista.agregarProducto(
+      3L,
+      5L,
+      1,
+      "/admin/estadisticas",
+      sessionMock,
+      redirectAttrs
+    );
+
+    assertThat(mav.getViewName(), equalTo("redirect:/mis-listas/3"));
   }
 
   // --- eliminarItem ---
@@ -274,7 +338,14 @@ public class ControladorListaTest {
       .when(servicioListaMock)
       .agregarProductoALista(5L, 7L, 1, 1L);
 
-    ModelAndView mav = controladorLista.agregarProducto(5L, 7L, 1, sessionMock);
+    ModelAndView mav = controladorLista.agregarProducto(
+      5L,
+      7L,
+      1,
+      null,
+      sessionMock,
+      redirectAttrs
+    );
 
     assertThat(mav.getViewName(), equalTo("redirect:/mis-listas"));
   }

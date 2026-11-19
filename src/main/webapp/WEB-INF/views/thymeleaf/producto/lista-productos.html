@@ -34,6 +34,11 @@
     <div th:if="${errorDudoso}" id="alerta-dudoso" class="alert alert-warning" role="alert"
          th:text="${errorDudoso}"></div>
 
+    <div th:if="${listaAgregadaId}" id="alerta-lista-agregada" class="alert alert-success d-flex flex-wrap justify-content-between align-items-center gap-2" role="status">
+        <span><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Producto agregado a tu lista. Podés seguir buscando.</span>
+        <a th:href="@{/mis-listas/{id}(id=${listaAgregadaId})}" class="btn btn-sm btn-success text-nowrap">Ver mi lista</a>
+    </div>
+
     <div th:if="${dudosoDesmarcado}" id="alerta-dudoso-quitado" class="alert alert-success" role="status">
         Quitaste tu marca de dudoso. Si volvés a dudar de ese precio, podés marcarlo de nuevo.
     </div>
@@ -342,65 +347,6 @@
     modal.show();
 </script>
 
-<div th:if="${productoAValorar != null}"
-     class="toast-container position-fixed bottom-0 end-0 p-3 lp-toast-zona">
-    <div id="notificacion-valorar-producto"
-         class="toast lp-toast"
-         role="alert"
-         aria-live="polite"
-         aria-atomic="true"
-         data-bs-autohide="false">
-        <div class="toast-header">
-            <strong class="me-auto">Ayudá a tu barrio</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"
-                    aria-label="Cerrar"></button>
-        </div>
-        <div class="toast-body">
-            ¿El precio de <strong th:text="${productoAValorar.nombre}"></strong> sigue siendo correcto?
-            Valorá esta publicación para mantener la información actualizada.
-            <button type="button"
-                    class="btn btn-verde btn-sm mt-2 d-block"
-                    th:attr="data-reporte-id=${productoAValorar.reporteId}"
-                    onclick="irAValorarProducto(this)">
-                Valorar publicación
-            </button>
-        </div>
-    </div>
-</div>
-
-<div th:if="${productoAValorar != null}" class="modal fade" id="modalValorarProducto"
-     tabindex="-1" aria-labelledby="titulo-modal-valorar" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="titulo-modal-valorar">Valorá esta publicación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-                ¿El precio publicado de <strong th:text="${productoAValorar.nombre}"></strong> sigue siendo correcto?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-success" onclick="confirmarPrecioCorrecto()">
-                    Sí, parece correcto
-                </button>
-                <button type="button"
-                        class="btn btn-outline-danger"
-                        th:attr="data-reporte-id=${productoAValorar.reporteId}"
-                        onclick="marcarPrecioDudoso(this)">
-                    No, cambió
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script th:if="${productoAValorar != null}">
-    var notificacionValoracion = new bootstrap.Toast(
-        document.getElementById('notificacion-valorar-producto')
-    );
-    notificacionValoracion.show();
-</script>
-
 <script>
     // Al cambiar el orden se vuelve a buscar con el mismo texto
     document.querySelectorAll('input[name="orden"]').forEach(function (opcion) {
@@ -476,9 +422,7 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down lp-modal-precios">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="lp-volver" data-bs-dismiss="modal" aria-label="Volver">
-                    <i class="bi bi-arrow-left" aria-hidden="true"></i>
-                </button>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
                 <div class="lp-precios-foto">
@@ -515,6 +459,7 @@
             </div>
             <form th:action="@{/mis-listas/agregar-producto}" method="post">
                 <input type="hidden" name="reporteId" id="input-reporte-id" value="">
+                <input type="hidden" name="volverA" id="input-volver-a" value="">
                 <div class="modal-body">
                     <div th:if="${listas == null or #lists.isEmpty(listas)}" class="text-center">
                         <p class="text-muted">No tenés listas creadas.</p>
@@ -561,32 +506,19 @@
 </div>
 
 <script>
+    // Al agregar a una lista se vuelve a esta misma pantalla (con la búsqueda y los filtros que tenía).
+    (function () {
+        var form = document.getElementById('input-volver-a').form;
+        form.addEventListener('submit', function () {
+            var accion = form.getAttribute('action');
+            var contexto = accion.substring(0, accion.indexOf('/mis-listas/'));
+            var ruta = window.location.pathname.substring(contexto.length);
+            document.getElementById('input-volver-a').value = ruta + window.location.search;
+        });
+    })();
+
     function seleccionarReporte(btn) {
         document.getElementById('input-reporte-id').value = btn.getAttribute('data-reporte-id');
-    }
-
-    function irAValorarProducto(boton) {
-        bootstrap.Toast.getInstance(document.getElementById('notificacion-valorar-producto')).hide();
-        new bootstrap.Modal(document.getElementById('modalValorarProducto')).show();
-    }
-
-    function confirmarPrecioCorrecto() {
-        bootstrap.Modal.getInstance(document.getElementById('modalValorarProducto')).hide();
-        bootstrap.Toast.getOrCreateInstance(document.getElementById('toast-gracias')).show();
-    }
-
-    function marcarPrecioDudoso(boton) {
-        var reporteId = boton.getAttribute('data-reporte-id');
-        var botonValoracion = document.getElementById('btn-marcar-dudoso-' + reporteId);
-        var menu = document.getElementById('btn-menu-producto-' + reporteId);
-        bootstrap.Modal.getInstance(document.getElementById('modalValorarProducto')).hide();
-        if (menu) {
-            menu.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            bootstrap.Dropdown.getOrCreateInstance(menu).show();
-        }
-        if (botonValoracion) {
-            botonValoracion.focus();
-        }
     }
 
     function abrirFoto(img) {

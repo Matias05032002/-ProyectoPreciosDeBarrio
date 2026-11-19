@@ -1,8 +1,10 @@
 package com.tallerwebi.dominio;
 
+import com.tallerwebi.dominio.Imagen.TipoDeImagen;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
 import com.tallerwebi.dominio.excepcion.DatosInvalidos;
 import com.tallerwebi.dominio.excepcion.EmailInvalido;
+import com.tallerwebi.dominio.excepcion.FotoInvalida;
 import com.tallerwebi.dominio.excepcion.RolInvalido;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import com.tallerwebi.dominio.excepcion.UsuarioNoEncontrado;
@@ -22,6 +24,8 @@ public class ServicioLoginImpl implements ServicioLogin {
   private static final String ROL_COMERCIO = "COMERCIO";
   private static final String ROL_USUARIO = "USER";
   private static final int LARGO_MAXIMO_NOMBRE = 100;
+  private static final int LARGO_MAXIMO_DIRECCION = 200;
+  private static final int MAX_FOTO_BYTES = 5 * 1024 * 1024;
   private static final LocalDate FECHA_NACIMIENTO_MINIMA = LocalDate.of(1900, 1, 1);
 
   private RepositorioUsuario repositorioUsuario;
@@ -137,6 +141,40 @@ public class ServicioLoginImpl implements ServicioLogin {
     usuario.setEmail(emailNorm);
     repositorioUsuario.modificar(usuario);
     return true;
+  }
+
+  @Override
+  public boolean actualizarUbicacion(Long usuarioId, String direccion, String localidad) {
+    if (
+      localidad == null ||
+      localidad.isBlank() ||
+      (direccion != null && direccion.trim().length() > LARGO_MAXIMO_DIRECCION)
+    ) {
+      return false;
+    }
+    Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
+    if (usuario == null) {
+      return false;
+    }
+    usuario.setDireccion(direccion == null || direccion.isBlank() ? null : direccion.trim());
+    usuario.setLocalidad(localidad.trim());
+    repositorioUsuario.modificar(usuario);
+    return true;
+  }
+
+  @Override
+  public void guardarFotoPerfil(Long usuarioId, byte[] foto) throws FotoInvalida {
+    String tipo = foto == null ? null : TipoDeImagen.detectar(foto);
+    if (tipo == null || foto.length > MAX_FOTO_BYTES) {
+      throw new FotoInvalida();
+    }
+    Usuario usuario = repositorioUsuario.buscarPorId(usuarioId);
+    if (usuario == null) {
+      return;
+    }
+    usuario.setFoto(foto);
+    usuario.setFotoTipo(tipo);
+    repositorioUsuario.modificar(usuario);
   }
 
   @Override
