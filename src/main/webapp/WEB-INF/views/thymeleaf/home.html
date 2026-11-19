@@ -663,10 +663,14 @@
       estadoUltimos.hidden = !mensaje;
     }
 
-    function marcar(cercanos) {
+    // Los dos filtros se pueden combinar: con "Más cercanos" solo se ordena por distancia,
+    // y con los dos activos se muestran los precios de los comercios cercanos, del más nuevo al más viejo.
+    var filtro = { recientes: true, cercanos: false };
+
+    function marcar() {
       if (!botonRecientes || !botonCercanos) { return; }
-      botonRecientes.setAttribute('aria-pressed', String(!cercanos));
-      botonCercanos.setAttribute('aria-pressed', String(cercanos));
+      botonRecientes.setAttribute('aria-pressed', String(filtro.recientes));
+      botonCercanos.setAttribute('aria-pressed', String(filtro.cercanos));
     }
 
     function pedirJson(url) {
@@ -677,7 +681,9 @@
 
     function mostrarRecientes(mensaje) {
       var este = ++pedido;
-      marcar(false);
+      filtro.recientes = true;
+      filtro.cercanos = false;
+      marcar();
       avisar(mensaje);
       pedirJson(URL_ULTIMOS).then(function (lista) { if (este === pedido) { pintar(lista); } });
     }
@@ -690,18 +696,23 @@
                   mostrarRecientes('Todavía no hay precios reportados en comercios con ubicación cerca tuyo.');
                   return;
                 }
-                avisar('');
+                if (filtro.recientes) {
+                  lista = lista.slice().sort(function (x, y) { return new Date(y.fecha) - new Date(x.fecha); });
+                  avisar('Los precios más recientes de los comercios cercanos.');
+                } else {
+                  avisar('');
+                }
                 pintar(lista);
               });
     }
 
-    function elegirCercanos() {
+    function aplicarCercanos() {
       var este = ++pedido;
       if (!navigator.geolocation) {
         mostrarRecientes('Tu navegador no permite ver tu ubicación.');
         return;
       }
-      marcar(true);
+      marcar();
       avisar('Buscando tu ubicación…');
       navigator.geolocation.getCurrentPosition(function (p) {
         if (este === pedido) { mostrarCercanos(p.coords.latitude, p.coords.longitude, este); }
@@ -712,8 +723,24 @@
       }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
     }
 
-    if (botonRecientes) { botonRecientes.addEventListener('click', function () { mostrarRecientes(''); }); }
-    if (botonCercanos) { botonCercanos.addEventListener('click', elegirCercanos); }
+    // Siempre queda al menos un filtro prendido
+    if (botonRecientes) {
+      botonRecientes.addEventListener('click', function () {
+        if (!filtro.cercanos) { return; }
+        filtro.recientes = !filtro.recientes;
+        aplicarCercanos();
+      });
+    }
+    if (botonCercanos) {
+      botonCercanos.addEventListener('click', function () {
+        if (filtro.cercanos) {
+          if (filtro.recientes) { mostrarRecientes(''); }
+          return;
+        }
+        filtro.cercanos = true;
+        aplicarCercanos();
+      });
+    }
 
     mostrarRecientes('');
 
