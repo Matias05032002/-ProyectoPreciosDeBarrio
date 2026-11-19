@@ -9,16 +9,21 @@ import com.tallerwebi.dominio.excepcion.*;
 import com.tallerwebi.dominio.notificacion.ServicioNotificacion;
 import com.tallerwebi.dominio.notificacion.TipoNotificacion;
 import jakarta.transaction.Transactional;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service("servicioReporte")
 @Transactional
 public class ServicioReporteImpl implements ServicioReporte {
+
+  private static final Pattern MARCAS_DE_TILDE = Pattern.compile("\\p{M}+");
 
   // Número + unidad de medida. "u" es para productos que se venden por unidad (1u, 6u).
   // Lo usa también ServicioOcr para normalizar lo que lee de los tickets.
@@ -325,7 +330,16 @@ public class ServicioReporteImpl implements ServicioReporte {
   }
 
   private static boolean mismoTexto(String uno, String otro) {
-    return uno != null && otro != null && uno.trim().equalsIgnoreCase(otro.trim());
+    return uno != null && otro != null && sinTildes(uno).equals(sinTildes(otro));
+  }
+
+  // La base compara sin distinguir mayúsculas ni tildes ("Jamón" y "Jamon" chocan en la clave
+  // única), así que acá se compara igual: si no, se intenta crear un producto repetido.
+  private static String sinTildes(String texto) {
+    return MARCAS_DE_TILDE
+      .matcher(Normalizer.normalize(texto.trim(), Normalizer.Form.NFD))
+      .replaceAll("")
+      .toLowerCase(Locale.ROOT);
   }
 
   private void validarPermisoEdicion(Reporte reporte, Long usuarioId) {
