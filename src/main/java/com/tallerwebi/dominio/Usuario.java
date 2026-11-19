@@ -40,7 +40,6 @@ public class Usuario {
   private String direccion;
 
   @Lob
-  @Column(name = "foto", columnDefinition = "LONGBLOB")
   private byte[] foto;
 
   @Column(name = "fotoTipo", length = 50)
